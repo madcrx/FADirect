@@ -2,21 +2,12 @@
   "expo": {
     "name": "FA Direct",
     "slug": "fadirect",
-    "cli": {
-      "appVersionSource": "remote"
-    },
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#1A3A52"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fadirect.app",
@@ -26,16 +17,10 @@
         "NSCameraUsageDescription": "FA Direct needs access to your camera to take photos for arrangements.",
         "NSMicrophoneUsageDescription": "FA Direct needs access to your microphone for future video calling features.",
         "NSLocationWhenInUseUsageDescription": "FA Direct needs your location to show nearby funeral services."
-      },
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "com.googleusercontent.apps.YOUR_IOS_CLIENT_ID"
-        }
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1A3A52"
       },
       "package": "com.fadirect.app",
@@ -48,9 +33,6 @@
         "RECEIVE_BOOT_COMPLETED"
       ],
       "googleServicesFile": "./google-services.json"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       [
