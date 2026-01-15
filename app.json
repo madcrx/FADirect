@@ -1,4 +1,7 @@
 {
+  "cli": {
+    "appVersionSource": "remote"
+  },
   "expo": {
     "name": "FA Direct",
     "slug": "fadirect",
