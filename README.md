@@ -38,20 +38,38 @@ Different workflow templates for various service types:
 
 ## 🚀 Getting Started
 
-See [SETUP.md](SETUP.md) for detailed setup instructions.
+Choose your path based on your needs:
 
-### Quick Start
+### 🧪 Development & Testing
+
+**Option A: Test on Real Devices (Recommended)**
+- **Windows → iOS/Android phones**: See [QUICK_START_DISTRIBUTION.md](QUICK_START_DISTRIBUTION.md)
+- **No Mac needed**: Uses cloud builds (EAS)
+- **Best for**: Testing with real users, distribution to team
+
+**Option B: Local Development**
+- **Mac + Xcode**: See [SETUP.md](SETUP.md) for iOS
+- **Windows/Mac + Android Studio**: See [SETUP.md](SETUP.md) for Android
+- **Best for**: Active development, debugging
+
+### Quick Commands
 
 ```bash
 # Install dependencies
 npm install
 
-# iOS
-cd ios && pod install && cd ..
-npm run ios
+# For local development
+npm run ios      # iOS simulator (Mac only)
+npm run android  # Android emulator
 
-# Android
-npm run android
+# For cloud builds (works from Windows!)
+npm run build:preview          # Build iOS & Android
+npm run build:ios:preview      # Build iOS only
+npm run build:android:preview  # Build Android only
+
+# Submit to TestFlight/Play Store
+npm run submit:ios      # Submit to TestFlight
+npm run submit:android  # Submit to Play Console
 ```
 
 ### Firebase Setup Required
@@ -66,7 +84,12 @@ See [SETUP.md](SETUP.md) for complete instructions.
 
 ## 📋 Documentation
 
-- [Quick Setup Guide](SETUP.md) - Get started in 30 minutes
+**Getting Started:**
+- [Quick Setup Guide](SETUP.md) - Local development setup (30 minutes)
+- [Distribution Guide](QUICK_START_DISTRIBUTION.md) - Test on real devices (1 hour)
+- [Full Distribution Manual](DISTRIBUTION.md) - Complete TestFlight/Play Store guide
+
+**Technical:**
 - [Architecture](#-project-structure) - Understand the codebase
 - [Security](#-security-architecture) - Learn about E2EE implementation
 - [Customization](#-customization) - Adapt for your needs

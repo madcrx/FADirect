@@ -86,3 +86,18 @@ coverage/
 # Debug
 ios/build
 android/app/build
+
+# EAS (Expo Application Services)
+.expo/
+.eas-build-pre-install.sh
+
+# Google Play service account (contains sensitive credentials)
+google-play-service-account.json
+
+# Apple credentials
+*.mobileprovision
+*.certSigningRequest
+
+# Build artifacts
+*.apk
+*.aab
