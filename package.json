@@ -10,6 +10,7 @@
     "test": "jest",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "postinstall": "patch-package",
+    "check": "node scripts/check-prerequisites.js",
     "build:ios:preview": "eas build --platform ios --profile preview",
     "build:android:preview": "eas build --platform android --profile preview",
     "build:preview": "eas build --platform all --profile preview",
