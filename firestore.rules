@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isArranger() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'arranger';
+    }
+
+    function isMourner() {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'mourner';
+    }
+
+    function isArrangementParticipant(arrangementData) {
+      return request.auth.uid == arrangementData.arrangerId ||
+             request.auth.uid == arrangementData.mournerId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Never allow user deletion via client
+    }
+
+    // Organizations collection
+    match /organizations/{orgId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isArranger();
+      allow delete: if false;
+    }
+
+    // Arrangements collection
+    match /arrangements/{arrangementId} {
+      allow read: if isAuthenticated() &&
+                     isArrangementParticipant(resource.data);
+      allow create: if isArranger();
+      allow update: if isAuthenticated() &&
+                       isArrangementParticipant(resource.data);
+      allow delete: if false;
+    }
+
+    // Messages collection (encrypted, so data is protected)
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.senderId == request.auth.uid ||
+                      resource.data.recipientId == request.auth.uid);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.senderId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+                       (resource.data.senderId == request.auth.uid ||
+                        resource.data.recipientId == request.auth.uid);
+      allow delete: if false; // Never allow message deletion
+    }
+
+    // Documents collection
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() &&
+                     request.auth.uid in resource.data.sharedWith;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       resource.data.uploadedBy == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+                       resource.data.uploadedBy == request.auth.uid;
+    }
+
+    // Photos collection
+    match /photos/{photoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       resource.data.uploadedBy == request.auth.uid;
+      allow delete: if isAuthenticated() &&
+                       resource.data.uploadedBy == request.auth.uid;
+    }
+
+    // Form Templates (read by all, write by arrangers only)
+    match /formTemplates/{templateId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isArranger();
+      allow delete: if false;
+    }
+
+    // Form Submissions
+    match /formSubmissions/{submissionId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.submittedBy == request.auth.uid ||
+                      isArranger());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       resource.data.submittedBy == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read, update: if isAuthenticated() &&
+                             resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow delete: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid;
+    }
+
+    // Encryption Keys (public keys only, private keys never stored)
+    match /encryptionKeys/{userId} {
+      allow read: if isAuthenticated(); // Anyone can read public keys
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false;
+    }
+  }
+}
