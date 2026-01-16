@@ -12,7 +12,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.fadirect.app",
       "buildNumber": "1",
-      "googleServicesFile": "./ios/GoogleService-Info.plist",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "FA Direct needs access to your photo library to upload photos for arrangements.",
         "NSCameraUsageDescription": "FA Direct needs access to your camera to take photos for arrangements.",
@@ -32,8 +31,7 @@
         "WRITE_EXTERNAL_STORAGE",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "plugins": [
       [
