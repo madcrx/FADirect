@@ -48,6 +48,7 @@ module.exports = ({ config }) => {
         NSCameraUsageDescription: 'FA Direct needs access to your camera to take photos for arrangements.',
         NSMicrophoneUsageDescription: 'FA Direct needs access to your microphone for future video calling features.',
         NSLocationWhenInUseUsageDescription: 'FA Direct needs your location to show nearby funeral services.',
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     android: {
