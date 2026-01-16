@@ -34,9 +34,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-id",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "info@epsicon.com.au",
+        "ascAppId": "29WPTLUBL8",
+        "appleTeamId": "B672DMM8X6"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
