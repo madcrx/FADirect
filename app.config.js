@@ -80,16 +80,10 @@ module.exports = ({ config }) => {
   // Only add Firebase config if valid files exist
   if (firebaseConfig.iosValid) {
     baseConfig.ios.googleServicesFile = './ios/GoogleService-Info.plist';
-    console.log('✓ Using iOS Firebase configuration');
-  } else {
-    console.warn('⚠ iOS Firebase configuration not found or invalid - Firebase will not work on iOS');
   }
 
   if (firebaseConfig.androidValid) {
     baseConfig.android.googleServicesFile = './google-services.json';
-    console.log('✓ Using Android Firebase configuration');
-  } else {
-    console.warn('⚠ Android Firebase configuration not found or invalid - Firebase will not work on Android');
   }
 
   return baseConfig;
