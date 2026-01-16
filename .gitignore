@@ -67,10 +67,11 @@ firestore-debug.log
 .env.local
 .env.*.local
 
-# Firebase config files - TEMPORARILY REMOVED FROM GITIGNORE FOR EAS BUILD
-# TODO: Move to EAS Secrets for production
-# google-services.json
-# GoogleService-Info.plist
+# Firebase config files - Explicitly allowed for EAS Build
+# These files are needed for builds. Use placeholder values in repo,
+# real values via EAS Secrets (see FIREBASE_SETUP.md)
+!google-services.json
+!ios/GoogleService-Info.plist
 
 # Secrets
 *.pem
