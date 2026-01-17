@@ -40,6 +40,11 @@
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
+        {
+  "build": {
+    "development": {
+      "ios": {
+        "simulator": true
       }
     }
   }
