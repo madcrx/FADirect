@@ -32,11 +32,18 @@
     }
   },
   "submit": {
+    "preview": {
+      "ios": {
+        "appleId": "info@epsicon.com.au",
+        "ascAppId": "REPLACE_WITH_YOUR_ASC_APP_ID",
+        "appleTeamId": "B672DMM8X6"
+      }
+    },
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-id",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "info@epsicon.com.au",
+        "ascAppId": "REPLACE_WITH_YOUR_ASC_APP_ID",
+        "appleTeamId": "B672DMM8X6"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
