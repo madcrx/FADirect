@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 5.9.0"
+    "version": ">= 5.9.0",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
@@ -21,7 +22,7 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
-    "production": {
+    "preview": {
       "ios": {
         "resourceClass": "m-medium"
       },
@@ -31,11 +32,11 @@
     }
   },
   "submit": {
-    "production": {
+    "preview": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-id",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "appleId": "info@epsicon.com.au",
+        "ascAppId": "6757940337",
+        "appleTeamId": "B672DMM8X6"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",

@@ -31,8 +31,7 @@
         "WRITE_EXTERNAL_STORAGE",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "plugins": [
       [
@@ -43,6 +42,11 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0ff31196-cf10-4628-b686-5fc145eef7d1"
+      }
+    }
   }
 }
