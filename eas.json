@@ -22,7 +22,7 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
-    "production": {
+    "preview": {
       "ios": {
         "resourceClass": "m-medium"
       },
@@ -32,7 +32,7 @@
     }
   },
   "submit": {
-    "production": {
+    "preview": {
       "ios": {
         "appleId": "info@epsicon.com.au",
         "ascAppId": "6757940337",
