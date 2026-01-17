@@ -53,24 +53,31 @@ export const CLOUD_FUNCTIONS = {
 } as const;
 
 export const initializeFirebase = () => {
-  // Configure Firestore settings
-  firestore().settings({
-    persistence: true,
-    cacheSizeBytes: firestore.CACHE_SIZE_UNLIMITED,
-  });
-
-  // Enable offline persistence
-  firestore()
-    .enablePersistence()
-    .catch(err => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firestore persistence failed: multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firestore persistence not available');
-      }
+  try {
+    // Configure Firestore settings
+    firestore().settings({
+      persistence: true,
+      cacheSizeBytes: firestore.CACHE_SIZE_UNLIMITED,
     });
 
-  console.log('Firebase initialized successfully');
+    // Enable offline persistence
+    firestore()
+      .enablePersistence()
+      .catch(err => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Firestore persistence failed: multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Firestore persistence not available');
+        } else {
+          console.warn('Firestore persistence error:', err.message);
+        }
+      });
+
+    console.log('Firebase initialized successfully');
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+    console.warn('App will run with limited functionality. Please check Firebase configuration.');
+  }
 };
 
 // Helper to get Firestore timestamp

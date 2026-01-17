@@ -17,11 +17,23 @@ LogBox.ignoreLogs(['ViewPropTypes will be removed']);
 
 const App = () => {
   useEffect(() => {
-    // Initialize Firebase
-    initializeFirebase();
+    const initializeServices = async () => {
+      try {
+        // Initialize Firebase
+        initializeFirebase();
+      } catch (error) {
+        console.error('Failed to initialize Firebase:', error);
+      }
 
-    // Initialize encryption service
-    initializeEncryption();
+      try {
+        // Initialize encryption service
+        initializeEncryption();
+      } catch (error) {
+        console.error('Failed to initialize encryption:', error);
+      }
+    };
+
+    initializeServices();
   }, []);
 
   return (
