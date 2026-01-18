@@ -35,14 +35,14 @@
     "preview": {
       "ios": {
         "appleId": "info@epsicon.com.au",
-        "ascAppId": "REPLACE_WITH_YOUR_ASC_APP_ID",
+        "ascAppId": "6757940337",
         "appleTeamId": "B672DMM8X6"
       }
     },
     "production": {
       "ios": {
         "appleId": "info@epsicon.com.au",
-        "ascAppId": "REPLACE_WITH_YOUR_ASC_APP_ID",
+        "ascAppId": "6757940337",
         "appleTeamId": "B672DMM8X6"
       },
       "android": {
