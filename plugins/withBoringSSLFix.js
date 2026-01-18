@@ -31,10 +31,9 @@ const withBoringSSLFix = (config) => {
         return config;
       }
 
-      // Find the last post_install block or add one
-      const postInstallFix = `
-  # Fix BoringSSL-GRPC for Xcode 16 - Remove unsupported -G flag
-  post_install do |installer|
+      // Patch code to inject into existing post_install hook
+      const patchCode = `
+    # Fix BoringSSL-GRPC for Xcode 16 - Remove unsupported -G flag
     installer.pods_project.targets.each do |target|
       if target.name.include?('BoringSSL-GRPC')
         puts "🔧 Fixing BoringSSL-GRPC for Xcode 16: \#{target.name}"
@@ -64,33 +63,59 @@ const withBoringSSLFix = (config) => {
 
         puts "✓ Fixed BoringSSL-GRPC compilation flags"
       end
-    end
 
-    # Safety: Remove -G from all targets
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        if config.build_settings['OTHER_CFLAGS'].is_a?(String)
-          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].gsub(/-G\\s*/, '')
-        elsif config.build_settings['OTHER_CFLAGS'].is_a?(Array)
-          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag == '-G' }
-        end
+      # Safety: Remove -G from all targets
+      if config.build_settings['OTHER_CFLAGS'].is_a?(String)
+        config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].gsub(/-G\\s*/, '')
+      elsif config.build_settings['OTHER_CFLAGS'].is_a?(Array)
+        config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag == '-G' }
       end
     end
-  end
 `;
 
-      // Insert before the final 'end' of the file
+      // Find existing post_install block and inject our code
       const lines = podfileContent.split('\n');
-      const lastEndIndex = lines.lastIndexOf('end');
+      let injected = false;
 
-      if (lastEndIndex > -1) {
-        lines.splice(lastEndIndex, 0, postInstallFix);
-        podfileContent = lines.join('\n');
-      } else {
-        // Just append if we can't find the end
-        podfileContent += '\n' + postInstallFix + '\nend\n';
+      // Look for post_install block
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].includes('post_install do |installer|')) {
+          // Find the end of this block
+          let depth = 1;
+          for (let j = i + 1; j < lines.length; j++) {
+            if (lines[j].trim().startsWith('do ')) {
+              depth++;
+            } else if (lines[j].trim() === 'end') {
+              depth--;
+              if (depth === 0) {
+                // Insert our patch before this 'end'
+                lines.splice(j, 0, patchCode);
+                injected = true;
+                break;
+              }
+            }
+          }
+          if (injected) break;
+        }
       }
 
+      if (!injected) {
+        // No post_install found, create one
+        const newPostInstall = `
+  post_install do |installer|
+${patchCode}
+  end
+`;
+        // Append before final end
+        const lastEndIndex = lines.lastIndexOf('end');
+        if (lastEndIndex > -1) {
+          lines.splice(lastEndIndex, 0, newPostInstall);
+        } else {
+          lines.push(newPostInstall);
+        }
+      }
+
+      podfileContent = lines.join('\n');
       fs.writeFileSync(podfilePath, podfileContent);
       console.log('✅ Applied BoringSSL-GRPC Xcode 16 fix to Podfile');
 
