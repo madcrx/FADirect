@@ -64,11 +64,13 @@ const withBoringSSLFix = (config) => {
         puts "✓ Fixed BoringSSL-GRPC compilation flags"
       end
 
-      # Safety: Remove -G from all targets
-      if config.build_settings['OTHER_CFLAGS'].is_a?(String)
-        config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].gsub(/-G\\s*/, '')
-      elsif config.build_settings['OTHER_CFLAGS'].is_a?(Array)
-        config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag == '-G' }
+      # Safety: Remove -G from all targets' build configurations
+      target.build_configurations.each do |config|
+        if config.build_settings['OTHER_CFLAGS'].is_a?(String)
+          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].gsub(/-G\\s*/, '')
+        elsif config.build_settings['OTHER_CFLAGS'].is_a?(Array)
+          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag == '-G' }
+        end
       end
     end
 `;
