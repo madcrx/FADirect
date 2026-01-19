@@ -38,39 +38,29 @@ const withBoringSSLFix = (config) => {
       if target.name.include?('BoringSSL-GRPC')
         puts "🔧 Fixing BoringSSL-GRPC for Xcode 16: \#{target.name}"
 
-        # Remove -G flag from all build phases
-        target.build_phases.each do |phase|
-          if phase.is_a?(Xcodeproj::Project::Object::PBXSourcesBuildPhase)
-            phase.files.each do |file|
-              if file.settings && file.settings['COMPILER_FLAGS']
-                original_flags = file.settings['COMPILER_FLAGS']
-                file.settings['COMPILER_FLAGS'] = original_flags.gsub(/-G\\s*/, '')
-              end
+        target.build_configurations.each do |config|
+          # Only modify OTHER_CFLAGS if it exists
+          if config.build_settings['OTHER_CFLAGS']
+            other_cflags = config.build_settings['OTHER_CFLAGS']
+            if other_cflags.is_a?(String)
+              config.build_settings['OTHER_CFLAGS'] = other_cflags.gsub(/-G\\s+/, '').gsub(/\\s+-G$/, '').gsub(/^-G\\s+/, '')
+            elsif other_cflags.is_a?(Array)
+              config.build_settings['OTHER_CFLAGS'] = other_cflags.select { |flag| flag != '-G' }
             end
           end
-        end
 
-        # Remove -G from build settings
-        target.build_configurations.each do |config|
-          config.build_settings.each do |key, value|
-            if key.include?('FLAGS') && value.is_a?(String)
-              config.build_settings[key] = value.gsub(/-G\\s*/, '')
-            elsif key.include?('FLAGS') && value.is_a?(Array)
-              config.build_settings[key] = value.reject { |flag| flag == '-G' }
+          # Only modify OTHER_CPLUSPLUSFLAGS if it exists
+          if config.build_settings['OTHER_CPLUSPLUSFLAGS']
+            other_cxxflags = config.build_settings['OTHER_CPLUSPLUSFLAGS']
+            if other_cxxflags.is_a?(String)
+              config.build_settings['OTHER_CPLUSPLUSFLAGS'] = other_cxxflags.gsub(/-G\\s+/, '').gsub(/\\s+-G$/, '').gsub(/^-G\\s+/, '')
+            elsif other_cxxflags.is_a?(Array)
+              config.build_settings['OTHER_CPLUSPLUSFLAGS'] = other_cxxflags.select { |flag| flag != '-G' }
             end
           end
         end
 
         puts "✓ Fixed BoringSSL-GRPC compilation flags"
-      end
-
-      # Safety: Remove -G from all targets' build configurations
-      target.build_configurations.each do |config|
-        if config.build_settings['OTHER_CFLAGS'].is_a?(String)
-          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].gsub(/-G\\s*/, '')
-        elsif config.build_settings['OTHER_CFLAGS'].is_a?(Array)
-          config.build_settings['OTHER_CFLAGS'] = config.build_settings['OTHER_CFLAGS'].reject { |flag| flag == '-G' }
-        end
       end
     end
 `;
