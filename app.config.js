@@ -75,7 +75,6 @@ module.exports = ({ config }) => {
           },
         },
       ],
-      './plugins/withBoringSSLFix.js',
     ],
   };
 
