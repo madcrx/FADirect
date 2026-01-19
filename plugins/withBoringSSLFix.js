@@ -9,19 +9,25 @@ const path = require('path');
  * Adds a post_install hook to remove the unsupported -G compiler flag
  */
 const withBoringSSLFix = (config) => {
+  console.log('🔧 withBoringSSLFix plugin is running...');
+
   return withDangerousMod(config, [
     'ios',
     async (config) => {
+      console.log('🔍 Looking for Podfile to patch...');
+
       const podfilePath = path.join(
         config.modRequest.platformProjectRoot,
         'Podfile'
       );
 
       if (!fs.existsSync(podfilePath)) {
-        console.warn('⚠️  Podfile not found, skipping BoringSSL-GRPC fix');
+        console.warn('⚠️  Podfile not found at:', podfilePath);
+        console.warn('⚠️  Skipping BoringSSL-GRPC fix');
         return config;
       }
 
+      console.log('✓ Found Podfile at:', podfilePath);
       let podfileContent = fs.readFileSync(podfilePath, 'utf-8');
 
       // Check if our fix is already applied
@@ -29,6 +35,8 @@ const withBoringSSLFix = (config) => {
         console.log('✓ BoringSSL-GRPC fix already applied');
         return config;
       }
+
+      console.log('📝 Applying BoringSSL-GRPC Xcode 16 fix...');
 
       // Patch code to inject into existing post_install hook
       const patchCode = `

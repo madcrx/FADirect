@@ -71,7 +71,7 @@ module.exports = ({ config }) => {
         {
           ios: {
             useFrameworks: 'static',
-            deploymentTarget: '13.4',
+            deploymentTarget: '15.1',
           },
         },
       ],
