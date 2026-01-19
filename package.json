@@ -39,7 +39,7 @@
     "@react-native-firebase/functions": "^20.5.0",
     "react-native-paper": "^5.11.6",
     "react-native-vector-icons": "^10.0.3",
-    "@react-native-community/datetimepicker": "^8.0.1",
+    "@react-native-community/datetimepicker": "7.6.3",
     "react-native-document-picker": "^9.1.1",
     "react-native-image-picker": "^7.1.0",
     "react-native-fs": "^2.20.0",
