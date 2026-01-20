@@ -1,35 +1,5 @@
-const fs = require('fs');
-const path = require('path');
-
-// Function to check if Firebase config files exist
-const hasFirebaseConfigs = () => {
-  const androidConfig = path.join(__dirname, 'google-services.json');
-  const iosConfig = path.join(__dirname, 'ios', 'GoogleService-Info.plist');
-
-  const androidExists = fs.existsSync(androidConfig);
-  const iosExists = fs.existsSync(iosConfig);
-
-  // Check if files have real content (not placeholder values)
-  let androidValid = false;
-  let iosValid = false;
-
-  if (androidExists) {
-    const content = fs.readFileSync(androidConfig, 'utf8');
-    androidValid = !content.includes('YOUR_PROJECT_NUMBER');
-  }
-
-  if (iosExists) {
-    const content = fs.readFileSync(iosConfig, 'utf8');
-    iosValid = !content.includes('YOUR_IOS_API_KEY');
-  }
-
-  return { androidValid, iosValid };
-};
-
-const firebaseConfig = hasFirebaseConfigs();
-
 module.exports = ({ config }) => {
-  const baseConfig = {
+  return {
     ...config,
     name: 'FA Direct',
     slug: 'fadirect',
@@ -77,15 +47,4 @@ module.exports = ({ config }) => {
       ],
     ],
   };
-
-  // Only add Firebase config if valid files exist
-  if (firebaseConfig.iosValid) {
-    baseConfig.ios.googleServicesFile = './ios/GoogleService-Info.plist';
-  }
-
-  if (firebaseConfig.androidValid) {
-    baseConfig.android.googleServicesFile = './google-services.json';
-  }
-
-  return baseConfig;
 };

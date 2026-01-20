@@ -9,7 +9,7 @@ import 'react-native-get-random-values'; // Required for UUID and encryption
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
-import { initializeFirebase } from '@services/firebase/config';
+import { supabase } from '@config/supabase';
 import { initializeEncryption } from '@services/encryption/signalProtocol';
 
 // Ignore specific warnings
@@ -60,13 +60,17 @@ const App = () => {
   useEffect(() => {
     const initializeServices = async () => {
       try {
-        console.log('Initializing Firebase...');
-        initializeFirebase();
-        console.log('✓ Firebase initialized successfully');
+        console.log('Initializing Supabase...');
+        // Test Supabase connection
+        const { error } = await supabase.auth.getSession();
+        if (error && error.message !== 'Auth session missing!') {
+          throw error;
+        }
+        console.log('✓ Supabase initialized successfully');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Failed to initialize Firebase:', message);
-        setInitError(`Firebase initialization failed: ${message}`);
+        console.error('Failed to initialize Supabase:', message);
+        setInitError(`Supabase initialization failed: ${message}`);
         setIsInitializing(false);
         return;
       }
@@ -96,11 +100,10 @@ const App = () => {
         <Text style={styles.errorTitle}>Initialization Error</Text>
         <Text style={styles.errorMessage}>{initError}</Text>
         <Text style={styles.errorHint}>
-          Please check Firebase Console to ensure all services are enabled:
-          {'\n'}- Authentication (Phone provider)
-          {'\n'}- Firestore Database
-          {'\n'}- Cloud Storage
-          {'\n'}- Cloud Messaging
+          Please check Supabase Dashboard to ensure all services are enabled:
+          {'\n'}- Authentication
+          {'\n'}- Database
+          {'\n'}- Storage
         </Text>
       </View>
     );
