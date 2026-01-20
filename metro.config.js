@@ -1,3 +1,4 @@
+const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
 /**
@@ -8,11 +9,14 @@ const { getDefaultConfig } = require('expo/metro-config');
  */
 const config = getDefaultConfig(__dirname);
 
-// Block Firebase modules from being resolved during build
-// The project has migrated to Supabase - using compatibility layer instead
+// Provide stub modules for Firebase packages to allow build to succeed
+// The project has migrated to Supabase - stub modules prevent resolution errors
 config.resolver = {
   ...config.resolver,
-  blacklistRE: /@react-native-firebase\/.*/,
+  nodeModulesPaths: [
+    path.resolve(__dirname, '.stubs'),
+    path.resolve(__dirname, 'node_modules'),
+  ],
 };
 
 module.exports = config;
