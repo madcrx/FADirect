@@ -1,26 +1,31 @@
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-import storage from '@react-native-firebase/storage';
-import messaging from '@react-native-firebase/messaging';
-import functions from '@react-native-firebase/functions';
-
 /**
- * Firebase Configuration
+ * Firebase Compatibility Layer (Stub)
  *
- * SETUP INSTRUCTIONS:
- * 1. Create a Firebase project at https://console.firebase.google.com
- * 2. Add iOS and Android apps to your Firebase project
- * 3. Download google-services.json (Android) and GoogleService-Info.plist (iOS)
- * 4. Place them in android/app and ios/ directories respectively
- * 5. Enable Authentication > Phone in Firebase Console
- * 6. Enable Firestore Database
- * 7. Enable Storage
- * 8. Enable Cloud Messaging
- * 9. Set up Firestore Security Rules (see firestore.rules file)
- * 10. Set up Storage Security Rules (see storage.rules file)
+ * This file provides stub implementations of Firebase services to allow
+ * the codebase to compile after migrating to Supabase.
+ *
+ * TODO: Migrate all services to use Supabase directly instead of this compatibility layer
  */
 
-// Firestore collections
+// Type stubs to replace @react-native-firebase/auth types
+export namespace FirebaseAuthTypes {
+  export interface User {
+    uid: string;
+    email: string | null;
+    phoneNumber: string | null;
+    displayName: string | null;
+  }
+
+  export interface ConfirmationResult {
+    confirm: (code: string) => Promise<UserCredential>;
+  }
+
+  export interface UserCredential {
+    user: User;
+  }
+}
+
+// Collections - these will need to be created as Supabase tables
 export const COLLECTIONS = {
   USERS: 'users',
   ORGANIZATIONS: 'organizations',
@@ -31,10 +36,10 @@ export const COLLECTIONS = {
   FORM_TEMPLATES: 'formTemplates',
   FORM_SUBMISSIONS: 'formSubmissions',
   NOTIFICATIONS: 'notifications',
-  ENCRYPTION_KEYS: 'encryptionKeys', // Encrypted storage for Signal Protocol keys
+  ENCRYPTION_KEYS: 'encryptionKeys',
 } as const;
 
-// Storage paths
+// Storage paths - these will map to Supabase Storage buckets
 export const STORAGE_PATHS = {
   PROFILE_PHOTOS: 'profile-photos',
   DOCUMENTS: 'documents',
@@ -43,7 +48,7 @@ export const STORAGE_PATHS = {
   ENCRYPTED_FILES: 'encrypted-files',
 } as const;
 
-// Cloud Functions
+// Cloud Functions - these will need to be implemented as Supabase Edge Functions
 export const CLOUD_FUNCTIONS = {
   CREATE_ARRANGEMENT: 'createArrangement',
   SEND_ENCRYPTED_MESSAGE: 'sendEncryptedMessage',
@@ -52,39 +57,90 @@ export const CLOUD_FUNCTIONS = {
   GENERATE_FORM_PDF: 'generateFormPdf',
 } as const;
 
-export const initializeFirebase = () => {
-  try {
-    // Configure Firestore settings
-    firestore().settings({
-      persistence: true,
-      cacheSizeBytes: firestore.CACHE_SIZE_UNLIMITED,
-    });
+// Stub implementations to prevent import errors
+// These provide minimal mock objects to allow compilation
+// TODO: Replace with actual Supabase implementations
 
-    // Enable offline persistence
-    firestore()
-      .enablePersistence()
-      .catch(err => {
-        if (err.code === 'failed-precondition') {
-          console.warn('Firestore persistence failed: multiple tabs open');
-        } else if (err.code === 'unimplemented') {
-          console.warn('Firestore persistence not available');
-        } else {
-          console.warn('Firestore persistence error:', err.message);
-        }
-      });
+export const auth = () => ({
+  currentUser: null,
+  signInWithPhoneNumber: async () => {
+    throw new Error('Firebase Auth not available - migrate to Supabase Auth');
+  },
+  signOut: async () => {
+    throw new Error('Firebase Auth not available - migrate to Supabase Auth');
+  },
+  onAuthStateChanged: () => {
+    throw new Error('Firebase Auth not available - migrate to Supabase Auth');
+  },
+});
 
-    console.log('Firebase initialized successfully');
-  } catch (error) {
-    console.error('Firebase initialization failed:', error);
-    console.warn('App will run with limited functionality. Please check Firebase configuration.');
-  }
+export const firestore = () => ({
+  collection: () => ({
+    doc: () => ({
+      set: async () => {
+        throw new Error('Firestore not available - migrate to Supabase Database');
+      },
+      get: async () => {
+        throw new Error('Firestore not available - migrate to Supabase Database');
+      },
+      update: async () => {
+        throw new Error('Firestore not available - migrate to Supabase Database');
+      },
+      onSnapshot: () => {
+        throw new Error('Firestore not available - migrate to Supabase Database');
+      },
+    }),
+    add: async () => {
+      throw new Error('Firestore not available - migrate to Supabase Database');
+    },
+    where: () => ({
+      orderBy: () => ({
+        get: async () => {
+          throw new Error('Firestore not available - migrate to Supabase Database');
+        },
+        onSnapshot: () => {
+          throw new Error('Firestore not available - migrate to Supabase Database');
+        },
+      }),
+    }),
+  }),
+  settings: () => {},
+  enablePersistence: async () => {},
+  CACHE_SIZE_UNLIMITED: -1,
+  FieldValue: {
+    serverTimestamp: () => new Date().toISOString(),
+  },
+});
+
+export const storage = () => ({
+  ref: () => {
+    throw new Error('Firebase Storage not available - migrate to Supabase Storage');
+  },
+});
+
+export const messaging = () => ({
+  requestPermission: async () => {
+    throw new Error('Firebase Messaging not available - migrate to Supabase Realtime');
+  },
+});
+
+export const functions = () => ({
+  httpsCallable: () => {
+    throw new Error('Firebase Functions not available - migrate to Supabase Edge Functions');
+  },
+});
+
+export const getTimestamp = () => {
+  console.warn('getTimestamp() called - this should be migrated to use new Date().toISOString()');
+  return new Date().toISOString();
 };
 
-// Helper to get Firestore timestamp
-export const getTimestamp = () => firestore.FieldValue.serverTimestamp();
+export const getCurrentUser = () => {
+  console.warn('getCurrentUser() called - migrate to use Supabase auth.getUser()');
+  return null;
+};
 
-// Helper to get current user
-export const getCurrentUser = () => auth().currentUser;
-
-// Export Firebase services
-export { auth, firestore, storage, messaging, functions };
+export const initializeFirebase = () => {
+  console.warn('Firebase compatibility layer loaded - services not fully functional');
+  console.warn('Please migrate to Supabase: https://supabase.com/docs/guides/auth');
+};

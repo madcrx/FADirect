@@ -1,7 +1,6 @@
-import { auth, firestore, COLLECTIONS, getTimestamp } from '@services/firebase/config';
+import { auth, firestore, COLLECTIONS, getTimestamp, FirebaseAuthTypes } from '@services/firebase/config';
 import { User, UserRole } from '@types/index';
 import { generateUserKeys } from '@services/encryption/signalProtocol';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 /**
  * Authentication Service
