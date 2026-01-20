@@ -8,4 +8,11 @@ const { getDefaultConfig } = require('expo/metro-config');
  */
 const config = getDefaultConfig(__dirname);
 
+// Block Firebase modules from being resolved during build
+// The project has migrated to Supabase - using compatibility layer instead
+config.resolver = {
+  ...config.resolver,
+  blacklistRE: /@react-native-firebase\/.*/,
+};
+
 module.exports = config;

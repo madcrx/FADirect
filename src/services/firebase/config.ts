@@ -7,22 +7,27 @@
  * TODO: Migrate all services to use Supabase directly instead of this compatibility layer
  */
 
-// Type stubs to replace @react-native-firebase/auth types
+// Type definitions for Firebase-compatible authentication types
+export type FirebaseUser = {
+  uid: string;
+  email: string | null;
+  phoneNumber: string | null;
+  displayName: string | null;
+};
+
+export type FirebaseConfirmationResult = {
+  confirm: (code: string) => Promise<FirebaseUserCredential>;
+};
+
+export type FirebaseUserCredential = {
+  user: FirebaseUser;
+};
+
+// Namespace export for backwards compatibility with existing code
 export namespace FirebaseAuthTypes {
-  export interface User {
-    uid: string;
-    email: string | null;
-    phoneNumber: string | null;
-    displayName: string | null;
-  }
-
-  export interface ConfirmationResult {
-    confirm: (code: string) => Promise<UserCredential>;
-  }
-
-  export interface UserCredential {
-    user: User;
-  }
+  export type User = FirebaseUser;
+  export type ConfirmationResult = FirebaseConfirmationResult;
+  export type UserCredential = FirebaseUserCredential;
 }
 
 // Collections - these will need to be created as Supabase tables
