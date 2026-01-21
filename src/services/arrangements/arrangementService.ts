@@ -1,4 +1,4 @@
-import { firestore, COLLECTIONS, getTimestamp } from '@services/firebase/config';
+import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
 import { Arrangement, FuneralType, WorkflowStep } from '@types/index';
 import { WORKFLOW_TEMPLATES } from '@utils/constants';
 
@@ -42,7 +42,7 @@ export class ArrangementService {
         currentStepIndex: 0,
       };
 
-      const docRef = await firestore()
+      const docRef = await database
         .collection(COLLECTIONS.ARRANGEMENTS)
         .add({
           ...arrangement,
@@ -67,7 +67,7 @@ export class ArrangementService {
     try {
       const field = userRole === 'arranger' ? 'arrangerId' : 'mournerId';
 
-      const snapshot = await firestore()
+      const snapshot = await database
         .collection(COLLECTIONS.ARRANGEMENTS)
         .where(field, '==', userId)
         .orderBy('createdAt', 'desc')
@@ -78,9 +78,9 @@ export class ArrangementService {
         return {
           ...data,
           id: doc.id,
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
-          scheduledDate: data.scheduledDate?.toDate(),
+          createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+          updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+          scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
         } as Arrangement;
       });
     } catch (error: any) {
@@ -94,7 +94,7 @@ export class ArrangementService {
    */
   static async getArrangement(arrangementId: string): Promise<Arrangement | null> {
     try {
-      const doc = await firestore()
+      const doc = await database
         .collection(COLLECTIONS.ARRANGEMENTS)
         .doc(arrangementId)
         .get();
@@ -103,13 +103,13 @@ export class ArrangementService {
         return null;
       }
 
-      const data = doc.data()!;
+      const data = doc.data();
       return {
         ...data,
         id: doc.id,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-        scheduledDate: data.scheduledDate?.toDate(),
+        createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+        scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
       } as Arrangement;
     } catch (error: any) {
       console.error('Error getting arrangement:', error);
@@ -125,7 +125,7 @@ export class ArrangementService {
     updates: Partial<Arrangement>,
   ): Promise<void> {
     try {
-      await firestore()
+      await database
         .collection(COLLECTIONS.ARRANGEMENTS)
         .doc(arrangementId)
         .update({
@@ -168,7 +168,7 @@ export class ArrangementService {
         step => step.status === 'in_progress' || step.status === 'pending',
       );
 
-      await firestore()
+      await database
         .collection(COLLECTIONS.ARRANGEMENTS)
         .doc(arrangementId)
         .update({
@@ -189,19 +189,19 @@ export class ArrangementService {
     arrangementId: string,
     callback: (arrangement: Arrangement | null) => void,
   ) {
-    return firestore()
+    return database
       .collection(COLLECTIONS.ARRANGEMENTS)
       .doc(arrangementId)
       .onSnapshot(
         doc => {
           if (doc.exists) {
-            const data = doc.data()!;
+            const data = doc.data();
             callback({
               ...data,
               id: doc.id,
-              createdAt: data.createdAt?.toDate(),
-              updatedAt: data.updatedAt?.toDate(),
-              scheduledDate: data.scheduledDate?.toDate(),
+              createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+              updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+              scheduledDate: data.scheduledDate ? new Date(data.scheduledDate) : undefined,
             } as Arrangement);
           } else {
             callback(null);

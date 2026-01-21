@@ -5,7 +5,7 @@ import {
   PreKeyBundle,
   KeyHelper,
 } from '@privacyresearch/libsignal-protocol-typescript';
-import { firestore, COLLECTIONS } from '@services/firebase/config';
+import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
@@ -142,8 +142,8 @@ export const generateUserKeys = async (userId: string) => {
     await AsyncStorage.setItem(STORAGE_KEYS.PRE_KEYS, JSON.stringify(preKeys));
     await AsyncStorage.setItem(STORAGE_KEYS.SIGNED_PRE_KEY, JSON.stringify(signedPreKey));
 
-    // Store public keys in Firestore for key exchange
-    await firestore()
+    // Store public keys in Supabase for key exchange
+    await database
       .collection(COLLECTIONS.ENCRYPTION_KEYS)
       .doc(userId)
       .set({
@@ -158,7 +158,7 @@ export const generateUserKeys = async (userId: string) => {
           publicKey: JSON.stringify(signedPreKey.keyPair.pubKey),
           signature: JSON.stringify(signedPreKey.signature),
         },
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: getTimestamp(),
       });
 
     console.log('Encryption keys generated and stored');
@@ -170,11 +170,11 @@ export const generateUserKeys = async (userId: string) => {
 };
 
 /**
- * Get recipient's public key bundle from Firestore
+ * Get recipient's public key bundle from Supabase
  */
 export const getRecipientKeyBundle = async (recipientId: string): Promise<PreKeyBundle> => {
   try {
-    const doc = await firestore()
+    const doc = await database
       .collection(COLLECTIONS.ENCRYPTION_KEYS)
       .doc(recipientId)
       .get();
@@ -183,7 +183,7 @@ export const getRecipientKeyBundle = async (recipientId: string): Promise<PreKey
       throw new Error('Recipient encryption keys not found');
     }
 
-    const data = doc.data()!;
+    const data = doc.data();
 
     // Select a random pre-key
     const preKeyIndex = Math.floor(Math.random() * data.preKeys.length);

@@ -1,4 +1,5 @@
-import { auth, firestore, COLLECTIONS, getTimestamp, FirebaseAuthTypes } from '@services/firebase/config';
+import { SupabaseAuthService, ConfirmationResult, SupabaseUser } from '@services/supabase/auth';
+import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
 import { User, UserRole } from '@types/index';
 import { generateUserKeys } from '@services/encryption/signalProtocol';
 
@@ -13,9 +14,9 @@ export class AuthService {
    */
   static async sendVerificationCode(
     phoneNumber: string,
-  ): Promise<FirebaseAuthTypes.ConfirmationResult> {
+  ): Promise<ConfirmationResult> {
     try {
-      const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+      const confirmation = await SupabaseAuthService.signInWithPhoneNumber(phoneNumber);
       return confirmation;
     } catch (error: any) {
       console.error('Error sending verification code:', error);
@@ -27,9 +28,9 @@ export class AuthService {
    * Verify the code and sign in
    */
   static async verifyCode(
-    confirmation: FirebaseAuthTypes.ConfirmationResult,
+    confirmation: ConfirmationResult,
     code: string,
-  ): Promise<FirebaseAuthTypes.UserCredential> {
+  ): Promise<{ user: SupabaseUser }> {
     try {
       const userCredential = await confirmation.confirm(code);
       return userCredential;
@@ -72,8 +73,8 @@ export class AuthService {
       // Generate encryption keys for this user
       await generateUserKeys(uid);
 
-      // Save user profile to Firestore
-      await firestore().collection(COLLECTIONS.USERS).doc(uid).set({
+      // Save user profile to Supabase
+      await database.collection(COLLECTIONS.USERS).doc(uid).set({
         ...user,
         createdAt: getTimestamp(),
         lastSeen: getTimestamp(),
@@ -87,22 +88,22 @@ export class AuthService {
   }
 
   /**
-   * Get user profile from Firestore
+   * Get user profile from Supabase
    */
   static async getUserProfile(uid: string): Promise<User | null> {
     try {
-      const doc = await firestore().collection(COLLECTIONS.USERS).doc(uid).get();
+      const doc = await database.collection(COLLECTIONS.USERS).doc(uid).get();
 
       if (!doc.exists) {
         return null;
       }
 
-      const data = doc.data()!;
+      const data = doc.data();
       return {
         ...data,
         id: doc.id,
-        createdAt: data.createdAt?.toDate(),
-        lastSeen: data.lastSeen?.toDate(),
+        createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
       } as User;
     } catch (error: any) {
       console.error('Error getting user profile:', error);
@@ -115,7 +116,7 @@ export class AuthService {
    */
   static async updateUserProfile(uid: string, updates: Partial<User>): Promise<void> {
     try {
-      await firestore()
+      await database
         .collection(COLLECTIONS.USERS)
         .doc(uid)
         .update({
@@ -133,7 +134,7 @@ export class AuthService {
    */
   static async updateLastSeen(uid: string): Promise<void> {
     try {
-      await firestore().collection(COLLECTIONS.USERS).doc(uid).update({
+      await database.collection(COLLECTIONS.USERS).doc(uid).update({
         lastSeen: getTimestamp(),
       });
     } catch (error) {
@@ -146,7 +147,7 @@ export class AuthService {
    */
   static async signOut(): Promise<void> {
     try {
-      await auth().signOut();
+      await SupabaseAuthService.signOut();
     } catch (error: any) {
       console.error('Error signing out:', error);
       throw new Error(error.message || 'Failed to sign out');
@@ -156,8 +157,8 @@ export class AuthService {
   /**
    * Listen to auth state changes
    */
-  static onAuthStateChanged(callback: (user: FirebaseAuthTypes.User | null) => void) {
-    return auth().onAuthStateChanged(callback);
+  static onAuthStateChanged(callback: (user: SupabaseUser | null) => void) {
+    return SupabaseAuthService.onAuthStateChanged(callback);
   }
 
   /**
@@ -165,7 +166,7 @@ export class AuthService {
    */
   static async userProfileExists(uid: string): Promise<boolean> {
     try {
-      const doc = await firestore().collection(COLLECTIONS.USERS).doc(uid).get();
+      const doc = await database.collection(COLLECTIONS.USERS).doc(uid).get();
       return doc.exists;
     } catch (error) {
       console.error('Error checking user profile:', error);
