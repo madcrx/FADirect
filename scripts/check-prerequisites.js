@@ -55,20 +55,20 @@ if (fs.existsSync(nodeModulesPath)) {
   checks.push({ name: 'Dependencies', status: '⚠️', detail: 'Need to run npm install' });
 }
 
-// Check for Firebase config files
+// Check for Firebase config files (optional - created during EAS builds)
 const googleServicesJson = path.join(process.cwd(), 'google-services.json');
 const googleServicesPlist = path.join(process.cwd(), 'GoogleService-Info.plist');
 
 if (fs.existsSync(googleServicesJson)) {
-  checks.push({ name: 'Android Firebase Config', status: '✅', detail: 'google-services.json found' });
+  checks.push({ name: 'Android Build Config', status: '✅', detail: 'google-services.json found' });
 } else {
-  checks.push({ name: 'Android Firebase Config', status: '❌', detail: 'google-services.json missing' });
+  checks.push({ name: 'Android Build Config', status: 'ℹ️', detail: 'Created during EAS build' });
 }
 
 if (fs.existsSync(googleServicesPlist)) {
-  checks.push({ name: 'iOS Firebase Config', status: '✅', detail: 'GoogleService-Info.plist found' });
+  checks.push({ name: 'iOS Build Config', status: '✅', detail: 'GoogleService-Info.plist found' });
 } else {
-  checks.push({ name: 'iOS Firebase Config', status: '❌', detail: 'GoogleService-Info.plist missing' });
+  checks.push({ name: 'iOS Build Config', status: 'ℹ️', detail: 'Created during EAS build' });
 }
 
 // Check eas.json
@@ -108,18 +108,9 @@ if (!hasErrors && !hasWarnings) {
       console.log('  Download the LTS version (18 or higher)');
     } else if (check.name === 'npm') {
       console.log('  Update npm: npm install -g npm@latest');
-    } else if (check.name === 'Android Firebase Config') {
-      console.log('  1. Go to Firebase Console: https://console.firebase.google.com');
-      console.log('  2. Select your project → Project Settings');
-      console.log('  3. Scroll to "Your apps" → Android app');
-      console.log('  4. Download google-services.json');
-      console.log('  5. Place in project root: FADirect/google-services.json');
-    } else if (check.name === 'iOS Firebase Config') {
-      console.log('  1. Go to Firebase Console: https://console.firebase.google.com');
-      console.log('  2. Select your project → Project Settings');
-      console.log('  3. Scroll to "Your apps" → iOS app');
-      console.log('  4. Download GoogleService-Info.plist');
-      console.log('  5. Place in project root: FADirect/GoogleService-Info.plist');
+    } else if (check.name === 'EAS Configuration') {
+      console.log('  Run: eas build:configure');
+      console.log('  Make sure EAS secrets are configured for Firebase config files');
     }
   });
 

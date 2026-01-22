@@ -81,21 +81,24 @@ npm run build:prod                 # iOS + Android
 npm run build:ios:prod             # iOS only
 ```
 
-## Firebase Setup
+## Backend Setup
 
-Firebase is configured for project: **fa-direct**
+The app uses **Supabase** for backend services.
 
-**Required**: Enable these services in [Firebase Console](https://console.firebase.google.com/project/fa-direct):
-- ✓ Authentication → Phone provider
-- ✓ Firestore Database
-- ✓ Cloud Storage
-- ✓ Cloud Messaging
+**Supabase Project**: wvxnwecxupvwappomajl.supabase.co
+
+**Services configured**:
+- ✓ Authentication → Phone (OTP)
+- ✓ PostgreSQL Database
+- ✓ Storage
+
+**Note**: Firebase configuration files are maintained for native build compatibility only.
 
 ## Troubleshooting
 
 **Build fails:**
 - Check build logs at the URL shown in terminal
-- Most common issue: Firebase services not enabled in console
+- Most common issue: EAS build configuration or secrets not set correctly
 
 **App won't open on iPhone:**
 1. Trust certificate: Settings → General → VPN & Device Management → Brett Farley → Trust
@@ -112,12 +115,12 @@ npm install
 - **Bundle ID**: com.fadirect.app
 - **Apple Team**: Brett Farley (B672DMM8X6)
 - **Expo Account**: @madcrx
-- **Firebase Project**: fa-direct
+- **Supabase Project**: wvxnwecxupvwappomajl.supabase.co
 
 ## Tech Stack
 
 - React Native 0.73 + Expo SDK 50
-- Firebase (Auth, Firestore, Storage)
+- Supabase (Auth, Database, Storage)
 - Signal Protocol (E2E encryption)
 - Redux Toolkit + React Navigation
 

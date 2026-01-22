@@ -130,7 +130,7 @@ eas build:list --limit 5
 ## Important URLs
 
 - **Builds**: https://expo.dev/accounts/madcrx/projects/fadirect/builds
-- **Firebase Console**: https://console.firebase.google.com/project/fa-direct
+- **Supabase Dashboard**: https://supabase.com/dashboard/project/wvxnwecxupvwappomajl
 - **Expo Orbit**: https://expo.dev/orbit
 - **GitHub Repo**: https://github.com/madcrx/FADirect
 
@@ -144,7 +144,7 @@ eas build:list --limit 5
 **Accounts:**
 - Expo: info@epsicon.com.au
 - Apple Developer: Brett Farley (B672DMM8X6)
-- Firebase: fa-direct project
+- Supabase: wvxnwecxupvwappomajl.supabase.co
 
 **Hardware:**
 - iPhone (registered device)
@@ -156,21 +156,21 @@ eas build:list --limit 5
 2. **Expo Orbit**: Keeps history of all builds, easy to reinstall previous versions
 3. **Git commits**: Make small, frequent commits with clear messages
 4. **Build times**: Builds take 20-30 minutes, plan accordingly
-5. **Firebase**: Make sure all required services are enabled (Auth, Firestore, Storage)
+5. **Backend**: App uses Supabase for authentication, database, and storage
 
 ## If Something Goes Wrong
 
 **Build fails:**
 ```powershell
 # Check the build logs URL shown in terminal
-# Most common: Firebase services not enabled
+# Most common: EAS build secrets not configured correctly
 ```
 
 **App crashes on iPhone:**
 ```powershell
 # 1. Make sure you trusted the certificate
-# 2. Check if Firebase services are enabled
-# 3. Look at build logs for errors
+# 2. Check build logs for errors
+# 3. Verify app installed correctly via Expo Orbit
 ```
 
 **Can't push to GitHub:**
@@ -184,7 +184,7 @@ git branch
 ## Need Help?
 
 1. Check build logs: https://expo.dev/accounts/madcrx/projects/fadirect/builds
-2. Check Firebase Console: https://console.firebase.google.com/project/fa-direct
+2. Check Supabase Dashboard: https://supabase.com/dashboard/project/wvxnwecxupvwappomajl
 3. Review the simple README.md in the project
 
 ---
