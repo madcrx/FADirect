@@ -37,9 +37,9 @@ const UserSetupScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const validateEmail = (email: string): boolean => {
+  const validateEmail = (emailToValidate: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(emailToValidate);
   };
 
   const handleComplete = async () => {

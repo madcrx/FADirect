@@ -16,7 +16,7 @@ const checks = [];
 // Check Node.js version
 try {
   const nodeVersion = process.version;
-  const major = parseInt(nodeVersion.slice(1).split('.')[0]);
+  const major = parseInt(nodeVersion.slice(1).split('.')[0], 10);
   if (major >= 18) {
     checks.push({ name: 'Node.js', status: '✅', detail: nodeVersion });
   } else {
@@ -29,7 +29,7 @@ try {
 // Check npm version
 try {
   const npmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
-  const major = parseInt(npmVersion.split('.')[0]);
+  const major = parseInt(npmVersion.split('.')[0], 10);
   if (major >= 9) {
     checks.push({ name: 'npm', status: '✅', detail: npmVersion });
   } else {

@@ -1,5 +1,4 @@
 import { supabase } from '@config/supabase';
-import { RealtimeChannel } from '@supabase/supabase-js';
 
 /**
  * Supabase Database Service
@@ -52,7 +51,9 @@ export class DocumentRef {
       .from(this.table)
       .upsert({ id: this.id, ...data });
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
   }
 
   async get(): Promise<{ exists: boolean; id: string; data: () => any }> {
@@ -66,7 +67,9 @@ export class DocumentRef {
       .eq('id', this.id)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = not found
+    if (error && error.code !== 'PGRST116') {
+      throw error; // PGRST116 = not found
+    }
 
     return {
       exists: !!data,
@@ -85,7 +88,9 @@ export class DocumentRef {
       .update(updates)
       .eq('id', this.id);
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
   }
 
   onSnapshot(callback: (doc: any) => void): () => void {
@@ -154,7 +159,9 @@ export class QueryBuilder {
 
   async get(): Promise<{ docs: any[] }> {
     const { data, error } = await this.query;
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     return {
       docs: (data || []).map((item: any) => ({
@@ -208,7 +215,9 @@ export class CollectionRef {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     return { id: result.id };
   }

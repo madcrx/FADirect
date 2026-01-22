@@ -20,15 +20,18 @@ const ArrangementListScreen = () => {
   const navigation = useNavigation<ArrangementListScreenNavigationProp>();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { arrangements, isLoading } = useSelector((state: RootState) => state.arrangements);
+  const { arrangements } = useSelector((state: RootState) => state.arrangements);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadArrangements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadArrangements = async () => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     try {
       dispatch(setLoading(true));

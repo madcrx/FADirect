@@ -41,9 +41,9 @@ class SignalProtocolStore {
   }
 
   async isTrustedIdentity(
-    identifier: string,
-    identityKey: ArrayBuffer,
-    direction: number,
+    _identifier: string,
+    _identityKey: ArrayBuffer,
+    _direction: number,
   ): Promise<boolean> {
     // In production, implement proper identity verification
     return true;
@@ -272,7 +272,7 @@ export const decryptMessage = async (
  * Encrypt file for secure storage
  * Uses AES-256-GCM for file encryption
  */
-export const encryptFile = async (fileData: ArrayBuffer, key: string): Promise<ArrayBuffer> => {
+export const encryptFile = async (fileData: ArrayBuffer, _key: string): Promise<ArrayBuffer> => {
   // This is a simplified implementation
   // In production, use proper AES-256-GCM encryption
   // You might want to use react-native-crypto or similar
@@ -285,7 +285,7 @@ export const encryptFile = async (fileData: ArrayBuffer, key: string): Promise<A
  */
 export const decryptFile = async (
   encryptedData: ArrayBuffer,
-  key: string,
+  _key: string,
 ): Promise<ArrayBuffer> => {
   // This is a simplified implementation
   // In production, use proper AES-256-GCM decryption

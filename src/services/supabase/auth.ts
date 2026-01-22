@@ -1,5 +1,5 @@
 import { supabase } from '@config/supabase';
-import { Session, User, AuthError } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 
 /**
  * Supabase Authentication Service
@@ -23,7 +23,9 @@ export class SupabaseAuthService {
         phone: phoneNumber,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       // Return a confirmation object similar to Firebase
       return {
@@ -34,8 +36,12 @@ export class SupabaseAuthService {
             type: 'sms',
           });
 
-          if (verifyError) throw verifyError;
-          if (!data.user) throw new Error('No user returned after verification');
+          if (verifyError) {
+            throw verifyError;
+          }
+          if (!data.user) {
+            throw new Error('No user returned after verification');
+          }
 
           return { user: data.user };
         },
@@ -52,7 +58,9 @@ export class SupabaseAuthService {
   static async signOut(): Promise<void> {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
     } catch (error: any) {
       console.error('Error signing out:', error);
       throw new Error(error.message || 'Failed to sign out');

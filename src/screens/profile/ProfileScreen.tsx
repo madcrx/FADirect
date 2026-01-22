@@ -20,7 +20,9 @@ const ProfileScreen = () => {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return (
     <ScrollView style={styles.container}>

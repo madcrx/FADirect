@@ -24,10 +24,11 @@ const ConversationListScreen = () => {
   const navigation = useNavigation<ConversationListScreenNavigationProp>();
   const { user } = useSelector((state: RootState) => state.auth);
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadConversations = async () => {
@@ -68,7 +69,7 @@ const ConversationListScreen = () => {
             label={item.deceasedName.substring(0, 2).toUpperCase()}
           />
         )}
-        right={props =>
+        right={() =>
           item.lastMessageTime ? (
             <View style={styles.rightContainer}>
               <Text variant="bodySmall" style={styles.timeText}>
