@@ -19,7 +19,7 @@ import { useDispatch } from 'react-redux';
 import { RootStackParamList, UserRole } from '@types/index';
 import { AuthService } from '@services/auth/authService';
 import { setUser } from '@store/slices/authSlice';
-import { auth } from '@services/firebase/config';
+import { SupabaseAuthService } from '@services/supabase/auth';
 import { theme } from '@utils/theme';
 
 type UserSetupScreenRouteProp = RouteProp<RootStackParamList, 'UserSetup'>;
@@ -37,9 +37,9 @@ const UserSetupScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const validateEmail = (email: string): boolean => {
+  const validateEmail = (emailToValidate: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(emailToValidate);
   };
 
   const handleComplete = async () => {
@@ -64,13 +64,13 @@ const UserSetupScreen = () => {
     setLoading(true);
 
     try {
-      const currentUser = auth().currentUser;
+      const currentUser = await SupabaseAuthService.getCurrentUser();
       if (!currentUser) {
         throw new Error('Not authenticated');
       }
 
       const userProfile = await AuthService.createUserProfile(
-        currentUser.uid,
+        currentUser.id,
         phoneNumber,
         {
           firstName: firstName.trim(),

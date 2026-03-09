@@ -6,7 +6,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useDispatch } from 'react-redux';
 import { RootStackParamList } from '@types/index';
 import { AuthService } from '@services/auth/authService';
-import { setUser, setLoading } from '@store/slices/authSlice';
+import { setUser } from '@store/slices/authSlice';
 import { theme } from '@utils/theme';
 
 type VerifyCodeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'VerifyCode'>;
@@ -31,6 +31,7 @@ const VerifyCodeScreen = () => {
 
     // Re-send code if needed
     resendCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resendCode = async () => {

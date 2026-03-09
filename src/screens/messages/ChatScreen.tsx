@@ -71,7 +71,9 @@ const ChatScreen = () => {
   }, [arrangementId, user]);
 
   const handleSend = async () => {
-    if (!inputText.trim() || !user) return;
+    if (!inputText.trim() || !user) {
+      return;
+    }
 
     setSending(true);
     const textToSend = inputText.trim();

@@ -5,7 +5,7 @@ import {
   PreKeyBundle,
   KeyHelper,
 } from '@privacyresearch/libsignal-protocol-typescript';
-import { firestore, COLLECTIONS } from '@services/firebase/config';
+import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
@@ -41,9 +41,9 @@ class SignalProtocolStore {
   }
 
   async isTrustedIdentity(
-    identifier: string,
-    identityKey: ArrayBuffer,
-    direction: number,
+    _identifier: string,
+    _identityKey: ArrayBuffer,
+    _direction: number,
   ): Promise<boolean> {
     // In production, implement proper identity verification
     return true;
@@ -142,8 +142,8 @@ export const generateUserKeys = async (userId: string) => {
     await AsyncStorage.setItem(STORAGE_KEYS.PRE_KEYS, JSON.stringify(preKeys));
     await AsyncStorage.setItem(STORAGE_KEYS.SIGNED_PRE_KEY, JSON.stringify(signedPreKey));
 
-    // Store public keys in Firestore for key exchange
-    await firestore()
+    // Store public keys in Supabase for key exchange
+    await database
       .collection(COLLECTIONS.ENCRYPTION_KEYS)
       .doc(userId)
       .set({
@@ -158,7 +158,7 @@ export const generateUserKeys = async (userId: string) => {
           publicKey: JSON.stringify(signedPreKey.keyPair.pubKey),
           signature: JSON.stringify(signedPreKey.signature),
         },
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: getTimestamp(),
       });
 
     console.log('Encryption keys generated and stored');
@@ -170,11 +170,11 @@ export const generateUserKeys = async (userId: string) => {
 };
 
 /**
- * Get recipient's public key bundle from Firestore
+ * Get recipient's public key bundle from Supabase
  */
 export const getRecipientKeyBundle = async (recipientId: string): Promise<PreKeyBundle> => {
   try {
-    const doc = await firestore()
+    const doc = await database
       .collection(COLLECTIONS.ENCRYPTION_KEYS)
       .doc(recipientId)
       .get();
@@ -183,7 +183,7 @@ export const getRecipientKeyBundle = async (recipientId: string): Promise<PreKey
       throw new Error('Recipient encryption keys not found');
     }
 
-    const data = doc.data()!;
+    const data = doc.data();
 
     // Select a random pre-key
     const preKeyIndex = Math.floor(Math.random() * data.preKeys.length);
@@ -272,7 +272,7 @@ export const decryptMessage = async (
  * Encrypt file for secure storage
  * Uses AES-256-GCM for file encryption
  */
-export const encryptFile = async (fileData: ArrayBuffer, key: string): Promise<ArrayBuffer> => {
+export const encryptFile = async (fileData: ArrayBuffer, _key: string): Promise<ArrayBuffer> => {
   // This is a simplified implementation
   // In production, use proper AES-256-GCM encryption
   // You might want to use react-native-crypto or similar
@@ -285,7 +285,7 @@ export const encryptFile = async (fileData: ArrayBuffer, key: string): Promise<A
  */
 export const decryptFile = async (
   encryptedData: ArrayBuffer,
-  key: string,
+  _key: string,
 ): Promise<ArrayBuffer> => {
   // This is a simplified implementation
   // In production, use proper AES-256-GCM decryption

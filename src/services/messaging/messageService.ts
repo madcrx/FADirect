@@ -1,4 +1,4 @@
-import { firestore, COLLECTIONS, getTimestamp } from '@services/firebase/config';
+import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
 import { Message, Attachment } from '@types/index';
 import { encryptMessage, decryptMessage } from '@services/encryption/signalProtocol';
 
@@ -33,7 +33,7 @@ export class MessageService {
         attachments: data.attachments,
       };
 
-      const docRef = await firestore()
+      const docRef = await database
         .collection(COLLECTIONS.MESSAGES)
         .add({
           ...message,
@@ -55,7 +55,7 @@ export class MessageService {
    */
   static async getMessages(arrangementId: string): Promise<Message[]> {
     try {
-      const snapshot = await firestore()
+      const snapshot = await database
         .collection(COLLECTIONS.MESSAGES)
         .where('arrangementId', '==', arrangementId)
         .orderBy('timestamp', 'asc')
@@ -66,9 +66,9 @@ export class MessageService {
         return {
           ...data,
           id: doc.id,
-          timestamp: data.timestamp?.toDate(),
-          deliveredAt: data.deliveredAt?.toDate(),
-          readAt: data.readAt?.toDate(),
+          timestamp: data.timestamp ? new Date(data.timestamp) : undefined,
+          deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : undefined,
+          readAt: data.readAt ? new Date(data.readAt) : undefined,
         } as Message;
       });
     } catch (error: any) {
@@ -100,7 +100,7 @@ export class MessageService {
    */
   static async markAsDelivered(messageId: string): Promise<void> {
     try {
-      await firestore().collection(COLLECTIONS.MESSAGES).doc(messageId).update({
+      await database.collection(COLLECTIONS.MESSAGES).doc(messageId).update({
         deliveredAt: getTimestamp(),
       });
     } catch (error) {
@@ -113,7 +113,7 @@ export class MessageService {
    */
   static async markAsRead(messageId: string): Promise<void> {
     try {
-      await firestore().collection(COLLECTIONS.MESSAGES).doc(messageId).update({
+      await database.collection(COLLECTIONS.MESSAGES).doc(messageId).update({
         readAt: getTimestamp(),
       });
     } catch (error) {
@@ -128,7 +128,7 @@ export class MessageService {
     arrangementId: string,
     callback: (messages: Message[]) => void,
   ) {
-    return firestore()
+    return database
       .collection(COLLECTIONS.MESSAGES)
       .where('arrangementId', '==', arrangementId)
       .orderBy('timestamp', 'asc')
@@ -139,9 +139,9 @@ export class MessageService {
             return {
               ...data,
               id: doc.id,
-              timestamp: data.timestamp?.toDate(),
-              deliveredAt: data.deliveredAt?.toDate(),
-              readAt: data.readAt?.toDate(),
+              timestamp: data.timestamp ? new Date(data.timestamp) : undefined,
+              deliveredAt: data.deliveredAt ? new Date(data.deliveredAt) : undefined,
+              readAt: data.readAt ? new Date(data.readAt) : undefined,
             } as Message;
           });
           callback(messages);

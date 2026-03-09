@@ -1,232 +1,129 @@
-# FA Direct (Funeral Arranger Direct)
+# FA Direct
 
-A secure, end-to-end encrypted communication platform for funeral arrangers and families, built with React Native, Firebase, and the Signal Protocol.
+Secure communication platform for funeral arrangers and mourners.
 
-## 🌟 Features
+## Quick Start
 
-### Core Functionality
-- **Secure Communication**: End-to-end encrypted messaging using the Signal Protocol
-- **Phone Number Authentication**: Simple, secure authentication via SMS verification
-- **Workflow Management**: Step-by-step guidance through funeral arrangement process
-- **Document Sharing**: Secure upload and sharing of death certificates, contracts, and other documents
-- **Photo Gallery**: Upload and share photos related to the service
-- **Form Management**: Dynamic forms for collecting necessary information
-- **Real-time Updates**: Live synchronization of messages and workflow progress
-- **Push Notifications**: Stay informed about important updates
+### First Time Setup
 
-### Security & Privacy
-- **End-to-End Encryption (E2EE)**: Messages encrypted with Signal Protocol
-- **Secure File Storage**: Documents and photos stored securely in Firebase Storage
-- **Role-Based Access**: Funeral arrangers and mourners have appropriate permissions
-- **Australian Privacy Compliance**: Built with Australian privacy standards in mind
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/madcrx/FADirect.git
+   cd FADirect
+   ```
 
-### User Experience
-- **Australian Localisation**: AU date formats, timezones, and phone numbers
-- **Offline Support**: Access previous messages and data when offline
-- **Professional Design**: Calm, respectful color scheme appropriate for funeral services
-- **Visual Progress Tracking**: Clear visualization of arrangement progress
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-## 📱 Funeral Types Supported
+3. **Log in to Expo**
+   ```bash
+   npx expo login
+   ```
+   Use your credentials: `info@epsicon.com.au`
 
-Different workflow templates for various service types:
-- **Traditional Funeral**: Full service with burial
-- **Cremation**: Cremation with memorial service
-- **Burial**: Direct burial service
-- **Repatriation**: International transport of deceased
-- **Memorial Service**: Service without burial/cremation
-- **Direct Cremation**: Cremation without service
+4. **Done!** You're ready to build and test.
 
-## 🚀 Getting Started
+## Testing on iPhone
 
-Choose your path based on your needs:
-
-### 🧪 Development & Testing
-
-**Option A: Test on Real Devices (Recommended)**
-- **Windows → iOS/Android phones**: See [QUICK_START_DISTRIBUTION.md](QUICK_START_DISTRIBUTION.md)
-- **No Mac needed**: Uses cloud builds (EAS)
-- **Best for**: Testing with real users, distribution to team
-
-**Option B: Local Development**
-- **Mac + Xcode**: See [SETUP.md](SETUP.md) for iOS
-- **Windows/Mac + Android Studio**: See [SETUP.md](SETUP.md) for Android
-- **Best for**: Active development, debugging
-
-### Quick Commands
+### Build for Testing
 
 ```bash
-# Install dependencies
+npm run build:preview
+```
+
+**Wait 20-30 minutes** for the build to complete.
+
+### Install on iPhone
+
+**Option 1: Expo Orbit (Easiest)**
+1. Install [Expo Orbit](https://expo.dev/orbit) on your computer
+2. When build completes, the build will appear in Expo Orbit
+3. Click "Install" and select your iPhone
+4. App installs automatically
+
+**Option 2: Direct Download**
+1. When build completes, open the build URL on your iPhone
+2. Tap "Install"
+3. Go to **Settings → General → VPN & Device Management**
+4. Tap "Brett Farley" → "Trust"
+5. Open the app
+
+## Making Changes and Republishing
+
+```bash
+# 1. Make your code changes
+
+# 2. Commit and push
+git add .
+git commit -m "Describe your changes"
+git push
+
+# 3. Rebuild for testing
+npm run build:preview
+
+# 4. Install on iPhone (same process as above)
+```
+
+That's it! Every time you make changes: **commit → push → build → install**
+
+## Build Commands
+
+```bash
+# Testing builds (for your iPhone)
+npm run build:preview              # iOS + Android
+npm run build:ios:preview          # iOS only
+npm run build:android:preview      # Android only
+
+# Production builds (for App Store)
+npm run build:prod                 # iOS + Android
+npm run build:ios:prod             # iOS only
+```
+
+## Backend Setup
+
+The app uses **Supabase** for backend services.
+
+**Supabase Project**: wvxnwecxupvwappomajl.supabase.co
+
+**Services configured**:
+- ✓ Authentication → Phone (OTP)
+- ✓ PostgreSQL Database
+- ✓ Storage
+
+**Note**: Firebase configuration files are maintained for native build compatibility only.
+
+## Troubleshooting
+
+**Build fails:**
+- Check build logs at the URL shown in terminal
+- Most common issue: EAS build configuration or secrets not set correctly
+
+**App won't open on iPhone:**
+1. Trust certificate: Settings → General → VPN & Device Management → Brett Farley → Trust
+2. If still crashes, check recent builds at: https://expo.dev/accounts/madcrx/projects/fadirect/builds
+
+**"Module not found":**
+```bash
+rm -rf node_modules package-lock.json
 npm install
-
-# For local development
-npm run ios      # iOS simulator (Mac only)
-npm run android  # Android emulator
-
-# For cloud builds (works from Windows!)
-npm run build:preview          # Build iOS & Android
-npm run build:ios:preview      # Build iOS only
-npm run build:android:preview  # Build Android only
-
-# Submit to TestFlight/Play Store
-npm run submit:ios      # Submit to TestFlight
-npm run submit:android  # Submit to Play Console
 ```
 
-### Firebase Setup Required
+## Project Info
 
-1. Create a Firebase project
-2. Add iOS and Android apps
-3. Download config files (GoogleService-Info.plist, google-services.json)
-4. Enable Authentication (Phone), Firestore, and Storage
-5. Deploy security rules
+- **Bundle ID**: com.fadirect.app
+- **Apple Team**: Brett Farley (B672DMM8X6)
+- **Expo Account**: @madcrx
+- **Supabase Project**: wvxnwecxupvwappomajl.supabase.co
 
-See [SETUP.md](SETUP.md) for complete instructions.
+## Tech Stack
 
-## 📋 Documentation
-
-**Getting Started:**
-- [Quick Setup Guide](SETUP.md) - Local development setup (30 minutes)
-- [Distribution Guide](QUICK_START_DISTRIBUTION.md) - Test on real devices (1 hour)
-- [Full Distribution Manual](DISTRIBUTION.md) - Complete TestFlight/Play Store guide
-
-**Technical:**
-- [Architecture](#-project-structure) - Understand the codebase
-- [Security](#-security-architecture) - Learn about E2EE implementation
-- [Customization](#-customization) - Adapt for your needs
-
-## 🏗️ Project Structure
-
-```
-FADirect/
-├── src/
-│   ├── components/          # Reusable UI components
-│   ├── navigation/          # App navigation
-│   ├── screens/             # Screen components
-│   │   ├── auth/            # Authentication
-│   │   ├── arrangements/    # Arrangement management
-│   │   ├── messages/        # Secure messaging
-│   │   ├── documents/       # Document sharing
-│   │   └── profile/         # User profile
-│   ├── services/            # Business logic
-│   │   ├── firebase/        # Firebase config
-│   │   ├── encryption/      # Signal Protocol E2EE
-│   │   ├── auth/            # Authentication
-│   │   ├── arrangements/    # Arrangements
-│   │   └── messaging/       # Messages
-│   ├── store/               # Redux state
-│   ├── types/               # TypeScript types
-│   └── utils/               # Utilities & constants
-├── firestore.rules          # Firestore security
-├── storage.rules            # Storage security
-└── firebase.json            # Firebase config
-```
-
-## 🔐 Security Architecture
-
-### End-to-End Encryption
-
-FA Direct uses the Signal Protocol for message encryption:
-
-- **Perfect Forward Secrecy**: Compromised keys don't decrypt past messages
-- **Future Secrecy**: Self-healing from key compromises
-- **Deniability**: Cryptographic deniability of message authorship
-- **Asynchronous**: Works even when recipient is offline
-
-### Implementation
-
-1. Each user generates identity keys and pre-keys on signup
-2. Public keys stored in Firestore for key exchange
-3. Messages encrypted on sender device
-4. Messages decrypted on recipient device
-5. Private keys never leave the device
-
-## 🌏 Australian Localisation
-
-- **Timezone**: Australia/Sydney (configurable)
-- **Date Format**: DD/MM/YYYY
-- **Phone Format**: +61 4XX XXX XXX
-- **Compliance**: Privacy Act 1988 framework
-
-## 🧪 Testing
-
-```bash
-# Run unit tests
-npm test
-
-# Start Firebase emulators
-firebase emulators:start
-
-# E2E tests (coming soon)
-npm run e2e:ios
-npm run e2e:android
-```
-
-## 📦 Building for Production
-
-### iOS
-```bash
-npx react-native run-ios --configuration Release
-```
-
-### Android
-```bash
-cd android
-./gradlew assembleRelease
-```
-
-See [SETUP.md](SETUP.md) for detailed build instructions.
-
-## 🎨 Customization
-
-### Theme
-
-Update `src/utils/theme.ts` to customize colors:
-
-```typescript
-export const theme = {
-  colors: {
-    primary: '#1A3A52',    // Your brand color
-    secondary: '#B8956A',   // Accent color
-    // ...
-  }
-}
-```
-
-### Workflows
-
-Add custom workflows in `src/utils/constants.ts`.
-
-## 📄 License
-
-Copyright © 2024 FA Direct. All rights reserved.
-
-## 🤝 Support
-
-For support:
-- Create an issue in this repository
-- Email: support@fadirect.com.au
-
-## 🗺️ Roadmap
-
-- [x] Core messaging with E2EE
-- [x] Phone authentication
-- [x] Workflow management
-- [x] Document/photo sharing (basic)
-- [ ] Advanced form builder
-- [ ] Payment integration
-- [ ] Video calling
-- [ ] Multi-organization support
-- [ ] Web portal
-
-## 🙏 Acknowledgments
-
-Built with:
-- React Native
-- Firebase
-- Signal Protocol
-- React Native Paper
-- Redux Toolkit
+- React Native 0.73 + Expo SDK 50
+- Supabase (Auth, Database, Storage)
+- Signal Protocol (E2E encryption)
+- Redux Toolkit + React Navigation
 
 ---
 
-**Built with ❤️ for the Australian funeral services community**
+**Need help?** Check [build logs](https://expo.dev/accounts/madcrx/projects/fadirect/builds) or contact support.

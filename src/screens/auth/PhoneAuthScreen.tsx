@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
 } from 'react-native';
 import { Text, TextInput, Button, HelperText } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';

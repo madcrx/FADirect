@@ -30,7 +30,7 @@ const MessageNavigator = () => {
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
-        options={({ route }) => ({ title: 'Chat' })}
+        options={{ title: 'Chat' }}
       />
       <Stack.Screen
         name="PhotoGallery"
