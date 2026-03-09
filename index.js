@@ -1,10 +1,17 @@
 /**
- * FA Direct - Funeral Arranger Direct
- * Secure communication platform for funeral arrangers and mourners
+ * FA Direct - Entry Point
+ * Loads polyfills before app initialization
  */
 
-import { AppRegistry } from 'react-native';
-import App from './App';
-import { name as appName } from './app.json';
+// CRITICAL: Load polyfills FIRST, before any other imports
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 
-AppRegistry.registerComponent(appName, () => App);
+// Now register the app
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
+// It also ensures that whether you load the app in Expo Go or in a native build,
+// the environment is set up appropriately
+registerRootComponent(App);

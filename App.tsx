@@ -4,7 +4,6 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { Provider as StoreProvider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import 'react-native-get-random-values'; // Required for UUID and encryption
 
 import { store } from '@store/index';
 import { theme } from '@utils/theme';

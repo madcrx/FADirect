@@ -2,7 +2,7 @@
   "name": "fadirect",
   "version": "1.0.0",
   "description": "Funeral Arranger Direct - Secure communication platform for funeral arrangers and mourners",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "index.js",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
