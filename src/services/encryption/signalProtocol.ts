@@ -1,7 +1,5 @@
 // Temporary stub implementation of encryption
 // TODO: Implement proper E2E encryption with a React Native compatible library
-import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * End-to-End Encryption Service (STUB IMPLEMENTATION)
@@ -12,13 +10,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * - react-native-aes-crypto
  * - react-native-quick-crypto
  */
-
-const STORAGE_KEYS = {
-  IDENTITY_KEY_PAIR: '@encryption:identityKeyPair',
-  REGISTRATION_ID: '@encryption:registrationId',
-  PRE_KEYS: '@encryption:preKeys',
-  SIGNED_PRE_KEY: '@encryption:signedPreKey',
-};
 
 export const initializeEncryption = () => {
   console.log('Encryption service initialized (stub)');

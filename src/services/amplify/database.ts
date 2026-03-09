@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * Provides a Firestore-like API wrapper around AWS AppSync/GraphQL
  */
 
+// GraphQL client for future use with AppSync operations
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const client = generateClient();
 
 export const COLLECTIONS = {

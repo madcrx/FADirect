@@ -55,9 +55,8 @@ export class AmplifyAuthService {
       return {
         confirm: async (code: string) => {
           try {
-            let result;
             if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE') {
-              result = await confirmSignIn({
+              await confirmSignIn({
                 challengeResponse: code,
               });
             } else if (nextStep.signUpStep === 'CONFIRM_SIGN_UP') {
@@ -66,7 +65,7 @@ export class AmplifyAuthService {
                 confirmationCode: code,
               });
               // Sign in after confirmation
-              result = await signIn({
+              await signIn({
                 username: formattedPhone,
                 options: {
                   authFlowType: 'CUSTOM_WITHOUT_SRP',
