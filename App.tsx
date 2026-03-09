@@ -8,7 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
-import { supabase } from '@config/supabase';
+import { configureAmplify } from '@config/amplify';
+import { AmplifyAuthService } from '@services/amplify/auth';
 import { initializeEncryption } from '@services/encryption/signalProtocol';
 
 // Ignore specific warnings
@@ -129,20 +130,22 @@ const App = () => {
   useEffect(() => {
     const initializeServices = async () => {
       try {
-        console.log('Initializing Supabase...');
-        // Test Supabase connection
-        const { error } = await supabase.auth.getSession();
-        if (error) {
-          const errorMessage = getErrorMessage(error);
-          if (errorMessage !== 'Auth session missing!') {
-            throw new Error(errorMessage);
-          }
+        console.log('Initializing AWS Amplify...');
+        // Configure Amplify
+        configureAmplify();
+
+        // Test Amplify auth connection
+        try {
+          await AmplifyAuthService.getSession();
+        } catch (error) {
+          // Session missing is okay on first launch
+          console.log('No active session');
         }
-        console.log('✓ Supabase initialized successfully');
+        console.log('✓ AWS Amplify initialized successfully');
       } catch (error) {
         const message = getErrorMessage(error);
-        console.error('Failed to initialize Supabase:', message);
-        setInitError(`Supabase initialization failed: ${message}`);
+        console.error('Failed to initialize AWS Amplify:', message);
+        setInitError(`AWS Amplify initialization failed: ${message}`);
         setIsInitializing(false);
         return;
       }
@@ -172,10 +175,10 @@ const App = () => {
         <Text style={styles.errorTitle}>Initialization Error</Text>
         <Text style={styles.errorMessage}>{initError}</Text>
         <Text style={styles.errorHint}>
-          Please check Supabase Dashboard to ensure all services are enabled:
-          {'\n'}- Authentication
-          {'\n'}- Database
-          {'\n'}- Storage
+          Please check AWS Amplify Console to ensure all services are configured:
+          {'\n'}- Cognito (Authentication)
+          {'\n'}- AppSync (GraphQL API)
+          {'\n'}- S3 (Storage)
         </Text>
       </View>
     );

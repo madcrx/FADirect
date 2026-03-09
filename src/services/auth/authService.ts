@@ -1,5 +1,5 @@
-import { SupabaseAuthService, ConfirmationResult, SupabaseUser } from '@services/supabase/auth';
-import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
+import { AmplifyAuthService, ConfirmationResult, AmplifyUser } from '@services/amplify/auth';
+import { database, COLLECTIONS, getTimestamp } from '@services/amplify/database';
 import { User, UserRole } from '@types/index';
 import { generateUserKeys } from '@services/encryption/signalProtocol';
 
@@ -27,7 +27,7 @@ export class AuthService {
     phoneNumber: string,
   ): Promise<ConfirmationResult> {
     try {
-      const confirmation = await SupabaseAuthService.signInWithPhoneNumber(phoneNumber);
+      const confirmation = await AmplifyAuthService.signInWithPhoneNumber(phoneNumber);
       return confirmation;
     } catch (error: any) {
       const errorMessage = this.getErrorMessage(error);
@@ -42,7 +42,7 @@ export class AuthService {
   static async verifyCode(
     confirmation: ConfirmationResult,
     code: string,
-  ): Promise<{ user: SupabaseUser }> {
+  ): Promise<{ user: AmplifyUser }> {
     try {
       const userCredential = await confirmation.confirm(code);
       return userCredential;
@@ -164,7 +164,7 @@ export class AuthService {
    */
   static async signOut(): Promise<void> {
     try {
-      await SupabaseAuthService.signOut();
+      await AmplifyAuthService.signOut();
     } catch (error: any) {
       const errorMessage = this.getErrorMessage(error);
       console.error('Error signing out:', errorMessage);
@@ -176,7 +176,7 @@ export class AuthService {
    * Listen to auth state changes
    */
   static onAuthStateChanged(callback: (user: SupabaseUser | null) => void) {
-    return SupabaseAuthService.onAuthStateChanged(callback);
+    return AmplifyAuthService.onAuthStateChanged(callback);
   }
 
   /**
