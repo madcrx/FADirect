@@ -15,6 +15,17 @@ export interface ConfirmationResult {
 
 export class SupabaseAuthService {
   /**
+   * Helper to safely extract error message from potentially frozen error objects
+   */
+  private static getErrorMessage(error: any): string {
+    try {
+      return error?.message || error?.error_description || error?.msg || 'An error occurred';
+    } catch {
+      return 'An error occurred';
+    }
+  }
+
+  /**
    * Send verification code to phone number via OTP
    */
   static async signInWithPhoneNumber(phoneNumber: string): Promise<ConfirmationResult> {
@@ -24,7 +35,9 @@ export class SupabaseAuthService {
       });
 
       if (error) {
-        throw error;
+        // Create a new error with the message from the frozen error object
+        const errorMessage = this.getErrorMessage(error);
+        throw new Error(errorMessage);
       }
 
       // Return a confirmation object similar to Firebase
@@ -37,7 +50,9 @@ export class SupabaseAuthService {
           });
 
           if (verifyError) {
-            throw verifyError;
+            // Create a new error with the message from the frozen error object
+            const errorMessage = SupabaseAuthService.getErrorMessage(verifyError);
+            throw new Error(errorMessage);
           }
           if (!data.user) {
             throw new Error('No user returned after verification');
@@ -47,8 +62,9 @@ export class SupabaseAuthService {
         },
       };
     } catch (error: any) {
-      console.error('Error sending verification code:', error);
-      throw new Error(error.message || 'Failed to send verification code');
+      // Safely extract error message without modifying frozen objects
+      const errorMessage = this.getErrorMessage(error);
+      throw new Error(errorMessage || 'Failed to send verification code');
     }
   }
 
@@ -59,11 +75,12 @@ export class SupabaseAuthService {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        throw error;
+        const errorMessage = this.getErrorMessage(error);
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
-      console.error('Error signing out:', error);
-      throw new Error(error.message || 'Failed to sign out');
+      const errorMessage = this.getErrorMessage(error);
+      throw new Error(errorMessage || 'Failed to sign out');
     }
   }
 
@@ -75,7 +92,9 @@ export class SupabaseAuthService {
       const { data: { user } } = await supabase.auth.getUser();
       return user;
     } catch (error) {
-      console.error('Error getting current user:', error);
+      // Safely log error without modifying frozen objects
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error getting current user:', errorMessage);
       return null;
     }
   }
@@ -88,7 +107,9 @@ export class SupabaseAuthService {
       const { data: { session } } = await supabase.auth.getSession();
       return session;
     } catch (error) {
-      console.error('Error getting session:', error);
+      // Safely log error without modifying frozen objects
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error getting session:', errorMessage);
       return null;
     }
   }

@@ -14,6 +14,15 @@ import { initializeEncryption } from '@services/encryption/signalProtocol';
 // Ignore specific warnings
 LogBox.ignoreLogs(['ViewPropTypes will be removed']);
 
+// Helper to safely extract error message from potentially frozen error objects
+const getErrorMessage = (error: any): string => {
+  try {
+    return error?.message || error?.error_description || error?.msg || 'An error occurred';
+  } catch {
+    return 'An error occurred';
+  }
+};
+
 // Error boundary component
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -29,8 +38,14 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('App Error:', error);
-    console.error('Error Info:', errorInfo);
+    // Safely log error without modifying frozen objects
+    const errorMessage = getErrorMessage(error);
+    console.error('App Error:', errorMessage);
+    try {
+      console.error('Error Info:', JSON.stringify(errorInfo));
+    } catch {
+      console.error('Error Info: [Unable to stringify error info]');
+    }
   }
 
   render() {
@@ -39,7 +54,7 @@ class ErrorBoundary extends React.Component<
         <View style={styles.errorContainer}>
           <Text style={styles.errorTitle}>App Error</Text>
           <Text style={styles.errorMessage}>
-            {this.state.error?.message || 'An unexpected error occurred'}
+            {getErrorMessage(this.state.error) || 'An unexpected error occurred'}
           </Text>
           <Text style={styles.errorHint}>
             Please restart the app. If the problem persists, contact support.
@@ -62,12 +77,15 @@ const App = () => {
         console.log('Initializing Supabase...');
         // Test Supabase connection
         const { error } = await supabase.auth.getSession();
-        if (error && error.message !== 'Auth session missing!') {
-          throw error;
+        if (error) {
+          const errorMessage = getErrorMessage(error);
+          if (errorMessage !== 'Auth session missing!') {
+            throw new Error(errorMessage);
+          }
         }
         console.log('✓ Supabase initialized successfully');
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
+        const message = getErrorMessage(error);
         console.error('Failed to initialize Supabase:', message);
         setInitError(`Supabase initialization failed: ${message}`);
         setIsInitializing(false);
@@ -79,7 +97,7 @@ const App = () => {
         initializeEncryption();
         console.log('✓ Encryption initialized successfully');
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
+        const message = getErrorMessage(error);
         console.error('Failed to initialize encryption:', message);
         // Don't fail app for encryption errors - it's less critical
       }

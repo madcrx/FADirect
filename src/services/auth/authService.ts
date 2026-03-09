@@ -10,6 +10,17 @@ import { generateUserKeys } from '@services/encryption/signalProtocol';
 
 export class AuthService {
   /**
+   * Helper to safely extract error message from potentially frozen error objects
+   */
+  private static getErrorMessage(error: any): string {
+    try {
+      return error?.message || error?.error_description || error?.msg || 'An error occurred';
+    } catch {
+      return 'An error occurred';
+    }
+  }
+
+  /**
    * Send verification code to phone number
    */
   static async sendVerificationCode(
@@ -19,8 +30,9 @@ export class AuthService {
       const confirmation = await SupabaseAuthService.signInWithPhoneNumber(phoneNumber);
       return confirmation;
     } catch (error: any) {
-      console.error('Error sending verification code:', error);
-      throw new Error(error.message || 'Failed to send verification code');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error sending verification code:', errorMessage);
+      throw new Error(errorMessage || 'Failed to send verification code');
     }
   }
 
@@ -35,8 +47,9 @@ export class AuthService {
       const userCredential = await confirmation.confirm(code);
       return userCredential;
     } catch (error: any) {
-      console.error('Error verifying code:', error);
-      throw new Error(error.message || 'Invalid verification code');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error verifying code:', errorMessage);
+      throw new Error(errorMessage || 'Invalid verification code');
     }
   }
 
@@ -82,8 +95,9 @@ export class AuthService {
 
       return user;
     } catch (error: any) {
-      console.error('Error creating user profile:', error);
-      throw new Error(error.message || 'Failed to create user profile');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error creating user profile:', errorMessage);
+      throw new Error(errorMessage || 'Failed to create user profile');
     }
   }
 
@@ -106,8 +120,9 @@ export class AuthService {
         lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
       } as User;
     } catch (error: any) {
-      console.error('Error getting user profile:', error);
-      throw new Error(error.message || 'Failed to get user profile');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error getting user profile:', errorMessage);
+      throw new Error(errorMessage || 'Failed to get user profile');
     }
   }
 
@@ -124,8 +139,9 @@ export class AuthService {
           lastSeen: getTimestamp(),
         });
     } catch (error: any) {
-      console.error('Error updating user profile:', error);
-      throw new Error(error.message || 'Failed to update user profile');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error updating user profile:', errorMessage);
+      throw new Error(errorMessage || 'Failed to update user profile');
     }
   }
 
@@ -138,7 +154,8 @@ export class AuthService {
         lastSeen: getTimestamp(),
       });
     } catch (error) {
-      console.error('Error updating last seen:', error);
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error updating last seen:', errorMessage);
     }
   }
 
@@ -149,8 +166,9 @@ export class AuthService {
     try {
       await SupabaseAuthService.signOut();
     } catch (error: any) {
-      console.error('Error signing out:', error);
-      throw new Error(error.message || 'Failed to sign out');
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error signing out:', errorMessage);
+      throw new Error(errorMessage || 'Failed to sign out');
     }
   }
 
@@ -169,7 +187,8 @@ export class AuthService {
       const doc = await database.collection(COLLECTIONS.USERS).doc(uid).get();
       return doc.exists;
     } catch (error) {
-      console.error('Error checking user profile:', error);
+      const errorMessage = this.getErrorMessage(error);
+      console.error('Error checking user profile:', errorMessage);
       return false;
     }
   }
