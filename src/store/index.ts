@@ -19,8 +19,6 @@ export const store = configureStore({
         // Ignore these paths in the state
         ignoredPaths: ['auth.user.createdAt', 'arrangements.arrangements'],
       },
-      // Disable immutability check to prevent "Cannot assign to read-only property" errors
-      immutableCheck: false,
     }),
 });
 

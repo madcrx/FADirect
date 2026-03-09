@@ -97,13 +97,12 @@ const PhoneAuthScreen = () => {
             </Text>
 
             <TextInput
-              label="Mobile Number"
+              label={`Mobile Number (${PHONE_COUNTRY_CODE})`}
               value={phoneNumber}
               onChangeText={setPhoneNumber}
               keyboardType="phone-pad"
               mode="outlined"
               placeholder="04XX XXX XXX"
-              left={<TextInput.Affix text={PHONE_COUNTRY_CODE} />}
               disabled={loading}
               error={!!error}
               style={styles.input}
