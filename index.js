@@ -3,9 +3,7 @@
  * Loads polyfills before app initialization
  */
 
-// CRITICAL: Load polyfills FIRST, before any other imports
-import 'text-encoding-polyfill';
-
+// Load polyfills FIRST, before any other imports
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 

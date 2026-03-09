@@ -22,7 +22,6 @@
     "submit:all": "eas submit --platform all --latest"
   },
   "dependencies": {
-    "@privacyresearch/libsignal-protocol-typescript": "^0.0.11",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^6.5.11",
@@ -52,7 +51,6 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.0.3",
     "react-redux": "^9.0.4",
-    "text-encoding-polyfill": "^0.6.7",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

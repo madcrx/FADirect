@@ -1,6 +1,3 @@
-// Import polyfill FIRST before anything else
-import 'text-encoding-polyfill';
-
 import React, { useEffect, useState } from 'react';
 import { StatusBar, LogBox, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
