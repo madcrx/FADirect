@@ -23,6 +23,61 @@ const getErrorMessage = (error: any): string => {
   }
 };
 
+// Safe console wrapper to handle frozen objects
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+const originalConsoleLog = console.log;
+
+const safeStringify = (arg: any): any => {
+  if (arg === null || arg === undefined) return arg;
+  if (typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean') return arg;
+
+  try {
+    // Check if object is frozen and try to extract meaningful info
+    if (Object.isFrozen(arg)) {
+      if (arg instanceof Error || arg?.message) {
+        return getErrorMessage(arg);
+      }
+      // Try to create a plain copy
+      try {
+        return JSON.parse(JSON.stringify(arg));
+      } catch {
+        return String(arg);
+      }
+    }
+    return arg;
+  } catch {
+    return String(arg);
+  }
+};
+
+console.error = (...args: any[]) => {
+  try {
+    const safeArgs = args.map(safeStringify);
+    originalConsoleError(...safeArgs);
+  } catch (e) {
+    originalConsoleError('Error in console.error:', String(e));
+  }
+};
+
+console.warn = (...args: any[]) => {
+  try {
+    const safeArgs = args.map(safeStringify);
+    originalConsoleWarn(...safeArgs);
+  } catch (e) {
+    originalConsoleWarn('Error in console.warn:', String(e));
+  }
+};
+
+console.log = (...args: any[]) => {
+  try {
+    const safeArgs = args.map(safeStringify);
+    originalConsoleLog(...safeArgs);
+  } catch (e) {
+    originalConsoleLog('Error in console.log:', String(e));
+  }
+};
+
 // Error boundary component
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
