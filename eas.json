@@ -24,7 +24,7 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
-    "production": {
+    "preview": {
       "ios": {
         "resourceClass": "m-medium",
         "image": "latest"
@@ -40,17 +40,15 @@
         "appleId": "info@epsicon.com.au",
         "ascAppId": "6757940337",
         "appleTeamId": "B672DMM8X6"
-      }
-    },
-    "production": {
-      "ios": {
-        "appleId": "info@epsicon.com.au",
-        "ascAppId": "6757940337",
-        "appleTeamId": "B672DMM8X6"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
+        {
+  "build": {
+    "development": {
+      "ios": {
+        "simulator": true
       }
     }
   }
