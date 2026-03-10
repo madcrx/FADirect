@@ -26,14 +26,14 @@ Open AWS Console and create these tabs:
 
 | Item | Where to Find | Value |
 |------|---------------|-------|
-| User Pool ID | "User pool overview" section | `___________` |
-| Region | Top of page (e.g., us-east-1) | `___________` |
+| User Pool ID | "User pool overview" section | `ap-southeast-2_el3OwHrvc` |
+| Region | Top of page (e.g., us-east-1) | `ap-southeast-2` |
 
 **Click "App integration" tab → Scroll to "App clients":**
 
 | Item | Where to Find | Value |
 |------|---------------|-------|
-| App Client ID | Click on client name | `___________` |
+| App Client ID | Click on client name | `7k4prhvslbjtpo9k8aeej7jo08` |
 
 **Check authentication flows:**
 - Click **Edit** on app client
