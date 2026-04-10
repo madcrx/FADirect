@@ -24,7 +24,7 @@
         "gradleCommand": ":app:assembleRelease"
       }
     },
-    "preview": {
+    "production": {
       "ios": {
         "resourceClass": "m-medium",
         "image": "latest"
@@ -35,7 +35,7 @@
     }
   },
   "submit": {
-    "preview": {
+    "production": {
       "ios": {
         "appleId": "info@epsicon.com.au",
         "ascAppId": "6757940337",
@@ -44,11 +44,6 @@
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "internal"
-        {
-  "build": {
-    "development": {
-      "ios": {
-        "simulator": true
       }
     }
   }
