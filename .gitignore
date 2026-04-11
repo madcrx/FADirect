@@ -104,3 +104,4 @@ google-play-service-account.json
 # Build artifacts
 *.apk
 *.aab
+App.tsx.backup
