@@ -14,8 +14,8 @@ console.log('=== Crypto polyfill loaded ===');
 
 import { AppRegistry } from 'react-native';
 import App from './App';
-import { name as appName } from './app.json';
 
 console.log('=== Registering app component ===');
-AppRegistry.registerComponent(appName, () => App);
+// For Expo projects, the app name is always "main"
+AppRegistry.registerComponent('main', () => App);
 console.log('=== App registered successfully ===');
