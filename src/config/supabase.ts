@@ -4,12 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Get these from https://app.supabase.com/project/_/settings/api
 // TODO: Replace with your actual Supabase project credentials
-const SUPABASE_URL = 'https://wvxnwecxupvwappomajl.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_NARKWb_f4LTpMEBaiGZ1RA_I7fY424K';
+const SUPABASE_URL = 'https://placeholder.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
 // Validate credentials format
 const isValidSupabaseUrl = SUPABASE_URL.startsWith('https://') && SUPABASE_URL.includes('.supabase.co');
-const isValidSupabaseKey = SUPABASE_ANON_KEY.length > 100; // Real keys are very long
+const isValidSupabaseKey = SUPABASE_ANON_KEY.length > 100 && SUPABASE_ANON_KEY.startsWith('eyJ');
 
 if (!isValidSupabaseUrl || !isValidSupabaseKey) {
   console.warn(
