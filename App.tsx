@@ -68,39 +68,21 @@ const App = () => {
 
       addLog('🚀 Starting initialization...');
 
-      try {
-        addLog('📡 Initializing Supabase...');
-        const { error } = await supabase.auth.getSession();
-        if (error && error.message !== 'Auth session missing!') {
-          console.warn('Supabase auth error (non-critical):', error.message);
-          addLog(`⚠️  Supabase: ${error.message.substring(0, 50)}...`);
-        } else {
-          addLog('✅ Supabase OK');
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Supabase initialization error (non-critical):', message);
-        addLog(`⚠️ Supabase failed: ${message.substring(0, 40)}...`);
-      }
+      // SKIP SUPABASE - URL polyfill issues, will fix later
+      addLog('⏭️  Skipping Supabase (URL polyfill issues)');
 
-      try {
-        addLog('🔐 Initializing encryption...');
-        await initializeEncryption();
-        addLog('✅ Encryption OK');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Failed to initialize encryption (non-critical):', message);
-        addLog(`⚠️ Encryption failed: ${message.substring(0, 40)}...`);
-      }
+      // SKIP ENCRYPTION - depends on Supabase database service
+      addLog('⏭️  Skipping encryption (depends on Supabase)');
 
       addLog('✅ Initialization complete!');
+      addLog('ℹ️  App running in offline mode');
 
       // Wait 2 seconds so user can see the logs, then proceed
       setTimeout(() => {
         setIsInitializing(false);
       }, 2000);
 
-      console.log('=== App ready ===');
+      console.log('=== App ready (offline mode) ===');
     };
 
     initializeServices().catch(error => {
