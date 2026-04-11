@@ -9,7 +9,7 @@ import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
 // import { supabase } from '@config/supabase'; // DISABLED FOR NOW
-import { initializeEncryption } from '@services/encryption/signalProtocol';
+// import { initializeEncryption } from '@services/encryption/signalProtocol'; // DISABLED - imports Supabase
 
 // Ignore specific warnings
 LogBox.ignoreLogs(['ViewPropTypes will be removed']);
@@ -68,20 +68,8 @@ const App = () => {
       };
 
       addLog('🚀 Starting initialization...');
-
-      // SKIP SUPABASE FOR NOW - just test if app loads
       addLog('⏭️ Skipping Supabase (testing)');
-
-      try {
-        addLog('🔐 Initializing encryption...');
-        await initializeEncryption();
-        addLog('✅ Encryption OK');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Failed to initialize encryption (non-critical):', message);
-        addLog(`⚠️ Encryption failed: ${message.substring(0, 40)}...`);
-      }
-
+      addLog('⏭️ Skipping encryption (imports Supabase)');
       addLog('✅ Initialization complete!');
 
       // Wait 2 seconds so user can see the logs, then proceed
