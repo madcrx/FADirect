@@ -58,56 +58,58 @@ class ErrorBoundary extends React.Component<
 const App = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
+  const [initLogs, setInitLogs] = useState<string[]>([]);
 
   useEffect(() => {
     const initializeServices = async () => {
-      console.log('=== Starting initialization ===');
+      const addLog = (msg: string) => {
+        console.log(msg);
+        setInitLogs(prev => [...prev, msg]);
+      };
+
+      addLog('🚀 Starting initialization...');
       const errors: string[] = [];
 
       try {
-        console.log('1. Initializing Supabase...');
+        addLog('📡 Initializing Supabase...');
         // Test Supabase connection
         const { error } = await supabase.auth.getSession();
         if (error && error.message !== 'Auth session missing!') {
           console.warn('Supabase auth error (non-critical):', error.message);
           errors.push(`Supabase: ${error.message}`);
-          // Don't fail - just log the warning
+          addLog(`⚠️ Supabase: ${error.message.substring(0, 50)}...`);
         } else {
-          console.log('✓ Supabase initialized successfully');
+          addLog('✅ Supabase OK');
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.warn('Supabase initialization error (non-critical):', message);
         errors.push(`Supabase: ${message}`);
-        // Don't fail app - continue with limited functionality
+        addLog(`⚠️ Supabase failed: ${message.substring(0, 40)}...`);
       }
 
       try {
-        console.log('2. Initializing encryption...');
+        addLog('🔐 Initializing encryption...');
         await initializeEncryption();
-        console.log('✓ Encryption initialized successfully');
+        addLog('✅ Encryption OK');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.warn('Failed to initialize encryption (non-critical):', message);
         errors.push(`Encryption: ${message}`);
-        // Don't fail app for encryption errors - it's less critical
+        addLog(`⚠️ Encryption failed: ${message.substring(0, 40)}...`);
       }
 
       // Initialization complete
-      console.log('3. Initialization complete');
-      setIsInitializing(false);
+      addLog('✅ Initialization complete!');
+
+      // Wait 2 seconds so user can see the logs, then proceed
+      setTimeout(() => {
+        setIsInitializing(false);
+      }, 2000);
 
       // Show errors if any (for debugging)
       if (errors.length > 0) {
         console.warn('Initialization completed with warnings:', errors);
-        // Only show alert in development builds
-        if (__DEV__) {
-          Alert.alert(
-            'Initialization Warnings',
-            errors.join('\n\n'),
-            [{ text: 'OK' }]
-          );
-        }
       }
 
       console.log('=== App ready ===');
@@ -142,6 +144,13 @@ const App = () => {
         <Text style={styles.loadingTitle}>FA Direct</Text>
         <ActivityIndicator size="large" color="#B8956A" style={styles.spinner} />
         <Text style={styles.loadingText}>Initializing app...</Text>
+
+        {/* Debug logs - visible on screen */}
+        <View style={styles.debugContainer}>
+          {initLogs.map((log, index) => (
+            <Text key={index} style={styles.debugText}>{log}</Text>
+          ))}
+        </View>
       </View>
     );
   }
@@ -210,6 +219,18 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  debugContainer: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+    width: '100%',
+    maxHeight: 300,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#B8956A',
+    marginBottom: 5,
+    fontFamily: 'monospace',
   },
 });
 
