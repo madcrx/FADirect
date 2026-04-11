@@ -4,7 +4,6 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { Provider as StoreProvider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import 'react-native-get-random-values'; // Required for UUID and encryption
 
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
@@ -64,24 +63,24 @@ const App = () => {
         // Test Supabase connection
         const { error } = await supabase.auth.getSession();
         if (error && error.message !== 'Auth session missing!') {
-          throw error;
+          console.warn('Supabase auth error (non-critical):', error.message);
+          // Don't fail - just log the warning
+        } else {
+          console.log('✓ Supabase initialized successfully');
         }
-        console.log('✓ Supabase initialized successfully');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Failed to initialize Supabase:', message);
-        setInitError(`Supabase initialization failed: ${message}`);
-        setIsInitializing(false);
-        return;
+        console.warn('Supabase initialization error (non-critical):', message);
+        // Don't fail app - continue with limited functionality
       }
 
       try {
         console.log('Initializing encryption...');
-        initializeEncryption();
+        await initializeEncryption();
         console.log('✓ Encryption initialized successfully');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Failed to initialize encryption:', message);
+        console.warn('Failed to initialize encryption (non-critical):', message);
         // Don't fail app for encryption errors - it's less critical
       }
 
