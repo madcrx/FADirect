@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StatusBar, LogBox, View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { StatusBar, LogBox, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { Provider as StoreProvider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
