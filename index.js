@@ -6,11 +6,13 @@
 // Log entry point - if this doesn't show, JS bundle isn't loading
 console.log('=== index.js loading ===');
 
-// CRITICAL: Crypto polyfill must be imported FIRST
+// CRITICAL: Polyfills must be imported FIRST
 import 'react-native-get-random-values';
 
-// REMOVED URL POLYFILL - IT'S CAUSING THE CRASH
-// import 'react-native-url-polyfill/auto';
+// Use whatwg-url instead of react-native-url-polyfill (more compatible)
+import { URL, URLSearchParams } from 'whatwg-url';
+global.URL = URL;
+global.URLSearchParams = URLSearchParams;
 
 console.log('=== Polyfills loaded ===');
 
