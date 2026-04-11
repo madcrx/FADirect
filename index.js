@@ -6,11 +6,12 @@
 // Log entry point - if this doesn't show, JS bundle isn't loading
 console.log('=== index.js loading ===');
 
-// CRITICAL: This must be imported FIRST before any other imports
-// It polyfills crypto.getRandomValues for React Native
+// CRITICAL: These polyfills must be imported FIRST before any other imports
+// They polyfill crypto.getRandomValues and URL for React Native
 import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
 
-console.log('=== Crypto polyfill loaded ===');
+console.log('=== Crypto and URL polyfills loaded ===');
 
 import { AppRegistry } from 'react-native';
 import App from './App';
