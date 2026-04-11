@@ -6,12 +6,13 @@
 // Log entry point - if this doesn't show, JS bundle isn't loading
 console.log('=== index.js loading ===');
 
-// CRITICAL: These polyfills must be imported FIRST before any other imports
-// They polyfill crypto.getRandomValues and URL for React Native
+// CRITICAL: Crypto polyfill must be imported FIRST
 import 'react-native-get-random-values';
-import 'react-native-url-polyfill/auto';
 
-console.log('=== Crypto and URL polyfills loaded ===');
+// REMOVED URL POLYFILL - IT'S CAUSING THE CRASH
+// import 'react-native-url-polyfill/auto';
+
+console.log('=== Polyfills loaded ===');
 
 import { AppRegistry } from 'react-native';
 import App from './App';
