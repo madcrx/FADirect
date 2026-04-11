@@ -1,7 +1,8 @@
 /**
- * ULTRA MINIMAL TEST APP
+ * ULTRA MINIMAL TEST APP - v1.0.4
  * No Redux, no Navigation, no Services - NOTHING
  * Just React Native core components
+ * FORCED CACHE BUST: 2026-04-11-23:00
  */
 
 import React from 'react';
