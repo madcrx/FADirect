@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
-import { supabase } from '@config/supabase';
+// import { supabase } from '@config/supabase'; // DISABLED FOR NOW
 import { initializeEncryption } from '@services/encryption/signalProtocol';
 
 // Ignore specific warnings
@@ -68,25 +68,9 @@ const App = () => {
       };
 
       addLog('🚀 Starting initialization...');
-      const errors: string[] = [];
 
-      try {
-        addLog('📡 Initializing Supabase...');
-        // Test Supabase connection
-        const { error } = await supabase.auth.getSession();
-        if (error && error.message !== 'Auth session missing!') {
-          console.warn('Supabase auth error (non-critical):', error.message);
-          errors.push(`Supabase: ${error.message}`);
-          addLog(`⚠️ Supabase: ${error.message.substring(0, 50)}...`);
-        } else {
-          addLog('✅ Supabase OK');
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Supabase initialization error (non-critical):', message);
-        errors.push(`Supabase: ${message}`);
-        addLog(`⚠️ Supabase failed: ${message.substring(0, 40)}...`);
-      }
+      // SKIP SUPABASE FOR NOW - just test if app loads
+      addLog('⏭️ Skipping Supabase (testing)');
 
       try {
         addLog('🔐 Initializing encryption...');
@@ -95,22 +79,15 @@ const App = () => {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.warn('Failed to initialize encryption (non-critical):', message);
-        errors.push(`Encryption: ${message}`);
         addLog(`⚠️ Encryption failed: ${message.substring(0, 40)}...`);
       }
 
-      // Initialization complete
       addLog('✅ Initialization complete!');
 
       // Wait 2 seconds so user can see the logs, then proceed
       setTimeout(() => {
         setIsInitializing(false);
       }, 2000);
-
-      // Show errors if any (for debugging)
-      if (errors.length > 0) {
-        console.warn('Initialization completed with warnings:', errors);
-      }
 
       console.log('=== App ready ===');
     };
