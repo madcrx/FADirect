@@ -55,8 +55,9 @@ export class AuthService {
       // Convert API user to app user format
       const user = this.convertApiUserToUser(response.user);
 
+      // TODO: Re-enable encryption once migrated to custom API
       // Generate encryption keys for this user
-      await generateUserKeys(user.id);
+      // await generateUserKeys(user.id);
 
       // Save current user
       this.currentUser = user;

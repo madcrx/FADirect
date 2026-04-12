@@ -10,7 +10,7 @@ import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
 import { apiClient } from '@services/api';
 import { AuthService } from '@services/auth/authService';
-import { initializeEncryption } from '@services/encryption/signalProtocol';
+// import { initializeEncryption } from '@services/encryption/signalProtocol'; // Disabled - uses Supabase
 
 // Ignore specific warnings
 LogBox.ignoreLogs(['ViewPropTypes will be removed']);
@@ -91,8 +91,9 @@ const App = () => {
 
       try {
         addLog('🔐 Initializing encryption...');
-        await initializeEncryption();
-        addLog('✅ Encryption OK!');
+        // TODO: Update encryption service to use custom API instead of Supabase
+        // await initializeEncryption();
+        addLog('⚠️  Encryption temporarily disabled (pending API migration)');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.warn('Failed to initialize encryption (non-critical):', message);
