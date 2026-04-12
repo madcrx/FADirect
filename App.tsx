@@ -8,8 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
-import { supabase } from '@config/supabase';
-import { initializeEncryption } from '@services/encryption/signalProtocol';
+// Supabase imports disabled - URL polyfill issues
+// import { supabase } from '@config/supabase';
+// import { initializeEncryption } from '@services/encryption/signalProtocol';
 
 // Ignore specific warnings
 LogBox.ignoreLogs(['ViewPropTypes will be removed']);
