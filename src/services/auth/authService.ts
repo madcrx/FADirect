@@ -1,7 +1,9 @@
-import { SupabaseAuthService, ConfirmationResult, SupabaseUser } from '@services/supabase/auth';
-import { database, COLLECTIONS, getTimestamp } from '@services/supabase/database';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authApi, apiClient, User as ApiUser } from '@services/api';
 import { User, UserRole } from '@types/index';
 import { generateUserKeys } from '@services/encryption/signalProtocol';
+
+const CURRENT_USER_KEY = '@fadirect_current_user';
 
 /**
  * Authentication Service
@@ -9,15 +11,30 @@ import { generateUserKeys } from '@services/encryption/signalProtocol';
  */
 
 export class AuthService {
+  private static currentUser: User | null = null;
+
+  /**
+   * Initialize auth service - call this on app startup
+   */
+  static async initialize(): Promise<void> {
+    try {
+      await apiClient.initialize();
+
+      const userJson = await AsyncStorage.getItem(CURRENT_USER_KEY);
+      if (userJson) {
+        this.currentUser = JSON.parse(userJson);
+      }
+    } catch (error) {
+      console.error('Error initializing auth service:', error);
+    }
+  }
+
   /**
    * Send verification code to phone number
    */
-  static async sendVerificationCode(
-    phoneNumber: string,
-  ): Promise<ConfirmationResult> {
+  static async sendVerificationCode(phoneNumber: string): Promise<void> {
     try {
-      const confirmation = await SupabaseAuthService.signInWithPhoneNumber(phoneNumber);
-      return confirmation;
+      await authApi.sendVerificationCode(phoneNumber);
     } catch (error: any) {
       console.error('Error sending verification code:', error);
       throw new Error(error.message || 'Failed to send verification code');
@@ -28,12 +45,24 @@ export class AuthService {
    * Verify the code and sign in
    */
   static async verifyCode(
-    confirmation: ConfirmationResult,
+    phoneNumber: string,
     code: string,
-  ): Promise<{ user: SupabaseUser }> {
+    name?: string
+  ): Promise<{ user: User }> {
     try {
-      const userCredential = await confirmation.confirm(code);
-      return userCredential;
+      const response = await authApi.verifyCode(phoneNumber, code, name);
+
+      // Convert API user to app user format
+      const user = this.convertApiUserToUser(response.user);
+
+      // Generate encryption keys for this user
+      await generateUserKeys(user.id);
+
+      // Save current user
+      this.currentUser = user;
+      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+
+      return { user };
     } catch (error: any) {
       console.error('Error verifying code:', error);
       throw new Error(error.message || 'Invalid verification code');
@@ -41,104 +70,24 @@ export class AuthService {
   }
 
   /**
-   * Create a new user profile
+   * Get current authenticated user
    */
-  static async createUserProfile(
-    uid: string,
-    phoneNumber: string,
-    data: {
-      firstName: string;
-      lastName: string;
-      role: UserRole;
-      email?: string;
-      organizationId?: string;
-      organizationName?: string;
-    },
-  ): Promise<User> {
+  static async getCurrentUser(): Promise<User | null> {
+    if (this.currentUser) {
+      return this.currentUser;
+    }
+
     try {
-      const now = new Date();
-      const user: User = {
-        id: uid,
-        phoneNumber,
-        role: data.role,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        organizationId: data.organizationId,
-        organizationName: data.organizationName,
-        createdAt: now,
-        lastSeen: now,
-      };
+      const response = await authApi.getCurrentUser();
+      const user = this.convertApiUserToUser(response.user);
 
-      // Generate encryption keys for this user
-      await generateUserKeys(uid);
-
-      // Save user profile to Supabase
-      await database.collection(COLLECTIONS.USERS).doc(uid).set({
-        ...user,
-        createdAt: getTimestamp(),
-        lastSeen: getTimestamp(),
-      });
+      this.currentUser = user;
+      await AsyncStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
 
       return user;
     } catch (error: any) {
-      console.error('Error creating user profile:', error);
-      throw new Error(error.message || 'Failed to create user profile');
-    }
-  }
-
-  /**
-   * Get user profile from Supabase
-   */
-  static async getUserProfile(uid: string): Promise<User | null> {
-    try {
-      const doc = await database.collection(COLLECTIONS.USERS).doc(uid).get();
-
-      if (!doc.exists) {
-        return null;
-      }
-
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
-        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-      } as User;
-    } catch (error: any) {
-      console.error('Error getting user profile:', error);
-      throw new Error(error.message || 'Failed to get user profile');
-    }
-  }
-
-  /**
-   * Update user profile
-   */
-  static async updateUserProfile(uid: string, updates: Partial<User>): Promise<void> {
-    try {
-      await database
-        .collection(COLLECTIONS.USERS)
-        .doc(uid)
-        .update({
-          ...updates,
-          lastSeen: getTimestamp(),
-        });
-    } catch (error: any) {
-      console.error('Error updating user profile:', error);
-      throw new Error(error.message || 'Failed to update user profile');
-    }
-  }
-
-  /**
-   * Update last seen timestamp
-   */
-  static async updateLastSeen(uid: string): Promise<void> {
-    try {
-      await database.collection(COLLECTIONS.USERS).doc(uid).update({
-        lastSeen: getTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error updating last seen:', error);
+      console.error('Error getting current user:', error);
+      return null;
     }
   }
 
@@ -147,7 +96,10 @@ export class AuthService {
    */
   static async signOut(): Promise<void> {
     try {
-      await SupabaseAuthService.signOut();
+      await authApi.logout();
+
+      this.currentUser = null;
+      await AsyncStorage.removeItem(CURRENT_USER_KEY);
     } catch (error: any) {
       console.error('Error signing out:', error);
       throw new Error(error.message || 'Failed to sign out');
@@ -155,22 +107,36 @@ export class AuthService {
   }
 
   /**
-   * Listen to auth state changes
+   * Check if user is authenticated
    */
-  static onAuthStateChanged(callback: (user: SupabaseUser | null) => void) {
-    return SupabaseAuthService.onAuthStateChanged(callback);
+  static isAuthenticated(): boolean {
+    return apiClient.getAuthToken() !== null;
   }
 
   /**
-   * Check if user profile exists
+   * Get cached user (doesn't make API call)
    */
-  static async userProfileExists(uid: string): Promise<boolean> {
-    try {
-      const doc = await database.collection(COLLECTIONS.USERS).doc(uid).get();
-      return doc.exists;
-    } catch (error) {
-      console.error('Error checking user profile:', error);
-      return false;
-    }
+  static getCachedUser(): User | null {
+    return this.currentUser;
+  }
+
+  /**
+   * Convert API user format to app user format
+   */
+  private static convertApiUserToUser(apiUser: ApiUser): User {
+    const nameParts = (apiUser.name || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    return {
+      id: apiUser.id,
+      phoneNumber: apiUser.phoneNumber,
+      role: apiUser.role as UserRole,
+      firstName,
+      lastName,
+      createdAt: new Date(apiUser.createdAt),
+      lastSeen: new Date(apiUser.lastSeen),
+      profilePhotoUrl: apiUser.profilePhotoUrl,
+    };
   }
 }

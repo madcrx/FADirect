@@ -20,28 +20,15 @@ const VerifyCodeScreen = () => {
   const { phoneNumber } = route.params;
   const [code, setCode] = useState('');
   const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
-  const [confirmation, setConfirmation] = useState<any>(null);
 
   const codeInputRef = useRef<RNTextInput>(null);
 
   useEffect(() => {
     // Auto-focus the input
     codeInputRef.current?.focus();
-
-    // Re-send code if needed
-    resendCode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const resendCode = async () => {
-    try {
-      const result = await AuthService.sendVerificationCode(phoneNumber);
-      setConfirmation(result);
-    } catch (err: any) {
-      setError('Failed to send code. Please try again.');
-    }
-  };
 
   const handleVerifyCode = async () => {
     if (code.length !== 6) {
@@ -53,23 +40,17 @@ const VerifyCodeScreen = () => {
     setError('');
 
     try {
-      // Verify the code
-      const userCredential = await AuthService.verifyCode(confirmation, code);
-      const uid = userCredential.user.uid;
+      // Verify the code - backend creates user if new or logs in existing user
+      const { user } = await AuthService.verifyCode(phoneNumber, code);
 
-      // Check if user profile exists
-      const profileExists = await AuthService.userProfileExists(uid);
-
-      if (profileExists) {
-        // Load existing user profile
-        const userProfile = await AuthService.getUserProfile(uid);
-        if (userProfile) {
-          dispatch(setUser(userProfile));
-          // User will be redirected to Main by RootNavigator
-        }
-      } else {
-        // Navigate to user setup
+      // Check if user needs to complete their profile
+      if (!user.firstName || !user.lastName) {
+        // User needs to set up their profile
         navigation.navigate('UserSetup', { phoneNumber });
+      } else {
+        // User profile is complete, dispatch to Redux
+        dispatch(setUser(user));
+        // User will be redirected to Main by RootNavigator
       }
     } catch (err: any) {
       setError(err.message || 'Invalid code. Please try again.');
@@ -82,7 +63,15 @@ const VerifyCodeScreen = () => {
   const handleResendCode = async () => {
     setError('');
     setCode('');
-    await resendCode();
+    setResending(true);
+
+    try {
+      await AuthService.sendVerificationCode(phoneNumber);
+    } catch (err: any) {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -125,19 +114,23 @@ const VerifyCodeScreen = () => {
             mode="contained"
             onPress={handleVerifyCode}
             loading={verifying}
-            disabled={verifying || code.length !== 6}
+            disabled={verifying || resending || code.length !== 6}
             style={styles.button}>
             Verify
           </Button>
 
-          <Button mode="text" onPress={handleResendCode} disabled={verifying}>
+          <Button
+            mode="text"
+            onPress={handleResendCode}
+            disabled={verifying || resending}
+            loading={resending}>
             Resend Code
           </Button>
 
           <Button
             mode="text"
             onPress={() => navigation.goBack()}
-            disabled={verifying}
+            disabled={verifying || resending}
             style={styles.backButton}>
             Change Phone Number
           </Button>

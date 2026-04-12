@@ -8,7 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from '@store/index';
 import { theme } from '@utils/theme';
 import RootNavigator from '@navigation/RootNavigator';
-import { supabase } from '@config/supabase';
+import { apiClient } from '@services/api';
+import { AuthService } from '@services/auth/authService';
 import { initializeEncryption } from '@services/encryption/signalProtocol';
 
 // Ignore specific warnings
@@ -69,18 +70,23 @@ const App = () => {
       addLog('🚀 Starting initialization...');
 
       try {
-        addLog('📡 Initializing Supabase (SDK 55 test)...');
-        const { error } = await supabase.auth.getSession();
-        if (error && error.message !== 'Auth session missing!') {
-          console.warn('Supabase auth error (non-critical):', error.message);
-          addLog(`⚠️  Supabase: ${error.message.substring(0, 50)}...`);
-        } else {
-          addLog('✅ Supabase OK!');
-        }
+        addLog('📡 Initializing API client...');
+        await apiClient.initialize();
+        addLog('✅ API client OK!');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.warn('Supabase initialization error (non-critical):', message);
-        addLog(`⚠️ Supabase failed: ${message.substring(0, 40)}...`);
+        console.warn('API client initialization error (non-critical):', message);
+        addLog(`⚠️ API client: ${message.substring(0, 40)}...`);
+      }
+
+      try {
+        addLog('🔐 Initializing auth service...');
+        await AuthService.initialize();
+        addLog('✅ Auth service OK!');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        console.warn('Auth service initialization error (non-critical):', message);
+        addLog(`⚠️ Auth service: ${message.substring(0, 40)}...`);
       }
 
       try {
@@ -116,7 +122,7 @@ const App = () => {
         <Text style={styles.errorTitle}>Initialization Error</Text>
         <Text style={styles.errorMessage}>{initError}</Text>
         <Text style={styles.errorHint}>
-          Please check Supabase Dashboard to ensure all services are enabled.
+          Please check your internet connection and try again.
         </Text>
       </View>
     );

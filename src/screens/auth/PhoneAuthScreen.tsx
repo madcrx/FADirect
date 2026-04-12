@@ -58,10 +58,9 @@ const PhoneAuthScreen = () => {
 
     try {
       const formattedNumber = formatPhoneNumber(phoneNumber);
-      const confirmation = await AuthService.sendVerificationCode(formattedNumber);
+      await AuthService.sendVerificationCode(formattedNumber);
 
       navigation.navigate('VerifyCode', {
-        verificationId: (confirmation as any).verificationId || 'pending',
         phoneNumber: formattedNumber,
       });
     } catch (err: any) {

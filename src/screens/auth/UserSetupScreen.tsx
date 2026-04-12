@@ -18,8 +18,8 @@ import { useRoute, RouteProp } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import { RootStackParamList, UserRole } from '@types/index';
 import { AuthService } from '@services/auth/authService';
+import { usersApi } from '@services/api';
 import { setUser } from '@store/slices/authSlice';
-import { SupabaseAuthService } from '@services/supabase/auth';
 import { theme } from '@utils/theme';
 
 type UserSetupScreenRouteProp = RouteProp<RootStackParamList, 'UserSetup'>;
@@ -64,27 +64,29 @@ const UserSetupScreen = () => {
     setLoading(true);
 
     try {
-      const currentUser = await SupabaseAuthService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('Not authenticated');
-      }
+      // Update user profile with full name
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      const { user: updatedUser } = await usersApi.updateProfile({
+        name: fullName,
+      });
 
-      const userProfile = await AuthService.createUserProfile(
-        currentUser.id,
-        phoneNumber,
-        {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          role,
-          email: email.trim() || undefined,
-          organizationName: role === 'arranger' ? organizationName.trim() : undefined,
-        },
-      );
+      // Convert API user to app user format
+      const userProfile = {
+        id: updatedUser.id,
+        phoneNumber: updatedUser.phoneNumber,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        role: updatedUser.role as UserRole,
+        email: email.trim() || undefined,
+        createdAt: new Date(updatedUser.createdAt),
+        lastSeen: new Date(updatedUser.lastSeen),
+        profilePhotoUrl: updatedUser.profilePhotoUrl,
+      };
 
       dispatch(setUser(userProfile));
       // Navigation will happen automatically via RootNavigator
     } catch (err: any) {
-      setError(err.message || 'Failed to create profile. Please try again.');
+      setError(err.message || 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
