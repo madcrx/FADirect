@@ -1,117 +1,71 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootStackParamList, RootState } from '@types/index';
-// AuthService disabled - offline mode
-// import { AuthService } from '@services/auth/authService';
-import { setUser, setLoading } from '@store/slices/authSlice';
-import { theme } from '@utils/theme';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Auth Screens
-import PhoneAuthScreen from '@screens/auth/PhoneAuthScreen';
-import VerifyCodeScreen from '@screens/auth/VerifyCodeScreen';
-import UserSetupScreen from '@screens/auth/UserSetupScreen';
+/**
+ * OFFLINE MODE ROOT NAVIGATOR
+ * Minimal navigator without any Supabase dependencies
+ */
 
-// Main App
-import MainNavigator from './MainNavigator';
-
-const Stack = createStackNavigator<RootStackParamList>();
+console.log('=== RootNavigator loading (offline mode) ===');
 
 const RootNavigator = () => {
-  const dispatch = useDispatch();
-  const { isAuthenticated, isLoading } = useSelector((state: RootState) => state.auth);
-  const [initializing, setInitializing] = useState(true);
-
-  useEffect(() => {
-    // OFFLINE MODE - Skip auth state listener
-    // Just mark as not authenticated and ready
-    dispatch(setUser(null));
-    dispatch(setLoading(false));
-    setInitializing(false);
-
-    // Original auth state listener code (disabled for offline mode):
-    /*
-    const unsubscribe = AuthService.onAuthStateChanged(async user => {
-      dispatch(setLoading(true));
-
-      if (user) {
-        // User is signed in, load their profile
-        try {
-          const userProfile = await AuthService.getUserProfile(user.uid);
-          if (userProfile) {
-            dispatch(setUser(userProfile));
-            // Update last seen
-            AuthService.updateLastSeen(user.uid);
-          }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-        }
-      } else {
-        // User is signed out
-        dispatch(setUser(null));
-      }
-
-      dispatch(setLoading(false));
-      setInitializing(false);
-    });
-
-    return unsubscribe;
-    */
-  }, [dispatch]);
-
-  if (initializing || isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
-  }
+  console.log('=== RootNavigator rendering ===');
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.colors.primary,
-        },
-        headerTintColor: theme.colors.onPrimary,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}>
-      {!isAuthenticated ? (
-        // Auth Stack
-        <>
-          <Stack.Screen
-            name="PhoneAuth"
-            component={PhoneAuthScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="VerifyCode"
-            component={VerifyCodeScreen}
-            options={{ title: 'Verify Phone Number' }}
-          />
-          <Stack.Screen
-            name="UserSetup"
-            component={UserSetupScreen}
-            options={{ title: 'Setup Profile', headerLeft: () => null }}
-          />
-        </>
-      ) : (
-        // Main App
-        <Stack.Screen name="Main" component={MainNavigator} options={{ headerShown: false }} />
-      )}
-    </Stack.Navigator>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>📴 FA Direct</Text>
+        <Text style={styles.subtitle}>Offline Mode</Text>
+        <Text style={styles.message}>
+          App is running in offline mode.{'\n'}
+          Supabase integration is disabled.
+        </Text>
+        <Text style={styles.info}>
+          The app loads successfully! 🎉{'\n\n'}
+          Navigation and backend features{'\n'}
+          will be added once URL polyfill{'\n'}
+          issues are resolved.
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#1A3A52',
+  },
+  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 20,
+    color: '#B8956A',
+    marginBottom: 30,
+  },
+  message: {
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 30,
+    lineHeight: 24,
+  },
+  info: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 
