@@ -3,7 +3,8 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootStackParamList, RootState } from '@types/index';
-import { AuthService } from '@services/auth/authService';
+// AuthService disabled - offline mode
+// import { AuthService } from '@services/auth/authService';
 import { setUser, setLoading } from '@store/slices/authSlice';
 import { theme } from '@utils/theme';
 
@@ -23,7 +24,14 @@ const RootNavigator = () => {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // Listen for auth state changes
+    // OFFLINE MODE - Skip auth state listener
+    // Just mark as not authenticated and ready
+    dispatch(setUser(null));
+    dispatch(setLoading(false));
+    setInitializing(false);
+
+    // Original auth state listener code (disabled for offline mode):
+    /*
     const unsubscribe = AuthService.onAuthStateChanged(async user => {
       dispatch(setLoading(true));
 
@@ -49,6 +57,7 @@ const RootNavigator = () => {
     });
 
     return unsubscribe;
+    */
   }, [dispatch]);
 
   if (initializing || isLoading) {
