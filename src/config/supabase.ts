@@ -1,55 +1,24 @@
-// URL polyfill is now imported in index.js
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// SUPABASE DISABLED - Using custom REST API backend instead
+// This file is kept for backwards compatibility but does not create a real client
 
-// Get these from https://app.supabase.com/project/_/settings/api
-// TODO: Replace with your actual Supabase project credentials
-const SUPABASE_URL = 'https://placeholder.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-// Validate credentials format
-const isValidSupabaseUrl = SUPABASE_URL.startsWith('https://') && SUPABASE_URL.includes('.supabase.co');
-const isValidSupabaseKey = SUPABASE_ANON_KEY.length > 100 && SUPABASE_ANON_KEY.startsWith('eyJ');
+console.log('⚠️ Supabase client disabled - using custom API backend');
 
-if (!isValidSupabaseUrl || !isValidSupabaseKey) {
-  console.warn(
-    '⚠️ Invalid Supabase credentials detected. ' +
-    'Please update SUPABASE_URL and SUPABASE_ANON_KEY in src/config/supabase.ts. ' +
-    'Get your credentials from: https://app.supabase.com/project/_/settings/api'
-  );
-}
+// Export a mock client to prevent import errors
+export const supabase = {
+  auth: {
+    getSession: async () => ({ data: { session: null }, error: new Error('Supabase disabled') }),
+    signIn: async () => ({ data: null, error: new Error('Supabase disabled') }),
+    signOut: async () => ({ error: new Error('Supabase disabled') }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+  },
+  from: () => ({
+    select: () => Promise.resolve({ data: [], error: null }),
+    insert: () => Promise.resolve({ data: null, error: new Error('Supabase disabled') }),
+    update: () => Promise.resolve({ data: null, error: new Error('Supabase disabled') }),
+    delete: () => Promise.resolve({ data: null, error: new Error('Supabase disabled') }),
+  }),
+} as any as SupabaseClient;
 
-// Create Supabase client with error handling
-// Use a mock client if credentials are invalid to prevent crashes
-let supabaseClient: SupabaseClient;
-
-try {
-  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'fadirect-mobile',
-      },
-    },
-  });
-} catch (error) {
-  console.error('Failed to create Supabase client:', error);
-  // Create a minimal mock client to prevent app crashes
-  // This allows the app to start even with invalid credentials
-  supabaseClient = {
-    auth: {
-      getSession: async () => ({ data: { session: null }, error: new Error('Supabase not configured') }),
-      signIn: async () => ({ data: null, error: new Error('Supabase not configured') }),
-      signOut: async () => ({ error: new Error('Supabase not configured') }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    },
-  } as any;
-}
-
-export const supabase = supabaseClient;
 export default supabase;
