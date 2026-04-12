@@ -35,7 +35,7 @@
     "expo-build-properties": "~55.0.13",
     "i18n-js": "^4.3.2",
     "react": "19.2.0",
-    "react-native": "^0.83.2",
+    "react-native": "^0.83.4",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-get-random-values": "~1.11.0",
     "react-native-image-picker": "^7.1.0",
