@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:3000/api'  // Development
+  ? 'http://10.0.2.2:3000/api'  // Development - Android emulator uses 10.0.2.2 for host machine
   : 'https://your-production-api.com/api';  // Production - update this
 
 const TOKEN_KEY = '@fadirect_auth_token';
