@@ -1,0 +1,51 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
+
+// Get messages for an arrangement
+router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
+  try {
+    const result = await db.query(
+      `SELECT m.*, u.name as sender_name
+       FROM messages m
+       LEFT JOIN users u ON m.sender_id = u.id
+       WHERE m.arrangement_id = $1
+       ORDER BY m.created_at ASC`,
+      [req.params.arrangementId]
+    );
+    res.json({ messages: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Send message
+router.post('/', authenticateToken, async (req, res, next) => {
+  try {
+    const { recipientId, arrangementId, encryptedContent, messageType } = req.body;
+    const result = await db.query(
+      `INSERT INTO messages (sender_id, recipient_id, arrangement_id, encrypted_content, message_type)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [req.user.id, recipientId, arrangementId, encryptedContent, messageType || 'text']
+    );
+    res.status(201).json({ message: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Mark message as read
+router.put('/:id/read', authenticateToken, async (req, res, next) => {
+  try {
+    await db.query(
+      'UPDATE messages SET read = TRUE WHERE id = $1 AND recipient_id = $2',
+      [req.params.id, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+});
+
+module.exports = router;
