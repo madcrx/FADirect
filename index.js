@@ -8,7 +8,11 @@ console.log('=== index.js loading ===');
 
 // CRITICAL: Polyfills must be imported FIRST
 import 'react-native-get-random-values';
-import 'react-native-url-polyfill/auto';
+
+// Polyfill URL using whatwg-url
+import { URL, URLSearchParams } from 'whatwg-url';
+global.URL = URL;
+global.URLSearchParams = URLSearchParams;
 
 console.log('=== Polyfills loaded ===');
 
