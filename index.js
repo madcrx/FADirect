@@ -8,7 +8,7 @@ console.log('=== index.js loading ===');
 
 // CRITICAL: Polyfills must be imported FIRST
 import 'react-native-get-random-values';
-import 'react-native-url-polyfill/auto';
+// Note: URL polyfill removed - not needed with custom API backend
 
 console.log('=== Polyfills loaded ===');
 
