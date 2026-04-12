@@ -3,10 +3,19 @@ const { generateToken } = require('../utils/jwt');
 const twilio = require('twilio');
 const config = require('../config');
 
-// Initialize Twilio client (only if configured)
+// Initialize Twilio client (only if configured with valid credentials)
 let twilioClient = null;
-if (config.TWILIO_ACCOUNT_SID && config.TWILIO_AUTH_TOKEN) {
+const hasTwilioConfig =
+  config.TWILIO_ACCOUNT_SID &&
+  config.TWILIO_AUTH_TOKEN &&
+  config.TWILIO_ACCOUNT_SID.startsWith('AC') &&
+  config.TWILIO_ACCOUNT_SID !== 'your_twilio_account_sid';
+
+if (hasTwilioConfig) {
   twilioClient = twilio(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN);
+  console.log('✅ Twilio initialized for SMS verification');
+} else {
+  console.log('⚠️  Twilio not configured - using mock verification (code: 123456)');
 }
 
 /**
