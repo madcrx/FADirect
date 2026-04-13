@@ -13,14 +13,12 @@ import 'react-native-get-random-values';
 // which conflicts with react-native-url-polyfill and causes crashes
 Object.defineProperty(global, 'URL', {
   configurable: false,  // Make it non-configurable so Expo can't overwrite
-  enumerable: true,
-  writable: false,
+  writable: true,       // Allow property modifications
   value: global.URL
 });
 Object.defineProperty(global, 'URLSearchParams', {
   configurable: false,
-  enumerable: true,
-  writable: false,
+  writable: true,       // Allow property modifications
   value: global.URLSearchParams
 });
 
