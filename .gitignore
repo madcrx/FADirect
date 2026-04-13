@@ -57,21 +57,10 @@ ios/Pods/
 *~
 .tmp/
 
-# Firebase
-.firebaserc
-firebase-debug.log
-firestore-debug.log
-
 # Environment variables
 .env
 .env.local
 .env.*.local
-
-# Firebase config files - Explicitly allowed for EAS Build
-# These files are needed for builds. Use placeholder values in repo,
-# real values via EAS Secrets (see FIREBASE_SETUP.md)
-!google-services.json
-!ios/GoogleService-Info.plist
 
 # Secrets
 *.pem
@@ -104,4 +93,4 @@ google-play-service-account.json
 # Build artifacts
 *.apk
 *.aab
-App.tsx.backup
+*.backup

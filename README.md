@@ -83,16 +83,13 @@ npm run build:ios:prod             # iOS only
 
 ## Backend Setup
 
-The app uses **Supabase** for backend services.
+The app uses a **custom Node.js/Express/PostgreSQL REST API** backend.
 
-**Supabase Project**: wvxnwecxupvwappomajl.supabase.co
-
-**Services configured**:
-- ✓ Authentication → Phone (OTP)
+**Services:**
+- ✓ Phone Authentication (OTP)
 - ✓ PostgreSQL Database
-- ✓ Storage
-
-**Note**: Firebase configuration files are maintained for native build compatibility only.
+- ✓ File Storage
+- ✓ Secure messaging
 
 ## Troubleshooting
 
@@ -115,13 +112,13 @@ npm install
 - **Bundle ID**: com.fadirect.app
 - **Apple Team**: Brett Farley (B672DMM8X6)
 - **Expo Account**: @madcrx
-- **Supabase Project**: wvxnwecxupvwappomajl.supabase.co
+- **Backend**: Custom Node.js REST API
 
 ## Tech Stack
 
 - React Native 0.73 + Expo SDK 50
-- Supabase (Auth, Database, Storage)
-- Signal Protocol (E2E encryption)
+- Custom Node.js/Express REST API
+- PostgreSQL Database
 - Redux Toolkit + React Navigation
 
 ---

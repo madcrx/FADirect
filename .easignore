@@ -1,11 +1,3 @@
-# Ignore Firebase configuration files
-# Project has migrated to Supabase
-firebase.json
-firestore.rules
-firestore.indexes.json
-storage.rules
-.firebaserc
-
 # Build and cache directories
 .expo/
 .expo-shared/
