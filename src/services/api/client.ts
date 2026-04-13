@@ -1,9 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
-const API_BASE_URL = __DEV__
-  ? 'http://10.0.2.2:3000/api'  // Development - Android emulator uses 10.0.2.2 for host machine
-  : 'https://your-production-api.com/api';  // Production - update this
+// ALWAYS use development URL for now (backend running on localhost:3000)
+// EAS preview builds set __DEV__ to false, so we can't rely on it
+const API_BASE_URL = 'http://10.0.2.2:3000/api';  // Android emulator uses 10.0.2.2 for host machine
+
+// TODO: When ready for production, use environment variables:
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
 
 const TOKEN_KEY = '@fadirect_auth_token';
 
