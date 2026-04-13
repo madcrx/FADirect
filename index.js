@@ -3,11 +3,13 @@
  * Secure communication platform for funeral arrangers and mourners
  */
 
+// CRITICAL CRITICAL CRITICAL: URL polyfill MUST BE ABSOLUTELY FIRST
+// Import before ANY other code including console.log
+import 'react-native-url-polyfill/auto';
+import 'react-native-get-random-values';
+
 // Log entry point - if this doesn't show, JS bundle isn't loading
 console.log('=== index.js loading ===');
-
-// CRITICAL: Polyfills must be imported FIRST
-import 'react-native-get-random-values';
 
 console.log('=== Polyfills loaded ===');
 console.log('URL available:', typeof URL !== 'undefined');
