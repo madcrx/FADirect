@@ -8,36 +8,54 @@
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
 
-// CRITICAL: Patch XMLHttpRequest before React Native loads it
-// React Native 0.83.4 has a bug where XMLHttpRequest constants are frozen
-if (global.XMLHttpRequest) {
-  const OriginalXHR = global.XMLHttpRequest;
-  global.XMLHttpRequest = function() {
-    const xhr = new OriginalXHR();
-    // Make sure properties are configurable
-    try {
-      if (xhr.NONE !== undefined) {
-        Object.defineProperty(xhr, 'NONE', {
-          value: xhr.NONE,
+// CRITICAL: Patch Event constructor to fix NONE property bug
+// React Native 0.83.4 bug where Event/XMLHttpRequest constants are frozen
+const OriginalEvent = global.Event;
+if (OriginalEvent) {
+  global.Event = function Event(type, eventInitDict) {
+    const event = new OriginalEvent(type, eventInitDict);
+    // Prevent NONE property from being read-only
+    const descriptor = Object.getOwnPropertyDescriptor(event, 'NONE');
+    if (descriptor && !descriptor.writable) {
+      try {
+        Object.defineProperty(event, 'NONE', {
+          ...descriptor,
           writable: true,
           configurable: true,
-          enumerable: true
+        });
+      } catch (e) {
+        // Ignore if we can't modify it
+      }
+    }
+    return event;
+  };
+  global.Event.prototype = OriginalEvent.prototype;
+}
+
+// Patch XMLHttpRequest readyState constants
+if (global.XMLHttpRequest) {
+  const states = ['UNSENT', 'OPENED', 'HEADERS_RECEIVED', 'LOADING', 'DONE', 'NONE'];
+  const XHRProto = global.XMLHttpRequest.prototype;
+  states.forEach(state => {
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(XHRProto, state);
+      if (descriptor && !descriptor.writable) {
+        Object.defineProperty(XHRProto, state, {
+          ...descriptor,
+          writable: true,
+          configurable: true,
         });
       }
     } catch (e) {
-      // Ignore if property doesn't exist
+      // Ignore
     }
-    return xhr;
-  };
-  // Copy static properties
-  Object.setPrototypeOf(global.XMLHttpRequest, OriginalXHR);
-  Object.setPrototypeOf(global.XMLHttpRequest.prototype, OriginalXHR.prototype);
+  });
 }
 
 // Log entry point - if this doesn't show, JS bundle isn't loading
 console.log('=== index.js loading ===');
 
-console.log('=== Polyfills loaded ===');
+console.log('=== Polyfills and patches loaded ===');
 console.log('URL available:', typeof URL !== 'undefined');
 console.log('URLSearchParams available:', typeof URLSearchParams !== 'undefined');
 
