@@ -11,6 +11,10 @@ const API_BASE_URL = 'http://10.0.2.2:3000/api';  // Android emulator uses 10.0.
 
 const TOKEN_KEY = '@fadirect_auth_token';
 
+// Configure axios defaults for React Native
+axios.defaults.timeout = 10000;  // 10 second timeout
+axios.defaults.maxRedirects = 0;  // No redirects
+
 interface ApiError {
   message: string;
   status?: number;
@@ -65,40 +69,21 @@ class ApiClient {
     }
 
     try {
-      console.log('🌐 API Request (axios):', options.method || 'GET', url);
-      console.log('🔍 Request headers:', JSON.stringify(headers, null, 2));
-      console.log('🔍 Request data:', options.data);
+      console.log('🌐 Making request:', options.method || 'GET', url);
 
-      const response = await axios({
+      // Create a fresh axios instance for each request to avoid XHR reuse issues
+      const response = await axios.create()({
         url,
         method: options.method || 'GET',
         data: options.data,
         headers,
+        timeout: 10000,
       });
 
-      console.log('✅ API Response:', response.status);
+      console.log('✅ Response received:', response.status);
       return response.data as T;
     } catch (error: any) {
-      console.error('❌ API Error caught:');
-      console.error('  Type:', typeof error);
-      console.error('  Constructor:', error?.constructor?.name);
-      console.error('  Message:', error?.message);
-      console.error('  Name:', error?.name);
-      console.error('  Stack (first 500 chars):', error?.stack?.substring(0, 500));
-
-      // Check if it's the NONE error specifically
-      if (error?.message?.includes('NONE')) {
-        console.error('🚨 NONE ERROR DETECTED IN API CLIENT!');
-        console.error('  Full error object keys:', Object.keys(error));
-        console.error('  Error prototype:', Object.getPrototypeOf(error));
-
-        // Try to get more details about where it came from
-        if (error.stack) {
-          const stackLines = error.stack.split('\n').slice(0, 10);
-          console.error('  Stack trace (first 10 lines):');
-          stackLines.forEach((line, i) => console.error(`    ${i}: ${line}`));
-        }
-      }
+      console.error('❌ Request failed:', error?.message);
 
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
