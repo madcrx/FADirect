@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authApi, apiClient, User as ApiUser } from '@services/api';
 import { User, UserRole } from '@types/index';
-import { generateUserKeys } from '@services/encryption/signalProtocol';
 
 const CURRENT_USER_KEY = '@fadirect_current_user';
 
