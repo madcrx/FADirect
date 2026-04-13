@@ -49,10 +49,7 @@
     "react-native-vector-icons": "^10.0.3",
     "react-native-worklets": "0.7.2",
     "react-redux": "^9.0.4",
-    "text-encoding": "^0.7.0",
-    "util": "^0.12.5",
-    "uuid": "^9.0.1",
-    "whatwg-url": "^8.7.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
