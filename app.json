@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1A3A52"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fadirect.app",
@@ -49,9 +44,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash.png",
+          "image": "./assets/icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
           "backgroundColor": "#1A3A52"
         }
       ]
