@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosError } from 'axios';
 
 // API Configuration
 // ALWAYS use development URL for now (backend running on localhost:3000)
@@ -46,11 +47,15 @@ class ApiClient {
 
   async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: {
+      method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+      data?: any;
+      headers?: Record<string, string>;
+    } = {}
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
@@ -60,39 +65,43 @@ class ApiClient {
     }
 
     try {
-      console.log('🌐 API Request:', options.method || 'GET', url);
+      console.log('🌐 API Request (axios):', options.method || 'GET', url);
 
-      const response = await fetch(url, {
-        ...options,
+      const response = await axios({
+        url,
+        method: options.method || 'GET',
+        data: options.data,
         headers,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        const error: ApiError = {
-          message: data.error?.message || 'An error occurred',
-          status: response.status,
-          errors: data.error,
-        };
-        throw error;
-      }
-
-      return data as T;
+      console.log('✅ API Response:', response.status);
+      return response.data as T;
     } catch (error: any) {
-      console.log('🔍 Full error object:', error);
-      console.log('🔍 Error type:', typeof error);
-      console.log('🔍 Error keys:', Object.keys(error || {}));
-      console.log('🔍 Error message:', error?.message);
-      console.log('🔍 Error stack:', error?.stack);
+      console.log('❌ API Error:', error?.message);
 
-      if (error.message === 'Network request failed') {
-        throw {
-          message: 'Unable to connect to server. Please check your internet connection.',
-          status: 0,
-        } as ApiError;
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response) {
+          // Server responded with error
+          const errorData = axiosError.response.data as any;
+          throw {
+            message: errorData?.error?.message || 'An error occurred',
+            status: axiosError.response.status,
+            errors: errorData?.error,
+          } as ApiError;
+        } else if (axiosError.request) {
+          // Request made but no response
+          throw {
+            message: 'Unable to connect to server. Please check your internet connection.',
+            status: 0,
+          } as ApiError;
+        }
       }
-      throw error;
+
+      throw {
+        message: error?.message || 'An unexpected error occurred',
+        status: 0,
+      } as ApiError;
     }
   }
 
@@ -103,14 +112,14 @@ class ApiClient {
   async post<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      data,
     });
   }
 
   async put<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      data,
     });
   }
 
@@ -141,36 +150,39 @@ class ApiClient {
 
     const url = `${API_BASE_URL}${endpoint}`;
 
-    const headers: HeadersInit = {};
+    const headers: Record<string, string> = {};
     if (this.authToken) {
       headers['Authorization'] = `Bearer ${this.authToken}`;
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await axios({
+        url,
         method: 'POST',
-        headers,
-        body: formData,
+        data: formData,
+        headers: {
+          ...headers,
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        const error: ApiError = {
-          message: data.error?.message || 'Upload failed',
-          status: response.status,
-          errors: data.error,
-        };
-        throw error;
-      }
-
-      return data as T;
+      return response.data as T;
     } catch (error: any) {
-      if (error.message === 'Network request failed') {
-        throw {
-          message: 'Unable to connect to server. Please check your internet connection.',
-          status: 0,
-        } as ApiError;
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response) {
+          const errorData = axiosError.response.data as any;
+          throw {
+            message: errorData?.error?.message || 'Upload failed',
+            status: axiosError.response.status,
+            errors: errorData?.error,
+          } as ApiError;
+        } else {
+          throw {
+            message: 'Unable to connect to server. Please check your internet connection.',
+            status: 0,
+          } as ApiError;
+        }
       }
       throw error;
     }
