@@ -57,6 +57,8 @@ class ApiClient {
     }
 
     try {
+      console.log('🌐 API Request:', options.method || 'GET', url);
+
       const response = await fetch(url, {
         ...options,
         headers,
@@ -75,6 +77,12 @@ class ApiClient {
 
       return data as T;
     } catch (error: any) {
+      console.log('🔍 Full error object:', error);
+      console.log('🔍 Error type:', typeof error);
+      console.log('🔍 Error keys:', Object.keys(error || {}));
+      console.log('🔍 Error message:', error?.message);
+      console.log('🔍 Error stack:', error?.stack);
+
       if (error.message === 'Network request failed') {
         throw {
           message: 'Unable to connect to server. Please check your internet connection.',
