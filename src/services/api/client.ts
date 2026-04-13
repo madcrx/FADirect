@@ -4,7 +4,7 @@ import axios, { AxiosError } from 'axios';
 // API Configuration
 // ALWAYS use development URL for now (backend running on localhost:3000)
 // EAS preview builds set __DEV__ to false, so we can't rely on it
-const API_BASE_URL = 'http://10.0.2.2:3000/api';  // Android emulator uses 10.0.2.2 for host machine
+const API_BASE_URL = 'http://localhost:3000/api';  // Android emulator uses 10.0.2.2 for host machine
 
 // TODO: When ready for production, use environment variables:
 // const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
