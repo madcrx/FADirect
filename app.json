@@ -40,14 +40,6 @@
             "useFrameworks": "static"
           }
         }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#1A3A52"
-        }
       ]
     ],
     "extra": {
