@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSelector } from 'react-redux';
 import { MessageStackParamList, RootState, Arrangement } from '@types/index';
-import { ArrangementService } from '@services/arrangements/arrangementService';
+import { arrangementsApi } from '@services/api';
 import { theme } from '@utils/theme';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -35,14 +35,14 @@ const ConversationListScreen = () => {
     if (!user) return;
 
     try {
-      const arrangements = await ArrangementService.getArrangements(user.id, user.role);
+      const response = await arrangementsApi.getArrangements();
 
       // TODO: Fetch last messages and unread counts for each arrangement
-      const conversationItems: ConversationItem[] = arrangements.map(arr => ({
+      const conversationItems: ConversationItem[] = response.arrangements.map((arr: any) => ({
         ...arr,
         unreadCount: 0, // Placeholder
         lastMessage: 'Start a conversation...',
-        lastMessageTime: arr.updatedAt,
+        lastMessageTime: new Date(arr.updatedAt),
       }));
 
       setConversations(conversationItems);

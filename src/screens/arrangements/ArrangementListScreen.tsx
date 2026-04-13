@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrangementStackParamList, RootState, Arrangement } from '@types/index';
-import { ArrangementService } from '@services/arrangements/arrangementService';
+import { arrangementsApi } from '@services/api';
 import { setArrangements, setLoading } from '@store/slices/arrangementsSlice';
 import { theme } from '@utils/theme';
 import { format } from 'date-fns';
@@ -35,8 +35,8 @@ const ArrangementListScreen = () => {
 
     try {
       dispatch(setLoading(true));
-      const data = await ArrangementService.getArrangements(user.id, user.role);
-      dispatch(setArrangements(data));
+      const response = await arrangementsApi.getArrangements();
+      dispatch(setArrangements(response.arrangements as any));
     } catch (error: any) {
       console.error('Error loading arrangements:', error);
     } finally {

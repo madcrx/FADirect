@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrangementStackParamList, RootState, FuneralType } from '@types/index';
-import { ArrangementService } from '@services/arrangements/arrangementService';
+import { arrangementsApi } from '@services/api';
 import { addArrangement } from '@store/slices/arrangementsSlice';
 import { theme } from '@utils/theme';
 
@@ -54,16 +54,17 @@ const CreateArrangementScreen = () => {
     try {
       // TODO: Search for mourner by phone number
       // For now, use mourner phone as ID (would need proper user lookup)
-      const mournerId = mournerPhone; // Temporary
+      // const mournerId = mournerPhone; // Temporary
 
-      const arrangement = await ArrangementService.createArrangement({
-        arrangerId: user.id,
-        mournerId,
+      const response = await arrangementsApi.createArrangement({
         deceasedName: deceasedName.trim(),
-        funeralType,
+        // TODO: Add remaining fields when backend supports them
+        // funeralType,
+        // arrangerId: user.id,
+        // mournerId,
       });
 
-      dispatch(addArrangement(arrangement));
+      dispatch(addArrangement(response.arrangement as any));
       navigation.goBack();
     } catch (err: any) {
       setError(err.message || 'Failed to create arrangement');

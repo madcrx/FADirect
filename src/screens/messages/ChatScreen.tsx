@@ -11,7 +11,7 @@ import { Text, TextInput, IconButton, Avatar } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { MessageStackParamList, RootState, Message } from '@types/index';
-import { MessageService } from '@services/messaging/messageService';
+import { messagesApi } from '@services/api';
 import { theme } from '@utils/theme';
 import { format } from 'date-fns';
 import { TIME_FORMAT } from '@utils/constants';
@@ -35,40 +35,70 @@ const ChatScreen = () => {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // Listen to messages in real-time
-    const unsubscribe = MessageService.onMessagesChanged(arrangementId, async newMessages => {
-      // Decrypt all messages
-      const decryptedMessages = await Promise.all(
-        newMessages.map(async msg => {
-          try {
-            const decryptedContent = await MessageService.decryptMessageContent(msg, user!.id);
-            return {
-              ...msg,
-              decryptedContent,
-              isDecrypting: false,
-            };
-          } catch (error) {
-            return {
-              ...msg,
-              decryptedContent: '[Unable to decrypt]',
-              isDecrypting: false,
-            };
-          }
-        }),
-      );
+    loadMessages();
+
+    // TODO: Replace with WebSocket for real-time message updates
+    // const unsubscribe = MessageService.onMessagesChanged(arrangementId, async newMessages => {
+    //   // Decrypt all messages
+    //   const decryptedMessages = await Promise.all(
+    //     newMessages.map(async msg => {
+    //       try {
+    //         const decryptedContent = await MessageService.decryptMessageContent(msg, user!.id);
+    //         return {
+    //           ...msg,
+    //           decryptedContent,
+    //           isDecrypting: false,
+    //         };
+    //       } catch (error) {
+    //         return {
+    //           ...msg,
+    //           decryptedContent: '[Unable to decrypt]',
+    //           isDecrypting: false,
+    //         };
+    //       }
+    //     }),
+    //   );
+    //   setMessages(decryptedMessages);
+    //   // Mark unread messages as read
+    //   newMessages.forEach(msg => {
+    //     if (msg.recipientId === user!.id && !msg.readAt) {
+    //       MessageService.markAsRead(msg.id);
+    //     }
+    //   });
+    // });
+    // return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [arrangementId]);
+
+  const loadMessages = async () => {
+    if (!user) return;
+
+    try {
+      const response = await messagesApi.getMessages(arrangementId);
+
+      // TODO: Implement message decryption
+      const decryptedMessages = response.messages.map(msg => ({
+        ...msg,
+        decryptedContent: msg.encryptedContent, // Temporary: showing encrypted content
+        isDecrypting: false,
+        timestamp: new Date(msg.createdAt),
+        readAt: msg.read ? new Date(msg.createdAt) : null,
+        deliveredAt: new Date(msg.createdAt),
+        type: msg.messageType,
+      })) as any;
 
       setMessages(decryptedMessages);
 
       // Mark unread messages as read
-      newMessages.forEach(msg => {
-        if (msg.recipientId === user!.id && !msg.readAt) {
-          MessageService.markAsRead(msg.id);
+      response.messages.forEach(msg => {
+        if (msg.recipientId === user.id && !msg.read) {
+          messagesApi.markAsRead(msg.id);
         }
       });
-    });
-
-    return unsubscribe;
-  }, [arrangementId, user]);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
 
   const handleSend = async () => {
     if (!inputText.trim() || !user) {
@@ -80,13 +110,16 @@ const ChatScreen = () => {
     setInputText('');
 
     try {
-      await MessageService.sendMessage({
+      // TODO: Implement message encryption before sending
+      await messagesApi.sendMessage({
         arrangementId,
-        senderId: user.id,
         recipientId,
-        content: textToSend,
-        type: 'text',
+        encryptedContent: textToSend, // Temporary: should be encrypted
+        messageType: 'text',
       });
+
+      // Reload messages to show the sent message
+      await loadMessages();
 
       // Scroll to bottom
       setTimeout(() => {

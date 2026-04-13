@@ -4,7 +4,7 @@ import { Text, Card, Button, Chip, Divider, List } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { ArrangementStackParamList, Arrangement } from '@types/index';
-import { ArrangementService } from '@services/arrangements/arrangementService';
+import { arrangementsApi } from '@services/api';
 import { theme } from '@utils/theme';
 import { format } from 'date-fns';
 import { DATE_FORMAT } from '@utils/constants';
@@ -30,23 +30,22 @@ const ArrangementDetailScreen = () => {
   useEffect(() => {
     loadArrangement();
 
-    // Listen to real-time updates
-    const unsubscribe = ArrangementService.onArrangementChanged(
-      arrangementId,
-      updatedArrangement => {
-        setArrangement(updatedArrangement);
-        setLoading(false);
-      },
-    );
-
-    return unsubscribe;
+    // TODO: Replace with WebSocket for real-time updates
+    // const unsubscribe = ArrangementService.onArrangementChanged(
+    //   arrangementId,
+    //   updatedArrangement => {
+    //     setArrangement(updatedArrangement);
+    //     setLoading(false);
+    //   },
+    // );
+    // return unsubscribe;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrangementId]);
 
   const loadArrangement = async () => {
     try {
-      const data = await ArrangementService.getArrangement(arrangementId);
-      setArrangement(data);
+      const response = await arrangementsApi.getArrangement(arrangementId);
+      setArrangement(response.arrangement as any);
     } catch (error) {
       console.error('Error loading arrangement:', error);
     } finally {

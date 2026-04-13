@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Chip } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { ArrangementStackParamList, Arrangement, WorkflowStep } from '@types/index';
-import { ArrangementService } from '@services/arrangements/arrangementService';
+import { arrangementsApi } from '@services/api';
 import { theme } from '@utils/theme';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { format } from 'date-fns';
@@ -22,16 +22,30 @@ const WorkflowProgressScreen = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = ArrangementService.onArrangementChanged(
-      arrangementId,
-      updatedArrangement => {
-        setArrangement(updatedArrangement);
-        setLoading(false);
-      },
-    );
+    loadArrangement();
 
-    return unsubscribe;
+    // TODO: Replace with WebSocket for real-time updates
+    // const unsubscribe = ArrangementService.onArrangementChanged(
+    //   arrangementId,
+    //   updatedArrangement => {
+    //     setArrangement(updatedArrangement);
+    //     setLoading(false);
+    //   },
+    // );
+    // return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [arrangementId]);
+
+  const loadArrangement = async () => {
+    try {
+      const response = await arrangementsApi.getArrangement(arrangementId);
+      setArrangement(response.arrangement as any);
+    } catch (error) {
+      console.error('Error loading arrangement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStepIcon = (step: WorkflowStep) => {
     if (step.status === 'completed') {
