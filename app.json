@@ -24,6 +24,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1A3A52"
       },
       "package": "com.fadirect.app",
