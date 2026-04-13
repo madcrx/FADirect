@@ -66,6 +66,8 @@ class ApiClient {
 
     try {
       console.log('🌐 API Request (axios):', options.method || 'GET', url);
+      console.log('🔍 Request headers:', JSON.stringify(headers, null, 2));
+      console.log('🔍 Request data:', options.data);
 
       const response = await axios({
         url,
@@ -77,7 +79,26 @@ class ApiClient {
       console.log('✅ API Response:', response.status);
       return response.data as T;
     } catch (error: any) {
-      console.log('❌ API Error:', error?.message);
+      console.error('❌ API Error caught:');
+      console.error('  Type:', typeof error);
+      console.error('  Constructor:', error?.constructor?.name);
+      console.error('  Message:', error?.message);
+      console.error('  Name:', error?.name);
+      console.error('  Stack (first 500 chars):', error?.stack?.substring(0, 500));
+
+      // Check if it's the NONE error specifically
+      if (error?.message?.includes('NONE')) {
+        console.error('🚨 NONE ERROR DETECTED IN API CLIENT!');
+        console.error('  Full error object keys:', Object.keys(error));
+        console.error('  Error prototype:', Object.getPrototypeOf(error));
+
+        // Try to get more details about where it came from
+        if (error.stack) {
+          const stackLines = error.stack.split('\n').slice(0, 10);
+          console.error('  Stack trace (first 10 lines):');
+          stackLines.forEach((line, i) => console.error(`    ${i}: ${line}`));
+        }
+      }
 
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
