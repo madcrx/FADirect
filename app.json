@@ -45,6 +45,15 @@
             "useFrameworks": "static"
           }
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#1A3A52"
+        }
       ]
     ],
     "extra": {
