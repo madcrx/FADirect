@@ -66,6 +66,7 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
        FROM photos p
        LEFT JOIN users u ON p.uploaded_by = u.id
        WHERE p.arrangement_id = $1
+         AND p.deleted_at IS NULL
        ORDER BY p.created_at DESC`,
       [req.params.arrangementId]
     );
@@ -85,17 +86,34 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
   }
 });
 
-// Delete photo
+// Soft delete photo (uploader or arranger)
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const result = await db.query(
-      'DELETE FROM photos WHERE id = $1 AND uploaded_by = $2 RETURNING *',
-      [req.params.id, req.user.id]
+    // Get photo and check permissions
+    const photo = await db.query(
+      `SELECT p.*, a.arranger_id
+       FROM photos p
+       JOIN arrangements a ON p.arrangement_id = a.id
+       WHERE p.id = $1`,
+      [req.params.id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: { message: 'Photo not found or unauthorized' } });
+    if (photo.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Photo not found' } });
     }
+
+    const isUploader = photo.rows[0].uploaded_by === req.user.id;
+    const isArranger = photo.rows[0].arranger_id === req.user.id;
+
+    if (!isUploader && !isArranger) {
+      return res.status(403).json({ error: { message: 'Unauthorized' } });
+    }
+
+    // Soft delete
+    await db.query(
+      'UPDATE photos SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [req.params.id]
+    );
 
     res.json({ success: true });
   } catch (error) {

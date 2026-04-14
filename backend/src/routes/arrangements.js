@@ -12,7 +12,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
        FROM arrangements a
        LEFT JOIN users u ON a.arranger_id = u.id
        LEFT JOIN arrangement_participants ap ON a.id = ap.arrangement_id
-       WHERE a.arranger_id = $1 OR ap.user_id = $1
+       WHERE (a.arranger_id = $1 OR ap.user_id = $1)
+         AND a.deleted_at IS NULL
        ORDER BY a.created_at DESC`,
       [req.user.id]
     );
@@ -196,6 +197,35 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         currentStepIndex: arrangement.current_step_index || 0,
       }
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Soft delete arrangement (arranger only)
+router.delete('/:id', authenticateToken, async (req, res, next) => {
+  try {
+    // Check if user is arranger
+    const arrangement = await db.query(
+      'SELECT arranger_id FROM arrangements WHERE id = $1',
+      [req.params.id]
+    );
+
+    if (arrangement.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Arrangement not found' } });
+    }
+
+    if (arrangement.rows[0].arranger_id !== req.user.id) {
+      return res.status(403).json({ error: { message: 'Only arrangers can delete arrangements' } });
+    }
+
+    // Soft delete
+    await db.query(
+      'UPDATE arrangements SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [req.params.id]
+    );
+
+    res.json({ success: true, message: 'Arrangement deleted' });
   } catch (error) {
     next(error);
   }

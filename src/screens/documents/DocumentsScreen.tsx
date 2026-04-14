@@ -129,6 +129,8 @@ const DocumentsScreen = () => {
         label={uploading ? 'Uploading...' : 'Upload Document'}
         onPress={handleUpload}
         disabled={uploading}
+        visible={true}
+        extended={true}
       />
     </View>
   );

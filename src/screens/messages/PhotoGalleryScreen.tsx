@@ -167,6 +167,8 @@ const PhotoGalleryScreen = () => {
         label={uploading ? 'Uploading...' : 'Add Photo'}
         onPress={handleUpload}
         disabled={uploading}
+        visible={true}
+        extended={true}
       />
     </View>
   );

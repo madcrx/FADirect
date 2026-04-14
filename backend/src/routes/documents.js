@@ -61,7 +61,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
   try {
     const result = await db.query(
-      'SELECT * FROM documents WHERE arrangement_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM documents WHERE arrangement_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC',
       [req.params.arrangementId]
     );
 
@@ -74,6 +74,41 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
     }));
 
     res.json({ documents });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Soft delete document (uploader or arranger)
+router.delete('/:id', authenticateToken, async (req, res, next) => {
+  try {
+    // Get document and check permissions
+    const doc = await db.query(
+      `SELECT d.*, a.arranger_id
+       FROM documents d
+       JOIN arrangements a ON d.arrangement_id = a.id
+       WHERE d.id = $1`,
+      [req.params.id]
+    );
+
+    if (doc.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Document not found' } });
+    }
+
+    const isUploader = doc.rows[0].uploaded_by === req.user.id;
+    const isArranger = doc.rows[0].arranger_id === req.user.id;
+
+    if (!isUploader && !isArranger) {
+      return res.status(403).json({ error: { message: 'Unauthorized' } });
+    }
+
+    // Soft delete
+    await db.query(
+      'UPDATE documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [req.params.id]
+    );
+
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }
