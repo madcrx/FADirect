@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Image, TouchableOpacity, Alert, Dimensions, Share } from 'react-native';
-import { Text, FAB, ActivityIndicator, IconButton, Menu, Checkbox } from 'react-native-paper';
+import { View, StyleSheet, FlatList, Image, TouchableOpacity, Alert, Dimensions, Share, Linking } from 'react-native';
+import { Text, FAB, ActivityIndicator, IconButton, Checkbox } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { RootState } from '@types/index';
 import { photosApi, Photo } from '@services/api/photos';
 import { theme } from '@utils/theme';
 import * as ImagePicker from 'expo-image-picker';
-import * as MediaLibrary from 'expo-media-library';
-import * as FileSystem from 'expo-file-system';
 
 type PhotoGalleryScreenRouteProp = RouteProp<{ PhotoGallery: { arrangementId: string } }, 'PhotoGallery'>;
 
@@ -38,7 +36,6 @@ const PhotoGalleryScreen = () => {
 
   const requestPermissions = async () => {
     await ImagePicker.requestMediaLibraryPermissionsAsync();
-    await MediaLibrary.requestPermissionsAsync();
   };
 
   const loadPhotos = async () => {
@@ -127,22 +124,26 @@ const PhotoGalleryScreen = () => {
   };
 
   const handleSaveSelected = async () => {
-    try {
-      const photosToSave = photos.filter(p => selectedPhotos.has(p.id));
+    const photosToSave = photos.filter(p => selectedPhotos.has(p.id));
 
-      for (const photo of photosToSave) {
-        // Download and save to device
-        const fileUri = FileSystem.documentDirectory + photo.fileName;
-        await FileSystem.downloadAsync(photo.fileUrl, fileUri);
-        await MediaLibrary.saveToLibraryAsync(fileUri);
-      }
-
-      Alert.alert('Success', `${photosToSave.length} photo(s) saved to gallery`);
-      setSelectionMode(false);
-      setSelectedPhotos(new Set());
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to save photos');
+    if (photosToSave.length === 1) {
+      // For single photo, open in browser so user can long-press to save
+      Linking.openURL(photosToSave[0].fileUrl);
+    } else {
+      // For multiple photos, show instructions
+      Alert.alert(
+        'Save Photos',
+        'Opening photos in browser. Long press each image and tap "Save to Photos" to save them to your gallery.',
+        [
+          { text: 'OK', onPress: () => {
+            photosToSave.forEach(photo => Linking.openURL(photo.fileUrl));
+          }}
+        ]
+      );
     }
+
+    setSelectionMode(false);
+    setSelectedPhotos(new Set());
   };
 
   const handleShareSelected = async () => {
