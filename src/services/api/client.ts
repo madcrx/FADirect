@@ -1,13 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
+import { Platform } from 'react-native';
 
-// API Configuration
-// Android emulator uses 10.0.2.2 as special alias for host machine (via adb reverse)
-// This requires: adb reverse tcp:3000 tcp:3000
-const API_BASE_URL = 'http://10.0.2.2:3000/api';
+// API Configuration - Platform-specific URLs
+// Android emulator: 10.0.2.2 is special alias for host machine (requires: adb reverse tcp:3000 tcp:3000)
+// iOS simulator: Use actual PC IP address on the network
+const API_BASE_URL = Platform.select({
+  android: 'http://10.0.2.2:3000/api',
+  ios: 'http://192.168.101.128:3000/api',
+  default: 'http://localhost:3000/api',
+});
 
-// TODO: When ready for production, use environment variables:
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
+console.log(`📱 Platform: ${Platform.OS}, API URL: ${API_BASE_URL}`);
 
 const TOKEN_KEY = '@fadirect_auth_token';
 
