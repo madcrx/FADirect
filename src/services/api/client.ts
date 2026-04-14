@@ -296,3 +296,8 @@ class ApiClient {
 
 export const apiClient = new ApiClient();
 export type { ApiError };
+
+// Helper to find or create user by phone
+export const findOrCreateUser = async (phoneNumber: string, name?: string, role?: string) => {
+  return apiClient.post<{ user: any }>('/users/find-or-create', { phoneNumber, name, role });
+};

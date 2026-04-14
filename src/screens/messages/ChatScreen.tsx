@@ -77,15 +77,21 @@ const ChatScreen = () => {
       const response = await messagesApi.getMessages(arrangementId);
 
       // TODO: Implement message decryption
-      const decryptedMessages = response.messages.map(msg => ({
-        ...msg,
-        decryptedContent: msg.encryptedContent, // Temporary: showing encrypted content
-        isDecrypting: false,
-        timestamp: new Date(msg.createdAt),
-        readAt: msg.read ? new Date(msg.createdAt) : null,
-        deliveredAt: new Date(msg.createdAt),
-        type: msg.messageType,
-      })) as any;
+      const decryptedMessages = response.messages.map(msg => {
+        // Safely parse dates
+        const createdAt = msg.createdAt ? new Date(msg.createdAt) : new Date();
+        const isValidDate = !isNaN(createdAt.getTime());
+
+        return {
+          ...msg,
+          decryptedContent: msg.encryptedContent, // Temporary: showing encrypted content
+          isDecrypting: false,
+          timestamp: isValidDate ? createdAt : new Date(),
+          readAt: msg.read && isValidDate ? createdAt : null,
+          deliveredAt: isValidDate ? createdAt : new Date(),
+          type: msg.messageType,
+        };
+      }) as any;
 
       setMessages(decryptedMessages);
 

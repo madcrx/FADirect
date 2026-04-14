@@ -12,6 +12,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { ArrangementStackParamList, RootState, FuneralType } from '@types/index';
 import { arrangementsApi } from '@services/api';
+import { findOrCreateUser } from '@services/api/client';
 import { addArrangement } from '@store/slices/arrangementsSlice';
 import { theme } from '@utils/theme';
 
@@ -52,17 +53,15 @@ const CreateArrangementScreen = () => {
     setLoading(true);
 
     try {
-      // TODO: Search for mourner by phone number
-      // For now, use mourner phone as ID (would need proper user lookup)
-      // const mournerId = mournerPhone; // Temporary
+      // Find or create mourner by phone number
+      const mournerResponse = await findOrCreateUser(mournerPhone.trim(), undefined, 'mourner');
+      const mournerId = mournerResponse.user.id;
 
       const response = await arrangementsApi.createArrangement({
         deceasedName: deceasedName.trim(),
-        // TODO: Add remaining fields when backend supports them
-        // funeralType,
-        // arrangerId: user.id,
-        // mournerId,
-      });
+        funeralType,
+        mournerId,
+      } as any);
 
       dispatch(addArrangement(response.arrangement as any));
       navigation.goBack();

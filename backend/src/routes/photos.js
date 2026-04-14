@@ -39,7 +39,11 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
     }
 
     const { arrangementId, caption } = req.body;
-    const fileUrl = `/uploads/${req.file.filename}`;
+
+    // Generate full URL for the uploaded file
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
     const thumbnailUrl = fileUrl; // TODO: Generate actual thumbnail
 
     const result = await db.query(
@@ -65,7 +69,17 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
        ORDER BY p.created_at DESC`,
       [req.params.arrangementId]
     );
-    res.json({ photos: result.rows });
+
+    // Ensure URLs are absolute
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const photos = result.rows.map(photo => ({
+      ...photo,
+      file_url: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
+      thumbnail_url: photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url : `${protocol}://${host}${photo.thumbnail_url}`,
+    }));
+
+    res.json({ photos });
   } catch (error) {
     next(error);
   }

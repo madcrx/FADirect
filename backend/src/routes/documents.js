@@ -39,7 +39,11 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
     }
 
     const { arrangementId, documentType } = req.body;
-    const fileUrl = `/uploads/${req.file.filename}`;
+
+    // Generate full URL for the uploaded file
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
 
     const result = await db.query(
       `INSERT INTO documents (arrangement_id, uploaded_by, file_name, file_type, file_size, file_url, document_type)
@@ -60,7 +64,16 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
       'SELECT * FROM documents WHERE arrangement_id = $1 ORDER BY created_at DESC',
       [req.params.arrangementId]
     );
-    res.json({ documents: result.rows });
+
+    // Ensure URLs are absolute
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const documents = result.rows.map(doc => ({
+      ...doc,
+      file_url: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+    }));
+
+    res.json({ documents });
   } catch (error) {
     next(error);
   }

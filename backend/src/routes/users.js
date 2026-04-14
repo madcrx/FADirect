@@ -3,6 +3,37 @@ const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
+// Find or create user by phone
+router.post('/find-or-create', authenticateToken, async (req, res, next) => {
+  try {
+    const { phoneNumber, name, role } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ error: { message: 'Phone number is required' } });
+    }
+
+    // Check if user exists
+    let result = await db.query('SELECT * FROM users WHERE phone_number = $1', [phoneNumber]);
+
+    if (result.rows.length > 0) {
+      // User exists
+      return res.json({ user: result.rows[0] });
+    }
+
+    // Create new user
+    result = await db.query(
+      `INSERT INTO users (phone_number, name, role, phone_verified)
+       VALUES ($1, $2, $3, FALSE)
+       RETURNING *`,
+      [phoneNumber, name || null, role || 'mourner']
+    );
+
+    res.status(201).json({ user: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get user profile
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
