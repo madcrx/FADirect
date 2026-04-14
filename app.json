@@ -30,7 +30,8 @@
         "WRITE_EXTERNAL_STORAGE",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED"
-      ]
+      ],
+      "usesCleartextTraffic": true
     },
     "plugins": [
       [
