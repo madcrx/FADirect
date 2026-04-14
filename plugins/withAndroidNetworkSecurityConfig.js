@@ -35,13 +35,26 @@ const withAndroidNetworkSecurityConfig = (config) => {
       }
 
       // Create the network security config XML content
+      // Trust self-signed certificates for development
       const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext HTTP traffic for development -->
+    <!-- Base configuration: Trust system + user certificates (for self-signed certs) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Allow both HTTP and HTTPS for development servers -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">192.168.101.128</domain>
         <domain includeSubdomains="true">localhost</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
     </domain-config>
 </network-security-config>`;
 
