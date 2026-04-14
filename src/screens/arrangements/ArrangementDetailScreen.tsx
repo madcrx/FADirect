@@ -157,29 +157,48 @@ const ArrangementDetailScreen = () => {
 
           <List.Item
             title="Send Message"
+            description="Communicate with family members"
             left={props => <List.Icon {...props} icon="message" />}
-            onPress={() => {}}
+            onPress={() => {
+              // Navigate to messages - need to select recipient
+              // For now, just show alert that this requires recipient selection
+              alert('Please navigate to Messages tab to send messages');
+            }}
             style={styles.listItem}
           />
           <Divider />
           <List.Item
-            title="Upload Documents"
-            left={props => <List.Icon {...props} icon="file-upload" />}
-            onPress={() => {}}
+            title="View Documents"
+            description="See uploaded documents"
+            left={props => <List.Icon {...props} icon="file-document" />}
+            onPress={() => {
+              // Navigate to documents screen for this arrangement
+              (navigation as any).navigate('Documents', { arrangementId: arrangement.id });
+            }}
             style={styles.listItem}
           />
           <Divider />
           <List.Item
-            title="Upload Photos"
-            left={props => <List.Icon {...props} icon="image-plus" />}
-            onPress={() => {}}
+            title="View Photos"
+            description="See uploaded photos"
+            left={props => <List.Icon {...props} icon="image-multiple" />}
+            onPress={() => {
+              // Navigate to photo gallery for this arrangement
+              (navigation as any).navigate('Messages', {
+                screen: 'PhotoGallery',
+                params: { arrangementId: arrangement.id }
+              });
+            }}
             style={styles.listItem}
           />
           <Divider />
           <List.Item
-            title="Complete Forms"
-            left={props => <List.Icon {...props} icon="clipboard-list" />}
-            onPress={() => {}}
+            title="Update Status"
+            description="Change arrangement status"
+            left={props => <List.Icon {...props} icon="clipboard-check" />}
+            onPress={() => {
+              alert('Status update feature coming soon');
+            }}
             style={styles.listItem}
           />
         </Card.Content>

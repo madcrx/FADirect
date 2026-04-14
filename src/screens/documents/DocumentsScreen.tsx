@@ -1,40 +1,134 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, FAB, List, Divider } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { Text, FAB, List, Divider, ActivityIndicator } from 'react-native-paper';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { documentsApi, Document } from '@services/api/documents';
 import { theme } from '@utils/theme';
+import { format } from 'date-fns';
+import * as DocumentPicker from 'expo-document-picker';
+
+type DocumentsScreenRouteProp = RouteProp<{ Documents: { arrangementId: string } }, 'Documents'>;
 
 const DocumentsScreen = () => {
+  const route = useRoute<DocumentsScreenRouteProp>();
+  const arrangementId = route.params?.arrangementId;
+
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (arrangementId) {
+      loadDocuments();
+    } else {
+      setLoading(false);
+    }
+  }, [arrangementId]);
+
+  const loadDocuments = async () => {
+    if (!arrangementId) return;
+
+    try {
+      setLoading(true);
+      const response = await documentsApi.getDocuments(arrangementId);
+      setDocuments(response.documents);
+    } catch (error: any) {
+      console.error('Error loading documents:', error);
+      Alert.alert('Error', error.message || 'Failed to load documents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!arrangementId) {
+      Alert.alert('Error', 'No arrangement selected');
+      return;
+    }
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const file = result.assets[0];
+      setUploading(true);
+
+      await documentsApi.uploadDocument(
+        file.uri,
+        file.name,
+        file.mimeType || 'application/octet-stream',
+        arrangementId
+      );
+
+      Alert.alert('Success', 'Document uploaded successfully');
+      await loadDocuments();
+    } catch (error: any) {
+      console.error('Error uploading document:', error);
+      Alert.alert('Upload Failed', error.message || 'Failed to upload document');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!arrangementId) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text variant="bodyLarge">Please select an arrangement first</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView>
-        <List.Section>
-          <List.Subheader>Shared Documents</List.Subheader>
-          <List.Item
-            title="Death Certificate"
-            description="Uploaded 2 days ago"
-            left={props => <List.Icon {...props} icon="file-pdf-box" />}
-            right={props => <List.Icon {...props} icon="download" />}
-          />
-          <Divider />
-          <List.Item
-            title="Service Contract"
-            description="Uploaded 5 days ago"
-            left={props => <List.Icon {...props} icon="file-document" />}
-            right={props => <List.Icon {...props} icon="download" />}
-          />
-        </List.Section>
-
-        <Text variant="bodyMedium" style={styles.info}>
-          Document sharing feature - allows secure upload and download of important documents
-          like death certificates, contracts, and other funeral-related paperwork.
-        </Text>
+        {documents.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text variant="bodyLarge" style={styles.emptyText}>
+              No documents uploaded yet
+            </Text>
+            <Text variant="bodyMedium" style={styles.emptySubtext}>
+              Tap the upload button to add documents
+            </Text>
+          </View>
+        ) : (
+          <List.Section>
+            <List.Subheader>Shared Documents</List.Subheader>
+            {documents.map((doc, index) => (
+              <React.Fragment key={doc.id}>
+                {index > 0 && <Divider />}
+                <List.Item
+                  title={doc.fileName}
+                  description={`Uploaded ${format(new Date(doc.createdAt), 'MMM d, yyyy')}`}
+                  left={props => <List.Icon {...props} icon="file-document" />}
+                  right={props => <List.Icon {...props} icon="download" />}
+                  onPress={() => Alert.alert('Download', 'Download functionality coming soon')}
+                />
+              </React.Fragment>
+            ))}
+          </List.Section>
+        )}
       </ScrollView>
 
       <FAB
         icon="upload"
         style={styles.fab}
-        label="Upload Document"
-        onPress={() => {}}
+        label={uploading ? 'Uploading...' : 'Upload Document'}
+        onPress={handleUpload}
+        disabled={uploading}
       />
     </View>
   );
@@ -45,8 +139,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  info: {
-    padding: theme.spacing.lg,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+    marginTop: theme.spacing.xxl,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  emptySubtext: {
+    textAlign: 'center',
     color: theme.colors.onSurfaceVariant,
   },
   fab: {
