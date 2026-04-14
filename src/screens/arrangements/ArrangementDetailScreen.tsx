@@ -3,7 +3,8 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button, Chip, Divider, List } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { ArrangementStackParamList, Arrangement } from '@types/index';
+import { useSelector } from 'react-redux';
+import { ArrangementStackParamList, Arrangement, RootState } from '@types/index';
 import { arrangementsApi } from '@services/api';
 import { theme } from '@utils/theme';
 import { format } from 'date-fns';
@@ -23,6 +24,7 @@ const ArrangementDetailScreen = () => {
   const navigation = useNavigation<ArrangementDetailScreenNavigationProp>();
   const route = useRoute<ArrangementDetailScreenRouteProp>();
   const { arrangementId } = route.params;
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const [arrangement, setArrangement] = useState<Arrangement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,9 +162,19 @@ const ArrangementDetailScreen = () => {
             description="Communicate with family members"
             left={props => <List.Icon {...props} icon="message" />}
             onPress={() => {
-              // Navigate to messages - need to select recipient
-              // For now, just show alert that this requires recipient selection
-              alert('Please navigate to Messages tab to send messages');
+              // Navigate to chat - determine recipient based on user role
+              const isArranger = user?.role === 'arranger';
+              const recipientId = isArranger ? arrangement.mournerId : arrangement.arrangerId;
+
+              if (!recipientId) {
+                alert('No recipient available for this arrangement');
+                return;
+              }
+
+              (navigation as any).navigate('Messages', {
+                screen: 'Chat',
+                params: { arrangementId: arrangement.id, recipientId }
+              });
             }}
             style={styles.listItem}
           />

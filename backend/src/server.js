@@ -11,12 +11,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files
+app.use('/uploads', express.static(config.UPLOAD_DIR || './uploads'));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/arrangements', require('./routes/arrangements'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/documents', require('./routes/documents'));
+app.use('/api/photos', require('./routes/photos'));
 
 // Health check
 app.get('/health', (req, res) => {
