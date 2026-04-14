@@ -41,7 +41,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "./plugins/withAndroidNetworkSecurityConfig.js"
     ],
     "extra": {
       "eas": {

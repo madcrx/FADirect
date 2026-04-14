@@ -2,12 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 
 // API Configuration
-// Using PC's IP address for Android emulator to access host machine's backend
-// 192.168.101.128 is the host PC's network IP address
-const API_BASE_URL = 'http://192.168.101.128:3000/api';
+// Android emulator uses 10.0.2.2 as special alias for host machine (via adb reverse)
+// This requires: adb reverse tcp:3000 tcp:3000
+const API_BASE_URL = 'http://10.0.2.2:3000/api';
 
 // TODO: When ready for production, use environment variables:
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.101.128:3000/api';
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000/api';
 
 const TOKEN_KEY = '@fadirect_auth_token';
 
