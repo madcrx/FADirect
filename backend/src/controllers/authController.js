@@ -1,5 +1,6 @@
 const db = require('../config/database');
 const { generateToken } = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
 const config = require('../config');
 
@@ -100,34 +101,71 @@ exports.verifyCode = async (req, res, next) => {
     let user = result.rows[0];
 
     if (user) {
-      // Existing user - update last seen and phone_verified
+      // EXISTING USER - just log them in
       await db.query(
         'UPDATE users SET last_seen = CURRENT_TIMESTAMP, phone_verified = TRUE WHERE id = $1',
         [user.id]
       );
-    } else {
-      // New user - create account
-      if (!name || !role) {
-        return res.status(400).json({
-          error: { message: 'Name and role are required for new users' },
-          requiresSetup: true,
-        });
-      }
 
-      if (!['mourner', 'arranger'].includes(role)) {
-        return res.status(400).json({
-          error: { message: 'Role must be either "mourner" or "arranger"' }
-        });
-      }
-
-      result = await db.query(
-        `INSERT INTO users (phone_number, phone_verified, name, role)
-         VALUES ($1, TRUE, $2, $3)
-         RETURNING *`,
-        [phoneNumber, name, role]
-      );
-      user = result.rows[0];
+      const token = generateToken(user);
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: user.id,
+          phoneNumber: user.phone_number,
+          name: user.name,
+          role: user.role,
+          organizationId: user.organization_id,
+          profilePhotoUrl: user.profile_photo_url,
+        },
+      });
     }
+
+    // NEW USER - check if we have setup info
+    if (!name || !role) {
+      // Create minimal user record for profile setup
+      const newUser = await db.query(
+        `INSERT INTO users (phone_number, phone_verified, created_at, last_seen)
+         VALUES ($1, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         RETURNING *`,
+        [phoneNumber]
+      );
+
+      const tempToken = jwt.sign(
+        { id: newUser.rows[0].id, phoneNumber, phoneVerified: true },
+        config.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return res.json({
+        success: true,
+        requiresSetup: true,
+        token: tempToken,
+        user: {
+          id: newUser.rows[0].id,
+          phoneNumber: newUser.rows[0].phone_number,
+          phoneVerified: true,
+          name: null,
+          role: null,
+        },
+      });
+    }
+
+    // NEW USER with full profile info
+    if (!['mourner', 'arranger'].includes(role)) {
+      return res.status(400).json({
+        error: { message: 'Role must be either "mourner" or "arranger"' }
+      });
+    }
+
+    result = await db.query(
+      `INSERT INTO users (phone_number, phone_verified, name, role)
+       VALUES ($1, TRUE, $2, $3)
+       RETURNING *`,
+      [phoneNumber, name, role]
+    );
+    user = result.rows[0];
 
     // Generate JWT token
     const token = generateToken(user);
