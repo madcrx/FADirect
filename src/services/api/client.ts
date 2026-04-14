@@ -3,10 +3,9 @@ import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
 // API Configuration - Platform-specific URLs
-// Android emulator: 10.0.2.2 is special alias for host machine (requires: adb reverse tcp:3000 tcp:3000)
-// iOS simulator: Use actual PC IP address on the network
+// Using PC IP address for both platforms since iOS confirmed it works
 const API_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:3000/api',
+  android: 'http://192.168.101.128:3000/api',  // Same as iOS
   ios: 'http://192.168.101.128:3000/api',
   default: 'http://localhost:3000/api',
 });
