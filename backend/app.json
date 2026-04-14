@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "15d881b0-aafd-4e5b-9dc9-74a767eecc30"
+      }
+    },
+    "android": {
+      "package": "com.madcrx.fadirectapi"
+    }
+  }
+}

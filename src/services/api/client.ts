@@ -5,9 +5,9 @@ import { Platform } from 'react-native';
 // API Configuration - HTTPS URLs (self-signed certificate for development)
 // Backend must be running with HTTPS (see backend-setup/HTTPS-SETUP.md)
 const API_BASE_URL = Platform.select({
-  android: 'https://192.168.101.128:3000/api',  // HTTPS required for Android
-  ios: 'https://192.168.101.128:3000/api',      // HTTPS for consistency
-  default: 'https://localhost:3000/api',
+  android: 'http://192.168.101.128:3000/api',  // HTTP required for Android
+  ios: 'http://192.168.101.128:3000/api',      // HTTP for consistency
+  default: 'http://localhost:3000/api',
 });
 
 console.log(`📱 Platform: ${Platform.OS}, API URL: ${API_BASE_URL}`);
