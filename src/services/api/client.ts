@@ -2,12 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 
-// API Configuration - Platform-specific URLs
-// Using PC IP address for both platforms since iOS confirmed it works
+// API Configuration - HTTPS URLs (self-signed certificate for development)
+// Backend must be running with HTTPS (see backend-setup/HTTPS-SETUP.md)
 const API_BASE_URL = Platform.select({
-  android: 'http://192.168.101.128:3000/api',  // Same as iOS
-  ios: 'http://192.168.101.128:3000/api',
-  default: 'http://localhost:3000/api',
+  android: 'https://192.168.101.128:3000/api',  // HTTPS required for Android
+  ios: 'https://192.168.101.128:3000/api',      // HTTPS for consistency
+  default: 'https://localhost:3000/api',
 });
 
 console.log(`📱 Platform: ${Platform.OS}, API URL: ${API_BASE_URL}`);
