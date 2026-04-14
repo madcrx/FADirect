@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Image, TouchableOpacity, Alert, Dimensions } from 'react-native';
-import { Text, FAB, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet, FlatList, Image, TouchableOpacity, Alert, Dimensions, Share } from 'react-native';
+import { Text, FAB, ActivityIndicator, IconButton, Menu, Checkbox } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '@types/index';
 import { photosApi, Photo } from '@services/api/photos';
 import { theme } from '@utils/theme';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
 
 type PhotoGalleryScreenRouteProp = RouteProp<{ PhotoGallery: { arrangementId: string } }, 'PhotoGallery'>;
 
@@ -14,10 +18,14 @@ const imageSize = (width - theme.spacing.md * 4) / 3; // 3 columns with spacing
 const PhotoGalleryScreen = () => {
   const route = useRoute<PhotoGalleryScreenRouteProp>();
   const arrangementId = route.params?.arrangementId;
+  const { user } = useSelector((state: RootState) => state.auth);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [menuVisible, setMenuVisible] = useState(false);
 
   useEffect(() => {
     if (arrangementId) {
@@ -29,10 +37,8 @@ const PhotoGalleryScreen = () => {
   }, [arrangementId]);
 
   const requestPermissions = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please allow access to your photo library to upload photos.');
-    }
+    await ImagePicker.requestMediaLibraryPermissionsAsync();
+    await MediaLibrary.requestPermissionsAsync();
   };
 
   const loadPhotos = async () => {
@@ -50,7 +56,7 @@ const PhotoGalleryScreen = () => {
     }
   };
 
-  const handleUpload = async () => {
+  const handleUploadMultiple = async () => {
     if (!arrangementId) {
       Alert.alert('Error', 'No arrangement selected');
       return;
@@ -59,8 +65,8 @@ const PhotoGalleryScreen = () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsMultipleSelection: true,
+        selectionLimit: 10,
         quality: 0.8,
       });
 
@@ -68,61 +74,145 @@ const PhotoGalleryScreen = () => {
         return;
       }
 
-      const asset = result.assets[0];
       setUploading(true);
 
-      await photosApi.uploadPhoto(
-        asset.uri,
-        asset.fileName || 'photo.jpg',
-        asset.mimeType || 'image/jpeg',
-        arrangementId
-      );
+      // Upload each photo
+      for (const asset of result.assets) {
+        await photosApi.uploadPhoto(
+          asset.uri,
+          asset.fileName || 'photo.jpg',
+          asset.mimeType || 'image/jpeg',
+          arrangementId
+        );
+      }
 
-      Alert.alert('Success', 'Photo uploaded successfully');
+      Alert.alert('Success', `${result.assets.length} photo(s) uploaded successfully`);
       await loadPhotos();
     } catch (error: any) {
-      console.error('Error uploading photo:', error);
-      Alert.alert('Upload Failed', error.message || 'Failed to upload photo');
+      console.error('Error uploading photos:', error);
+      Alert.alert('Upload Failed', error.message || 'Failed to upload photos');
     } finally {
       setUploading(false);
     }
   };
 
+  const toggleSelection = (photoId: string) => {
+    const newSelection = new Set(selectedPhotos);
+    if (newSelection.has(photoId)) {
+      newSelection.delete(photoId);
+    } else {
+      newSelection.add(photoId);
+    }
+    setSelectedPhotos(newSelection);
+
+    // Exit selection mode if no photos selected
+    if (newSelection.size === 0) {
+      setSelectionMode(false);
+    }
+  };
+
   const handlePhotoPress = (photo: Photo) => {
+    if (selectionMode) {
+      toggleSelection(photo.id);
+    } else {
+      // Long press to enter selection mode
+      setSelectionMode(true);
+      setSelectedPhotos(new Set([photo.id]));
+    }
+  };
+
+  const handlePhotoLongPress = (photo: Photo) => {
+    setSelectionMode(true);
+    setSelectedPhotos(new Set([photo.id]));
+  };
+
+  const handleSaveSelected = async () => {
+    try {
+      const photosToSave = photos.filter(p => selectedPhotos.has(p.id));
+
+      for (const photo of photosToSave) {
+        // Download and save to device
+        const fileUri = FileSystem.documentDirectory + photo.fileName;
+        await FileSystem.downloadAsync(photo.fileUrl, fileUri);
+        await MediaLibrary.saveToLibraryAsync(fileUri);
+      }
+
+      Alert.alert('Success', `${photosToSave.length} photo(s) saved to gallery`);
+      setSelectionMode(false);
+      setSelectedPhotos(new Set());
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save photos');
+    }
+  };
+
+  const handleShareSelected = async () => {
+    try {
+      const photosToShare = photos.filter(p => selectedPhotos.has(p.id));
+      const urls = photosToShare.map(p => p.fileUrl);
+
+      await Share.share({
+        message: `Sharing ${urls.length} photo(s) from FA Direct`,
+        url: urls[0], // Share first photo URL
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to share photos');
+    }
+  };
+
+  const handleDeleteSelected = async () => {
     Alert.alert(
-      'Photo Options',
-      photo.caption || 'No caption',
+      'Delete Photos',
+      `Are you sure you want to delete ${selectedPhotos.size} photo(s)?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => handleDelete(photo.id),
+          onPress: async () => {
+            try {
+              for (const photoId of selectedPhotos) {
+                await photosApi.deletePhoto(photoId);
+              }
+              Alert.alert('Success', 'Photos deleted');
+              setSelectionMode(false);
+              setSelectedPhotos(new Set());
+              await loadPhotos();
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to delete photos');
+            }
+          },
         },
       ]
     );
   };
 
-  const handleDelete = async (photoId: string) => {
-    try {
-      await photosApi.deletePhoto(photoId);
-      Alert.alert('Success', 'Photo deleted');
-      await loadPhotos();
-    } catch (error: any) {
-      console.error('Error deleting photo:', error);
-      Alert.alert('Error', error.message || 'Failed to delete photo');
-    }
-  };
+  const renderPhoto = ({ item }: { item: Photo }) => {
+    const isSelected = selectedPhotos.has(item.id);
 
-  const renderPhoto = ({ item }: { item: Photo }) => (
-    <TouchableOpacity onPress={() => handlePhotoPress(item)} style={styles.photoContainer}>
-      <Image
-        source={{ uri: item.fileUrl }}
-        style={styles.photo}
-        resizeMode="cover"
-      />
-    </TouchableOpacity>
-  );
+    return (
+      <TouchableOpacity
+        onPress={() => handlePhotoPress(item)}
+        onLongPress={() => handlePhotoLongPress(item)}
+        style={[
+          styles.photoContainer,
+          isSelected && styles.photoSelected,
+        ]}>
+        <Image
+          source={{ uri: item.fileUrl }}
+          style={styles.photo}
+          resizeMode="cover"
+        />
+        {selectionMode && (
+          <View style={styles.selectionOverlay}>
+            <Checkbox
+              status={isSelected ? 'checked' : 'unchecked'}
+              onPress={() => toggleSelection(item.id)}
+            />
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (!arrangementId) {
     return (
@@ -142,6 +232,26 @@ const PhotoGalleryScreen = () => {
 
   return (
     <View style={styles.container}>
+      {selectionMode && (
+        <View style={styles.selectionBar}>
+          <Text variant="titleMedium">{selectedPhotos.size} selected</Text>
+          <View style={styles.selectionActions}>
+            <IconButton icon="content-save" onPress={handleSaveSelected} />
+            <IconButton icon="share-variant" onPress={handleShareSelected} />
+            {user?.role === 'arranger' && (
+              <IconButton icon="delete" onPress={handleDeleteSelected} />
+            )}
+            <IconButton
+              icon="close"
+              onPress={() => {
+                setSelectionMode(false);
+                setSelectedPhotos(new Set());
+              }}
+            />
+          </View>
+        </View>
+      )}
+
       {photos.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text variant="bodyLarge" style={styles.emptyText}>
@@ -164,10 +274,10 @@ const PhotoGalleryScreen = () => {
       <FAB
         icon={uploading ? 'loading' : 'camera'}
         style={styles.fab}
-        label={uploading ? 'Uploading...' : 'Add Photo'}
-        onPress={handleUpload}
+        label={uploading ? 'Uploading...' : 'Add Photos'}
+        onPress={handleUploadMultiple}
         disabled={uploading}
-        visible={true}
+        visible={!selectionMode}
         extended={true}
       />
     </View>
@@ -198,6 +308,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.onSurfaceVariant,
   },
+  selectionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.primaryContainer,
+  },
+  selectionActions: {
+    flexDirection: 'row',
+  },
   grid: {
     padding: theme.spacing.sm,
   },
@@ -209,9 +329,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: theme.colors.surfaceVariant,
   },
+  photoSelected: {
+    borderWidth: 3,
+    borderColor: theme.colors.primary,
+  },
   photo: {
     width: '100%',
     height: '100%',
+  },
+  selectionOverlay: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
   },
   fab: {
     position: 'absolute',
