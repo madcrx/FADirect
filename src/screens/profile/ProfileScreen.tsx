@@ -14,7 +14,11 @@ const ProfileScreen = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(user?.name || '');
+  const [editedName, setEditedName] = useState(
+    user?.firstName && user?.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : (user as any)?.name || ''
+  );
   const [editedEmail, setEditedEmail] = useState(user?.email || '');
   const [editedPhone, setEditedPhone] = useState(user?.phoneNumber || '');
   const [saving, setSaving] = useState(false);
@@ -73,7 +77,11 @@ const ProfileScreen = () => {
   };
 
   const handleCancel = () => {
-    setEditedName(user?.name || '');
+    setEditedName(
+      user?.firstName && user?.lastName
+        ? `${user.firstName} ${user.lastName}`
+        : (user as any)?.name || ''
+    );
     setEditedEmail(user?.email || '');
     setEditedPhone(user?.phoneNumber || '');
     setIsEditing(false);
@@ -83,9 +91,15 @@ const ProfileScreen = () => {
     return null;
   }
 
-  const initials = user.name
-    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
-    : user.phoneNumber.substring(0, 2);
+  const displayName = user.firstName && user.lastName
+    ? `${user.firstName} ${user.lastName}`
+    : (user as any).name || 'No name set';
+
+  const initials = user.firstName && user.lastName
+    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+    : (user as any).name
+      ? (user as any).name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2)
+      : user.phoneNumber.substring(0, 2);
 
   return (
     <ScrollView style={styles.container}>
@@ -133,7 +147,7 @@ const ProfileScreen = () => {
         ) : (
           <>
             <Text variant="headlineSmall" style={styles.name}>
-              {user.name || 'No name set'}
+              {displayName}
             </Text>
             <Text variant="bodyMedium" style={styles.role}>
               {user.role === 'arranger' ? 'Funeral Arranger' : 'Family Member'}
