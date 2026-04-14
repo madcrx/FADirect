@@ -73,6 +73,11 @@ const App = () => {
         addLog('📡 Initializing API client...');
         await apiClient.initialize();
         addLog('✅ API client OK!');
+
+        // Run network diagnostics to identify connectivity issues
+        addLog('🔧 Running network diagnostics...');
+        await apiClient.runNetworkDiagnostics();
+        addLog('✅ Network diagnostics complete (check logs)');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
         console.warn('API client initialization error (non-critical):', message);
