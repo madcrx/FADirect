@@ -1,6 +1,4 @@
-﻿const express = require('express');
-const https = require('https');
-const fs = require('fs');
+const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -27,7 +25,7 @@ app.use('/api/photos', require('./src/routes/photos'));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), protocol: 'https' });
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), protocol: 'http' });
 });
 
 // Error handling middleware
@@ -46,40 +44,20 @@ app.use((req, res) => {
   res.status(404).json({ error: { message: 'Route not found' } });
 });
 
-// Start server with HTTPS
+// Start HTTP server (for development)
 const PORT = config.PORT || 3000;
 
-try {
-  // Load SSL certificate
-  const sslOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'ssl', 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'ssl', 'server.crt'))
-  };
-
-  // Create HTTPS server
-  const server = https.createServer(sslOptions, app);
-
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log('');
-    console.log('🔒 ================================');
-    console.log('🔒 FA Direct HTTPS API Server');
-    console.log('🔒 ================================');
-    console.log('🔒 Port: ' + PORT);
-    console.log('📊 Environment: ' + config.NODE_ENV);
-    console.log('💻 Local: https://localhost:' + PORT + '/health');
-    console.log('📱 Mobile: https://192.168.101.128:' + PORT + '/health');
-    console.log('🔒 ================================');
-    console.log('');
-  });
-
-} catch (error) {
-  console.error('❌ Failed to start HTTPS server:', error.message);
-  console.error('');
-  console.error('SSL Certificate not found. Please generate it:');
-  console.error('  cd C:\\fad\\backend');
-  console.error('  node generate-cert.js');
-  console.error('');
-  process.exit(1);
-}
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('');
+  console.log('🚀 ================================');
+  console.log('🚀 FA Direct API Server (HTTP)');
+  console.log('🚀 ================================');
+  console.log('🚀 Port:', PORT);
+  console.log('📊 Environment:', config.NODE_ENV);
+  console.log('💻 Local: http://localhost:' + PORT + '/health');
+  console.log('📱 Mobile: http://192.168.101.128:' + PORT + '/health');
+  console.log('🚀 ================================');
+  console.log('');
+});
 
 module.exports = app;
