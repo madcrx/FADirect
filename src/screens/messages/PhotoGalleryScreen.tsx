@@ -280,6 +280,8 @@ const PhotoGalleryScreen = () => {
         disabled={uploading}
         visible={!selectionMode}
         extended={true}
+        color="#FFFFFF"
+        labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
       />
     </View>
   );
@@ -314,7 +316,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: theme.spacing.md,
-    backgroundColor: theme.colors.primaryContainer,
+    backgroundColor: '#E0E0E0',
   },
   selectionActions: {
     flexDirection: 'row',
@@ -332,7 +334,7 @@ const styles = StyleSheet.create({
   },
   photoSelected: {
     borderWidth: 3,
-    borderColor: theme.colors.primary,
+    borderColor: '#000000',
   },
   photo: {
     width: '100%',
@@ -349,7 +351,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: theme.spacing.md,
     bottom: theme.spacing.md,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#000000',
   },
 });
 

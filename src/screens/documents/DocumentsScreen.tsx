@@ -146,6 +146,8 @@ const DocumentsScreen = () => {
         disabled={uploading}
         visible={true}
         extended={true}
+        color="#FFFFFF"
+        labelStyle={{ color: '#FFFFFF', fontWeight: 'bold' }}
       />
     </View>
   );
@@ -180,7 +182,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: theme.spacing.md,
     bottom: theme.spacing.md,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#000000',
   },
 });
 
