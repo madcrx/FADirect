@@ -6,13 +6,18 @@ export interface Arrangement {
   deceasedDateOfBirth: string | null;
   deceasedDateOfDeath: string | null;
   arrangerId: string;
+  mournerId: string | null;
   arrangerName?: string;
+  funeralType?: string;
   serviceDate: string | null;
   serviceLocation: string | null;
   notes: string | null;
   status: 'draft' | 'active' | 'completed';
   createdAt: string;
   updatedAt: string;
+  workflowSteps?: any[];
+  currentStepIndex?: number;
+  scheduledDate?: string | null;
 }
 
 export interface ArrangementsListResponse {

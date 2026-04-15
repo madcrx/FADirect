@@ -22,7 +22,22 @@ export interface UploadDocumentResponse {
 
 export const documentsApi = {
   async getDocuments(arrangementId: string): Promise<DocumentsListResponse> {
-    return apiClient.get<DocumentsListResponse>(`/documents/arrangement/${arrangementId}`);
+    const response = await apiClient.get<any>(`/documents/arrangement/${arrangementId}`);
+
+    // Map snake_case from backend to camelCase for frontend
+    const documents = response.documents.map((doc: any) => ({
+      id: doc.id,
+      arrangementId: doc.arrangement_id,
+      uploadedBy: doc.uploaded_by,
+      fileName: doc.file_name,
+      fileType: doc.file_type,
+      fileSize: doc.file_size,
+      fileUrl: doc.file_url,
+      documentType: doc.document_type,
+      createdAt: doc.created_at,
+    }));
+
+    return { documents };
   },
 
   async uploadDocument(

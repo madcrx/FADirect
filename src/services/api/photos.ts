@@ -22,7 +22,22 @@ export interface UploadPhotoResponse {
 
 export const photosApi = {
   async getPhotos(arrangementId: string): Promise<PhotosListResponse> {
-    return apiClient.get<PhotosListResponse>(`/photos/arrangement/${arrangementId}`);
+    const response = await apiClient.get<any>(`/photos/arrangement/${arrangementId}`);
+
+    // Map snake_case from backend to camelCase for frontend
+    const photos = response.photos.map((photo: any) => ({
+      id: photo.id,
+      arrangementId: photo.arrangement_id,
+      uploadedBy: photo.uploaded_by,
+      uploaderName: photo.uploader_name,
+      fileName: photo.file_name,
+      fileUrl: photo.file_url,
+      thumbnailUrl: photo.thumbnail_url,
+      caption: photo.caption,
+      createdAt: photo.created_at,
+    }));
+
+    return { photos };
   },
 
   async uploadPhoto(

@@ -59,7 +59,7 @@ export interface Organization {
 export interface Arrangement {
   id: string;
   arrangerId: string;
-  mournerId: string;
+  mournerId: string | null;
   deceasedName: string;
   funeralType: FuneralType;
   status: ArrangementStatus;
