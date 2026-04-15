@@ -16,8 +16,14 @@ const options = {
 (async () => {
   try {
     console.log('Generating certificate...');
+
+    // Create ssl directory if it doesn't exist
+    if (!fs.existsSync('ssl')) {
+      fs.mkdirSync('ssl', { recursive: true });
+    }
+
     const pems = await selfsigned.generate(attrs, options);
-    
+
     if (pems && pems.private && pems.cert) {
       fs.writeFileSync('ssl/server.key', pems.private);
       fs.writeFileSync('ssl/server.crt', pems.cert);
