@@ -28,9 +28,14 @@ async function runMigrations() {
       try {
         await db.query(sql);
       } catch (error) {
-        // Ignore "already exists" errors
-        if (error.code === '42P07' || error.code === '42710' || error.code === '42P04') {
-          console.log(`   ℹ️  Some objects already exist, continuing...`);
+        // Ignore "already exists" errors:
+        // 42P07 = relation already exists
+        // 42710 = object already exists
+        // 42P04 = database already exists
+        // 42701 = duplicate column
+        const ignoredErrors = ['42P07', '42710', '42P04', '42701'];
+        if (ignoredErrors.includes(error.code)) {
+          console.log(`   ℹ️  Some objects already exist (${error.code}), continuing...`);
         } else {
           throw error;
         }
