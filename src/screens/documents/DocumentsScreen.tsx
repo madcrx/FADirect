@@ -107,18 +107,33 @@ const DocumentsScreen = () => {
         ) : (
           <List.Section>
             <List.Subheader>Shared Documents</List.Subheader>
-            {documents.map((doc, index) => (
-              <React.Fragment key={doc.id}>
-                {index > 0 && <Divider />}
-                <List.Item
-                  title={doc.fileName}
-                  description={`Uploaded ${format(new Date(doc.createdAt), 'MMM d, yyyy')}`}
-                  left={props => <List.Icon {...props} icon="file-document" />}
-                  right={props => <List.Icon {...props} icon="download" />}
-                  onPress={() => Alert.alert('Download', 'Download functionality coming soon')}
-                />
-              </React.Fragment>
-            ))}
+            {documents.map((doc, index) => {
+              // Safely format the date
+              let dateStr = 'Unknown date';
+              try {
+                if (doc.createdAt) {
+                  const date = new Date(doc.createdAt);
+                  if (!isNaN(date.getTime())) {
+                    dateStr = format(date, 'MMM d, yyyy');
+                  }
+                }
+              } catch (e) {
+                console.error('Error formatting date:', e);
+              }
+
+              return (
+                <React.Fragment key={doc.id}>
+                  {index > 0 && <Divider />}
+                  <List.Item
+                    title={doc.fileName}
+                    description={`Uploaded ${dateStr}`}
+                    left={props => <List.Icon {...props} icon="file-document" />}
+                    right={props => <List.Icon {...props} icon="download" />}
+                    onPress={() => Alert.alert('Download', 'Download functionality coming soon')}
+                  />
+                </React.Fragment>
+              );
+            })}
           </List.Section>
         )}
       </ScrollView>
@@ -151,7 +166,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.spacing.xl,
-    marginTop: theme.spacing.xxl,
+    marginTop: theme.spacing.xl,
   },
   emptyText: {
     textAlign: 'center',
