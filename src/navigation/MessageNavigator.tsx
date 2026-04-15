@@ -13,6 +13,7 @@ const Stack = createStackNavigator<MessageStackParamList>();
 const MessageNavigator = () => {
   return (
     <Stack.Navigator
+      initialRouteName="ConversationList"
       screenOptions={{
         headerStyle: {
           backgroundColor: theme.colors.primary,
