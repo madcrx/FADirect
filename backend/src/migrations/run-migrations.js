@@ -24,22 +24,15 @@ async function runMigrations() {
 
       const sql = fs.readFileSync(filePath, 'utf8');
 
-      // Split by semicolon and filter out empty statements
-      const statements = sql
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-
-      for (const statement of statements) {
-        try {
-          await db.query(statement);
-        } catch (error) {
-          // Ignore "already exists" errors
-          if (error.code === '42P07' || error.code === '42710') {
-            console.log(`   ℹ️  Object already exists, skipping...`);
-          } else {
-            throw error;
-          }
+      // Execute the entire file as one query to handle functions properly
+      try {
+        await db.query(sql);
+      } catch (error) {
+        // Ignore "already exists" errors
+        if (error.code === '42P07' || error.code === '42710' || error.code === '42P04') {
+          console.log(`   ℹ️  Some objects already exist, continuing...`);
+        } else {
+          throw error;
         }
       }
 
