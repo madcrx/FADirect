@@ -10,6 +10,7 @@ import ArrangementFormPage from './pages/ArrangementFormPage';
 import UsersPage from './pages/UsersPage';
 import PriceListsPage from './pages/PriceListsPage';
 import InvoicingPage from './pages/InvoicingPage';
+import GovernmentFormsPage from './pages/GovernmentFormsPage';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="price-lists" element={<PriceListsPage />} />
             <Route path="invoicing" element={<InvoicingPage />} />
+            <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="settings" element={<div>Settings Page (Coming Soon)</div>} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -10,6 +10,7 @@ async function runMigrations() {
     '002_add_workflow_features.sql',
     '003_add_soft_delete.sql',
     '004_add_price_lists_invoices.sql',
+    '005_add_government_forms.sql',
   ];
 
   try {

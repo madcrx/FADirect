@@ -24,6 +24,7 @@ import {
   People as PeopleIcon,
   AttachMoney as AttachMoneyIcon,
   Receipt as ReceiptIcon,
+  Gavel as GavelIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
@@ -38,6 +39,7 @@ const menuItems = [
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
+  { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
