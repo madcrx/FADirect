@@ -13,6 +13,8 @@ async function runMigrations() {
     '005_add_government_forms.sql',
     '006_add_audit_logs.sql',
     '007_add_calendar_events.sql',
+    '008_add_restore_and_backups.sql',
+    '009_add_phone_integration.sql',
   ];
 
   try {

@@ -28,10 +28,13 @@ import {
   BarChart as BarChartIcon,
   CalendarMonth as CalendarIcon,
   Backup as BackupIcon,
+  Delete as TrashIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
   Search as SearchIcon,
+  Phone as PhoneIcon,
+  Folder as FolderIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 
@@ -46,7 +49,10 @@ const menuItems = [
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
   { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
   { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
-  { text: 'Export & Backup', icon: <BackupIcon />, path: '/export' },
+  { text: 'Files', icon: <FolderIcon />, path: '/files' },
+  { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
+  { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },
+  { text: 'Trash', icon: <TrashIcon />, path: '/trash' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

@@ -3,6 +3,7 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./src/config');
+const backupScheduler = require('./src/services/backup-scheduler');
 
 const app = express();
 
@@ -32,6 +33,11 @@ app.use('/api/audit-logs', require('./src/routes/audit-logs'));
 app.use('/api/calendar', require('./src/routes/calendar'));
 app.use('/api/search', require('./src/routes/search'));
 app.use('/api/export', require('./src/routes/export'));
+app.use('/api/trash', require('./src/routes/trash'));
+app.use('/api/email', require('./src/routes/email'));
+app.use('/api/print', require('./src/routes/print'));
+app.use('/api/backups', require('./src/routes/backups'));
+app.use('/api/phone', require('./src/routes/phone'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -68,6 +74,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('📱 Mobile: http://192.168.101.128:' + PORT + '/health');
   console.log('🚀 ================================');
   console.log('');
+
+  // Start backup scheduler
+  backupScheduler.start();
 });
 
 module.exports = app;

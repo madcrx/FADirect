@@ -16,6 +16,10 @@ import SettingsPage from './pages/SettingsPage';
 import CalendarPage from './pages/CalendarPage';
 import SearchPage from './pages/SearchPage';
 import ExportPage from './pages/ExportPage';
+import TrashPage from './pages/TrashPage';
+import BackupsPage from './pages/BackupsPage';
+import CallLogsPage from './pages/CallLogsPage';
+import FileManagerPage from './pages/FileManagerPage';
 
 function App() {
   return (
@@ -39,6 +43,10 @@ function App() {
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="export" element={<ExportPage />} />
+            <Route path="backups" element={<BackupsPage />} />
+            <Route path="call-logs" element={<CallLogsPage />} />
+            <Route path="files" element={<FileManagerPage />} />
+            <Route path="trash" element={<TrashPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

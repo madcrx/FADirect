@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./config');
+const backupScheduler = require('./services/backup-scheduler');
 
 const app = express();
 
@@ -21,6 +22,11 @@ app.use('/api/arrangements', require('./routes/arrangements'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/photos', require('./routes/photos'));
+app.use('/api/trash', require('./routes/trash'));
+app.use('/api/email', require('./routes/email'));
+app.use('/api/print', require('./routes/print'));
+app.use('/api/backups', require('./routes/backups'));
+app.use('/api/phone', require('./routes/phone'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -49,6 +55,9 @@ app.listen(PORT, () => {
   console.log(`🚀 FA Direct API Server running on port ${PORT}`);
   console.log(`📊 Environment: ${config.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+
+  // Start backup scheduler
+  backupScheduler.start();
 });
 
 module.exports = app;
