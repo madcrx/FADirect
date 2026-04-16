@@ -14,6 +14,7 @@ import GovernmentFormsPage from './pages/GovernmentFormsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
 import CalendarPage from './pages/CalendarPage';
+import SearchPage from './pages/SearchPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="search" element={<SearchPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

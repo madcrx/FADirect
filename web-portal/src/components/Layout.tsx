@@ -30,6 +30,7 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 
@@ -137,6 +138,9 @@ export default function Layout() {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {menuItems.find(item => item.path === location.pathname)?.text || 'FA Direct'}
           </Typography>
+          <IconButton color="inherit" onClick={() => navigate('/search')}>
+            <SearchIcon />
+          </IconButton>
           <IconButton color="inherit" onClick={handleProfileMenuOpen}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
               <AccountCircleIcon />
