@@ -22,6 +22,8 @@ app.use('/api/arrangements', require('./src/routes/arrangements'));
 app.use('/api/messages', require('./src/routes/messages'));
 app.use('/api/documents', require('./src/routes/documents'));
 app.use('/api/photos', require('./src/routes/photos'));
+app.use('/api/dashboard', require('./src/routes/dashboard'));
+app.use('/api/admin/users', require('./src/routes/users-management'));
 
 // Health check
 app.get('/health', (req, res) => {
