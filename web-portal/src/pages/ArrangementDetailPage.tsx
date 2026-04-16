@@ -18,6 +18,9 @@ import {
   ListItem,
   ListItemText,
   Divider,
+  IconButton,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -27,6 +30,9 @@ import {
   Photo as PhotoIcon,
   Timeline as TimelineIcon,
   PlaylistAddCheck as ChecklistIcon,
+  CloudUpload as UploadIcon,
+  Download as DownloadIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { arrangementsApi, messagesApi, documentsApi, photosApi } from '@/services/api';
 import type { Arrangement, Message, Document, Photo } from '@/types';
@@ -59,6 +65,12 @@ export default function ArrangementDetailPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     if (id) {
@@ -98,6 +110,62 @@ export default function ArrangementDetailPage() {
       await loadData();
     } catch (error) {
       console.error('Failed to update workflow step:', error);
+    }
+  };
+
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('arrangementId', id);
+
+      await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setSnackbar({ open: true, message: 'Document uploaded successfully', severity: 'success' });
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to upload document',
+        severity: 'error'
+      });
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('arrangementId', id);
+
+      await api.post('/photos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setSnackbar({ open: true, message: 'Photo uploaded successfully', severity: 'success' });
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to upload photo',
+        severity: 'error'
+      });
+    } finally {
+      setUploading(false);
+      event.target.value = '';
     }
   };
 
@@ -303,6 +371,22 @@ export default function ArrangementDetailPage() {
         </TabPanel>
 
         <TabPanel value={tabValue} index={3}>
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadIcon />}
+              disabled={uploading}
+            >
+              Upload Document
+              <input
+                type="file"
+                hidden
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={handleDocumentUpload}
+              />
+            </Button>
+          </Box>
           {documents.length === 0 ? (
             <Typography color="text.secondary">No documents uploaded</Typography>
           ) : (
@@ -310,7 +394,13 @@ export default function ArrangementDetailPage() {
               {documents.map((doc, index) => (
                 <div key={doc.id}>
                   {index > 0 && <Divider />}
-                  <ListItem>
+                  <ListItem
+                    secondaryAction={
+                      <IconButton edge="end" href={doc.fileUrl} target="_blank">
+                        <DownloadIcon />
+                      </IconButton>
+                    }
+                  >
                     <ListItemText
                       primary={doc.fileName}
                       secondary={`Uploaded ${format(new Date(doc.createdAt), 'dd/MM/yyyy')} by ${doc.uploaderName}`}
@@ -323,6 +413,22 @@ export default function ArrangementDetailPage() {
         </TabPanel>
 
         <TabPanel value={tabValue} index={4}>
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadIcon />}
+              disabled={uploading}
+            >
+              Upload Photo
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handlePhotoUpload}
+              />
+            </Button>
+          </Box>
           {photos.length === 0 ? (
             <Typography color="text.secondary">No photos uploaded</Typography>
           ) : (
@@ -333,7 +439,8 @@ export default function ArrangementDetailPage() {
                     <img
                       src={photo.thumbnailUrl}
                       alt={photo.caption || 'Photo'}
-                      style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                      style={{ width: '100%', height: 200, objectFit: 'cover', cursor: 'pointer' }}
+                      onClick={() => window.open(photo.fileUrl, '_blank')}
                     />
                     {photo.caption && (
                       <CardContent>
@@ -347,6 +454,20 @@ export default function ArrangementDetailPage() {
           )}
         </TabPanel>
       </Card>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({...snackbar, open: false})}
+      >
+        <Alert
+          onClose={() => setSnackbar({...snackbar, open: false})}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
