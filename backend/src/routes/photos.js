@@ -58,6 +58,54 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
   }
 });
 
+// Get all photos (with optional arrangement filter)
+router.get('/', authenticateToken, async (req, res, next) => {
+  try {
+    const { arrangementId } = req.query;
+
+    let query = `
+      SELECT
+        p.*,
+        u.name as uploaded_by_name,
+        a.deceased_name
+      FROM photos p
+      LEFT JOIN users u ON p.uploaded_by = u.id
+      LEFT JOIN arrangements a ON p.arrangement_id = a.id
+      WHERE p.deleted_at IS NULL
+    `;
+
+    const params = [];
+    if (arrangementId) {
+      query += ` AND p.arrangement_id = $1`;
+      params.push(arrangementId);
+    }
+
+    query += ` ORDER BY p.created_at DESC LIMIT 100`;
+
+    const result = await db.query(query, params);
+
+    // Ensure URLs are absolute
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const photos = result.rows.map(photo => ({
+      id: photo.id,
+      fileName: photo.file_name,
+      originalName: photo.file_name,
+      fileSize: 0, // Not stored for photos
+      mimeType: 'image/jpeg', // Default
+      arrangementId: photo.arrangement_id,
+      deceasedName: photo.deceased_name,
+      uploadedBy: photo.uploaded_by_name,
+      uploadedAt: photo.created_at,
+      url: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
+    }));
+
+    res.json({ photos });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get photos for arrangement
 router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
   try {

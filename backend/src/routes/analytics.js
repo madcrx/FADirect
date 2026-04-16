@@ -52,11 +52,10 @@ router.get('/overview', authenticateToken, async (req, res, next) => {
       SELECT
         COUNT(*) as total_users,
         COUNT(*) FILTER (WHERE role = 'admin') as admin_users,
-        COUNT(*) FILTER (WHERE role = 'staff') as staff_users,
-        COUNT(*) FILTER (WHERE role = 'viewer') as viewer_users,
-        COUNT(*) FILTER (WHERE is_active = true) as active_users
+        COUNT(*) FILTER (WHERE role = 'arranger') as arranger_users,
+        COUNT(*) FILTER (WHERE role = 'mourner') as mourner_users,
+        COUNT(*) FILTER (WHERE last_seen >= NOW() - INTERVAL '30 days') as active_users
       FROM users
-      WHERE deleted_at IS NULL
     `;
 
     const usersResult = await db.query(usersQuery);
@@ -66,8 +65,8 @@ router.get('/overview', authenticateToken, async (req, res, next) => {
       SELECT
         (SELECT COUNT(*) FROM documents WHERE deleted_at IS NULL ${dateFilter}) as total_documents,
         (SELECT COUNT(*) FROM photos WHERE deleted_at IS NULL ${dateFilter}) as total_photos,
-        (SELECT SUM(file_size) FROM documents WHERE deleted_at IS NULL) as documents_storage,
-        (SELECT SUM(file_size) FROM photos WHERE deleted_at IS NULL) as photos_storage
+        (SELECT COALESCE(SUM(file_size), 0) FROM documents WHERE deleted_at IS NULL) as documents_storage,
+        0 as photos_storage
     `;
 
     const filesResult = await db.query(filesQuery, params);

@@ -57,6 +57,54 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
   }
 });
 
+// Get all documents (with optional arrangement filter)
+router.get('/', authenticateToken, async (req, res, next) => {
+  try {
+    const { arrangementId } = req.query;
+
+    let query = `
+      SELECT
+        d.*,
+        u.name as uploaded_by_name,
+        a.deceased_name
+      FROM documents d
+      LEFT JOIN users u ON d.uploaded_by = u.id
+      LEFT JOIN arrangements a ON d.arrangement_id = a.id
+      WHERE d.deleted_at IS NULL
+    `;
+
+    const params = [];
+    if (arrangementId) {
+      query += ` AND d.arrangement_id = $1`;
+      params.push(arrangementId);
+    }
+
+    query += ` ORDER BY d.created_at DESC LIMIT 100`;
+
+    const result = await db.query(query, params);
+
+    // Ensure URLs are absolute
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const documents = result.rows.map(doc => ({
+      id: doc.id,
+      fileName: doc.file_name,
+      originalName: doc.file_name,
+      fileSize: doc.file_size,
+      mimeType: doc.file_type,
+      arrangementId: doc.arrangement_id,
+      deceasedName: doc.deceased_name,
+      uploadedBy: doc.uploaded_by_name,
+      uploadedAt: doc.created_at,
+      url: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+    }));
+
+    res.json({ documents });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get documents for arrangement
 router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
   try {
