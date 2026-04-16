@@ -36,6 +36,8 @@ import {
   Phone as PhoneIcon,
   Folder as FolderIcon,
   Analytics as AnalyticsIcon,
+  EventNote as EventNoteIcon,
+  DriveEta as DriveEtaIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -46,6 +48,9 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
   { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
+  { text: 'Rostering', icon: <EventNoteIcon />, path: '/roster' },
+  { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
+  { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },

@@ -27,6 +27,13 @@ app.use('/api/email', require('./routes/email'));
 app.use('/api/print', require('./routes/print'));
 // app.use('/api/backups', require('./routes/backups'));
 app.use('/api/phone', require('./routes/phone'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/bulk', require('./routes/bulk-operations'));
+app.use('/api/roster', require('./routes/roster'));
+app.use('/api/staff-profiles', require('./routes/staff-profiles'));
+app.use('/api/vehicles', require('./routes/vehicles'));
+app.use('/api/digital-forms', require('./routes/digital-forms'));
 
 // Health check
 app.get('/health', (req, res) => {

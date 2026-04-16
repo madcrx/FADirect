@@ -1,0 +1,176 @@
+import { useEffect, useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Grid,
+  Avatar,
+  Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Person as PersonIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+} from '@mui/icons-material';
+import api from '@/services/api';
+
+interface StaffMember {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  photoUrl: string | null;
+  position: string | null;
+  licenseNumber: string | null;
+  isAvailable: boolean;
+}
+
+export default function StaffPage() {
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    loadStaff();
+  }, []);
+
+  const loadStaff = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/staff-profiles');
+      setStaff(response.data.staff);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to load staff');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={3}>
+        <Typography>Loading staff...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Staff Management
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Manage staff profiles, photos, and availability
+          </Typography>
+        </Box>
+        <Button variant="contained" startIcon={<AddIcon />}>
+          Add Staff Member
+        </Button>
+      </Box>
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
+          {success}
+        </Alert>
+      )}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {staff.map((member) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={member.id}>
+            <Card>
+              <CardContent>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+                  <Avatar
+                    src={member.photoUrl || undefined}
+                    sx={{ width: 80, height: 80, mb: 2 }}
+                  >
+                    <PersonIcon sx={{ fontSize: 40 }} />
+                  </Avatar>
+                  <Typography variant="h6" fontWeight="bold" textAlign="center">
+                    {member.fullName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" textAlign="center">
+                    {member.position || member.role}
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Chip
+                      label={member.isAvailable ? 'Available' : 'Unavailable'}
+                      size="small"
+                      color={member.isAvailable ? 'success' : 'default'}
+                    />
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {member.phoneNumber && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PhoneIcon fontSize="small" color="action" />
+                      <Typography variant="body2">{member.phoneNumber}</Typography>
+                    </Box>
+                  )}
+                  {member.email && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <EmailIcon fontSize="small" color="action" />
+                      <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+                        {member.email}
+                      </Typography>
+                    </Box>
+                  )}
+                  {member.licenseNumber && (
+                    <Typography variant="caption" color="text.secondary">
+                      License: {member.licenseNumber}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                  <IconButton size="small">
+                    <EditIcon />
+                  </IconButton>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {staff.length === 0 && (
+        <Card>
+          <CardContent>
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <PersonIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                No staff members found
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Add staff members to get started
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+    </Box>
+  );
+}

@@ -21,6 +21,9 @@ import BackupsPage from './pages/BackupsPage';
 import CallLogsPage from './pages/CallLogsPage';
 import FileManagerPage from './pages/FileManagerPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import RosteringPage from './pages/RosteringPage';
+import StaffPage from './pages/StaffPage';
+import VehiclesPage from './pages/VehiclesPage';
 
 function App() {
   return (
@@ -43,6 +46,9 @@ function App() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="calendar" element={<CalendarPage />} />
+            <Route path="roster" element={<RosteringPage />} />
+            <Route path="staff" element={<StaffPage />} />
+            <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="export" element={<ExportPage />} />
             <Route path="backups" element={<BackupsPage />} />

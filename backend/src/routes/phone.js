@@ -179,7 +179,7 @@ router.get('/call-logs', authenticateToken, async (req, res, next) => {
     let query = `
       SELECT
         cl.*,
-        u.full_name as user_name,
+        u.name as user_name,
         a.deceased_name
       FROM call_logs cl
       LEFT JOIN users u ON cl.user_id = u.id
