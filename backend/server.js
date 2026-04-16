@@ -40,6 +40,7 @@ app.use('/api/backups', require('./src/routes/backups'));
 app.use('/api/phone', require('./src/routes/phone'));
 app.use('/api/analytics', require('./src/routes/analytics'));
 app.use('/api/notifications', require('./src/routes/notifications'));
+app.use('/api/bulk', require('./src/routes/bulk-operations'));
 
 // Health check
 app.get('/health', (req, res) => {
