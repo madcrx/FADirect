@@ -38,6 +38,7 @@ import {
   Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
+import NotificationCenter from './NotificationCenter';
 
 const drawerWidth = 260;
 
@@ -151,6 +152,7 @@ export default function Layout() {
           <IconButton color="inherit" onClick={() => navigate('/search')}>
             <SearchIcon />
           </IconButton>
+          <NotificationCenter />
           <IconButton color="inherit" onClick={handleProfileMenuOpen}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
               <AccountCircleIcon />

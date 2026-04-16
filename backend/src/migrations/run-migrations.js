@@ -15,6 +15,7 @@ async function runMigrations() {
     '007_add_calendar_events.sql',
     '008_add_restore_and_backups.sql',
     '009_add_phone_integration.sql',
+    '010_add_notifications.sql',
   ];
 
   try {

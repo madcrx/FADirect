@@ -39,6 +39,7 @@ app.use('/api/print', require('./src/routes/print'));
 app.use('/api/backups', require('./src/routes/backups'));
 app.use('/api/phone', require('./src/routes/phone'));
 app.use('/api/analytics', require('./src/routes/analytics'));
+app.use('/api/notifications', require('./src/routes/notifications'));
 
 // Health check
 app.get('/health', (req, res) => {
