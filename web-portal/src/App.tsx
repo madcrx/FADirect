@@ -13,6 +13,7 @@ import InvoicingPage from './pages/InvoicingPage';
 import GovernmentFormsPage from './pages/GovernmentFormsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import CalendarPage from './pages/CalendarPage';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

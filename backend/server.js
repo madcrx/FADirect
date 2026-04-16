@@ -29,6 +29,7 @@ app.use('/api/invoices', require('./src/routes/invoices'));
 app.use('/api/government-forms', require('./src/routes/government-forms'));
 app.use('/api/settings', require('./src/routes/settings'));
 app.use('/api/audit-logs', require('./src/routes/audit-logs'));
+app.use('/api/calendar', require('./src/routes/calendar'));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -26,6 +26,7 @@ import {
   Receipt as ReceiptIcon,
   Gavel as GavelIcon,
   BarChart as BarChartIcon,
+  CalendarMonth as CalendarIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
@@ -37,6 +38,7 @@ const drawerWidth = 260;
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
+  { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },

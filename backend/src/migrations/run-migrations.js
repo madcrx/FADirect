@@ -12,6 +12,7 @@ async function runMigrations() {
     '004_add_price_lists_invoices.sql',
     '005_add_government_forms.sql',
     '006_add_audit_logs.sql',
+    '007_add_calendar_events.sql',
   ];
 
   try {
