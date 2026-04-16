@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./config');
-const backupScheduler = require('./services/backup-scheduler');
+// const backupScheduler = require('./services/backup-scheduler');
 
 const app = express();
 
@@ -25,7 +25,7 @@ app.use('/api/photos', require('./routes/photos'));
 app.use('/api/trash', require('./routes/trash'));
 app.use('/api/email', require('./routes/email'));
 app.use('/api/print', require('./routes/print'));
-app.use('/api/backups', require('./routes/backups'));
+// app.use('/api/backups', require('./routes/backups'));
 app.use('/api/phone', require('./routes/phone'));
 
 // Health check
@@ -57,7 +57,7 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 
   // Start backup scheduler
-  backupScheduler.start();
+  // backupScheduler.start();
 });
 
 module.exports = app;
