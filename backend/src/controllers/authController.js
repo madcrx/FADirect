@@ -20,17 +20,49 @@ if (hasTwilioConfig) {
 }
 
 /**
+ * Format phone number to E.164 format
+ * Handles Australian numbers (converts 04XX to +614XX)
+ */
+const formatPhoneNumber = (phone) => {
+  if (!phone) return phone;
+
+  // Remove all non-digit characters except leading +
+  let cleaned = phone.replace(/[^\d+]/g, '');
+
+  // If already in E.164 format, return as is
+  if (cleaned.startsWith('+61')) {
+    return cleaned;
+  }
+
+  // If starts with 61, add +
+  if (cleaned.startsWith('61')) {
+    return '+' + cleaned;
+  }
+
+  // If starts with 0 (Australian mobile), remove it and add +61
+  if (cleaned.startsWith('0')) {
+    return '+61' + cleaned.substring(1);
+  }
+
+  // If it's just digits, assume Australian and add +61
+  return '+61' + cleaned;
+};
+
+/**
  * Send verification code to phone number
  * POST /api/auth/send-code
  * Body: { phoneNumber: string }
  */
 exports.sendVerificationCode = async (req, res, next) => {
   try {
-    const { phoneNumber } = req.body;
+    let { phoneNumber } = req.body;
 
     if (!phoneNumber) {
       return res.status(400).json({ error: { message: 'Phone number is required' } });
     }
+
+    // Format phone number to E.164
+    phoneNumber = formatPhoneNumber(phoneNumber);
 
     // Validate phone number format (E.164)
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
@@ -72,13 +104,16 @@ exports.sendVerificationCode = async (req, res, next) => {
  */
 exports.verifyCode = async (req, res, next) => {
   try {
-    const { phoneNumber, code, name, role } = req.body;
+    let { phoneNumber, code, name, role } = req.body;
 
     if (!phoneNumber || !code) {
       return res.status(400).json({
         error: { message: 'Phone number and verification code are required' }
       });
     }
+
+    // Format phone number to E.164
+    phoneNumber = formatPhoneNumber(phoneNumber);
 
     // Verify code with Twilio (or use dev mode)
     if (twilioClient) {

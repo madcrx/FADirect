@@ -20,6 +20,34 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Format phone number to E.164 format (+61...)
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove all non-digit characters except leading +
+    let cleaned = phone.replace(/[^\d+]/g, '');
+
+    // If starts with +61, return as is
+    if (cleaned.startsWith('+61')) {
+      return cleaned;
+    }
+
+    // If starts with 61, add +
+    if (cleaned.startsWith('61')) {
+      return '+' + cleaned;
+    }
+
+    // If starts with 0, remove it and add +61
+    if (cleaned.startsWith('0')) {
+      return '+61' + cleaned.substring(1);
+    }
+
+    // Otherwise, add +61 prefix
+    return '+61' + cleaned;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setPhoneNumber(value);
+  };
+
   const handleSendCode = async () => {
     setError('');
     setLoading(true);
@@ -40,7 +68,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login(phoneNumber, code);
+      // Format phone number before sending
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      const response = await authApi.login(formattedPhone, code);
 
       // Check if user is admin or arranger
       if (response.user.role !== 'admin' && response.user.role !== 'arranger') {
@@ -89,9 +119,10 @@ export default function LoginPage() {
                 fullWidth
                 label="Phone Number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+61 4XX XXX XXX"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                placeholder="0406 XXX XXX or +61 406 XXX XXX"
                 disabled={codeSent}
+                helperText="Enter Australian mobile number (will be auto-formatted)"
                 sx={{ mb: 2 }}
               />
 
