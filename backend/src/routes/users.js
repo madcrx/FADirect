@@ -21,11 +21,14 @@ router.post('/find-or-create', authenticateToken, async (req, res, next) => {
     }
 
     // Create new user
+    // Ensure role is an array
+    const rolesArray = Array.isArray(role) ? role : (role ? [role] : ['mourner']);
+
     result = await db.query(
       `INSERT INTO users (phone_number, name, role, phone_verified)
        VALUES ($1, $2, $3, FALSE)
        RETURNING *`,
-      [phoneNumber, name || null, role || 'mourner']
+      [phoneNumber, name || null, rolesArray]
     );
 
     res.status(201).json({ user: result.rows[0] });
@@ -61,10 +64,16 @@ router.put('/me', authenticateToken, async (req, res, next) => {
     const { name, role, profilePhotoUrl, email } = req.body;
 
     const validRoles = ['admin', 'management', 'arranger', 'conductor', 'funeral_director_assistant', 'embalmer', 'driver', 'mourner'];
-    if (role && !validRoles.includes(role)) {
-      return res.status(400).json({
-        error: { message: `Role must be one of: ${validRoles.join(', ')}` }
-      });
+
+    // Validate roles if provided
+    if (role) {
+      const rolesArray = Array.isArray(role) ? role : [role];
+      const invalidRoles = rolesArray.filter(r => !validRoles.includes(r));
+      if (invalidRoles.length > 0) {
+        return res.status(400).json({
+          error: { message: `Invalid roles: ${invalidRoles.join(', ')}. Must be one of: ${validRoles.join(', ')}` }
+        });
+      }
     }
 
     const result = await db.query(

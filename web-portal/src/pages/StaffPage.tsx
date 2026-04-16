@@ -16,6 +16,11 @@ import {
   TextField,
   Alert,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -48,7 +53,7 @@ export default function StaffPage() {
   const [formData, setFormData] = useState({
     phoneNumber: '',
     fullName: '',
-    role: 'arranger',
+    roles: ['arranger'] as string[],
     position: '',
     licenseNumber: '',
     emergencyContactName: '',
@@ -77,7 +82,7 @@ export default function StaffPage() {
       const userResponse = await api.post('/users/find-or-create', {
         phoneNumber: formData.phoneNumber,
         name: formData.fullName,
-        role: formData.role || 'arranger',
+        role: formData.roles.length > 0 ? formData.roles : ['arranger'],
       });
 
       const userId = userResponse.data.user.id;
@@ -97,7 +102,7 @@ export default function StaffPage() {
       setFormData({
         phoneNumber: '',
         fullName: '',
-        role: 'arranger',
+        roles: ['arranger'],
         position: '',
         licenseNumber: '',
         emergencyContactName: '',
@@ -241,22 +246,33 @@ export default function StaffPage() {
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               required
             />
-            <TextField
-              fullWidth
-              select
-              label="Role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              required
-            >
-              <MenuItem value="admin">Admin</MenuItem>
-              <MenuItem value="management">Management</MenuItem>
-              <MenuItem value="arranger">Arranger</MenuItem>
-              <MenuItem value="conductor">Conductor</MenuItem>
-              <MenuItem value="funeral_director_assistant">Funeral Director Assistant</MenuItem>
-              <MenuItem value="embalmer">Embalmer</MenuItem>
-              <MenuItem value="driver">Driver</MenuItem>
-            </TextField>
+            <FormControl fullWidth required>
+              <InputLabel>Roles</InputLabel>
+              <Select
+                multiple
+                value={formData.roles}
+                onChange={(e: SelectChangeEvent<string[]>) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, roles: typeof value === 'string' ? value.split(',') : value });
+                }}
+                input={<OutlinedInput label="Roles" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} size="small" />
+                    ))}
+                  </Box>
+                )}
+              >
+                <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="management">Management</MenuItem>
+                <MenuItem value="arranger">Arranger</MenuItem>
+                <MenuItem value="conductor">Conductor</MenuItem>
+                <MenuItem value="funeral_director_assistant">Funeral Director Assistant</MenuItem>
+                <MenuItem value="embalmer">Embalmer</MenuItem>
+                <MenuItem value="driver">Driver</MenuItem>
+              </Select>
+            </FormControl>
             <TextField
               fullWidth
               label="Position / Job Title"

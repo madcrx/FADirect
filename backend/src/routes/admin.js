@@ -49,11 +49,14 @@ router.post('/users', authenticateToken, requireAdmin, async (req, res, next) =>
       });
     }
 
+    // Ensure role is an array
+    const rolesArray = Array.isArray(role) ? role : [role];
+
     const result = await db.query(
       `INSERT INTO users (phone_number, name, role, phone_verified)
        VALUES ($1, $2, $3, FALSE)
        RETURNING *`,
-      [phoneNumber, name, role]
+      [phoneNumber, name, rolesArray]
     );
 
     res.status(201).json({
