@@ -16,6 +16,7 @@ async function runMigrations() {
     '008_add_restore_and_backups.sql',
     '009_add_phone_integration.sql',
     '010_add_notifications.sql',
+    '011_add_rostering_system.sql',
   ];
 
   try {
