@@ -9,6 +9,7 @@ async function runMigrations() {
     '001_initial_schema.sql',
     '002_add_workflow_features.sql',
     '003_add_soft_delete.sql',
+    '004_add_price_lists_invoices.sql',
   ];
 
   try {
