@@ -35,6 +35,7 @@ import {
   Search as SearchIcon,
   Phone as PhoneIcon,
   Folder as FolderIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 
@@ -49,6 +50,7 @@ const menuItems = [
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
   { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
   { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
+  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
   { text: 'Files', icon: <FolderIcon />, path: '/files' },
   { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
   { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },

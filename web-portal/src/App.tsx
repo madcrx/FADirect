@@ -20,6 +20,7 @@ import TrashPage from './pages/TrashPage';
 import BackupsPage from './pages/BackupsPage';
 import CallLogsPage from './pages/CallLogsPage';
 import FileManagerPage from './pages/FileManagerPage';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
             <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="export" element={<ExportPage />} />
