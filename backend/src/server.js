@@ -35,6 +35,7 @@ app.use('/api/roster', require('./routes/roster'));
 app.use('/api/staff-profiles', require('./routes/staff-profiles'));
 app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/digital-forms', require('./routes/digital-forms'));
+app.use('/api/leave', require('./routes/leave'));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -113,6 +113,7 @@ router.post('/jobs',
       priority,
       notes,
       specialInstructions,
+      requirements,
       staffIds,
       vehicleIds,
     } = req.body;
@@ -131,8 +132,9 @@ router.post('/jobs',
           priority,
           notes,
           special_instructions,
+          requirements,
           created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         jobTypeId,
@@ -145,6 +147,7 @@ router.post('/jobs',
         priority || 'normal',
         notes || null,
         specialInstructions || null,
+        requirements ? JSON.stringify(requirements) : '{}',
         req.user.id,
       ]);
 
@@ -395,5 +398,67 @@ router.post('/run-sheet',
     }
   }
 );
+
+// Get available staff for rostering (filtered by role and leave status)
+router.get('/available-staff', authenticateToken, async (req, res, next) => {
+  try {
+    const { date, role } = req.query;
+
+    if (!date) {
+      return res.status(400).json({
+        error: { message: 'Date parameter is required' }
+      });
+    }
+
+    let query = `
+      SELECT
+        u.id,
+        u.name,
+        u.role,
+        u.phone_number,
+        sp.position,
+        sp.photo_url,
+        sp.is_available,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM leave_requests lr
+          WHERE lr.staff_id = u.id
+            AND lr.status = 'approved'
+            AND $1::date BETWEEN lr.start_date AND lr.end_date
+        ) THEN true ELSE false END as on_leave
+      FROM users u
+      LEFT JOIN staff_profiles sp ON sp.user_id = u.id
+      WHERE u.role != ARRAY['mourner']::TEXT[]
+        AND sp.is_available = true
+    `;
+
+    const params = [date];
+
+    // Filter by role if specified
+    if (role) {
+      query += ` AND $2 = ANY(u.role)`;
+      params.push(role);
+    }
+
+    query += ` ORDER BY u.name ASC`;
+
+    const result = await db.query(query, params);
+
+    res.json({
+      date,
+      staff: result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        roles: row.role,
+        phoneNumber: row.phone_number,
+        position: row.position,
+        photoUrl: row.photo_url,
+        available: row.is_available && !row.on_leave,
+        onLeave: row.on_leave,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;

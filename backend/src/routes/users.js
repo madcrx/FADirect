@@ -63,7 +63,7 @@ router.put('/me', authenticateToken, async (req, res, next) => {
   try {
     const { name, role, profilePhotoUrl, email } = req.body;
 
-    const validRoles = ['admin', 'management', 'arranger', 'conductor', 'funeral_director_assistant', 'embalmer', 'driver', 'mourner'];
+    const validRoles = ['admin', 'management', 'arranger', 'conductor', 'funeral_director_assistant', 'embalmer', 'hearse_driver', 'coach_driver', 'mourner'];
 
     // Validate roles if provided
     if (role) {

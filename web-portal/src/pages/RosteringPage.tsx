@@ -62,6 +62,14 @@ export default function RosteringPage() {
     startTime: '',
     endTime: '',
     location: '',
+    requirements: {
+      arranger: 0,
+      conductor: 0,
+      funeral_director_assistant: 0,
+      embalmer: 0,
+      hearse_driver: 0,
+      coach_driver: 0,
+    },
   });
 
   useEffect(() => {
@@ -101,6 +109,14 @@ export default function RosteringPage() {
         startTime: '',
         endTime: '',
         location: '',
+        requirements: {
+          arranger: 0,
+          conductor: 0,
+          funeral_director_assistant: 0,
+          embalmer: 0,
+          hearse_driver: 0,
+          coach_driver: 0,
+        },
       });
       await loadData();
     } catch (err: any) {
@@ -303,6 +319,73 @@ export default function RosteringPage() {
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             />
+
+            {/* Staff Requirements */}
+            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+              Staff Requirements
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+              <TextField
+                label="Arrangers"
+                type="number"
+                value={formData.requirements.arranger}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, arranger: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="Conductors"
+                type="number"
+                value={formData.requirements.conductor}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, conductor: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="FDA (Assistants)"
+                type="number"
+                value={formData.requirements.funeral_director_assistant}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, funeral_director_assistant: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="Embalmers"
+                type="number"
+                value={formData.requirements.embalmer}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, embalmer: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="Hearse Drivers"
+                type="number"
+                value={formData.requirements.hearse_driver}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, hearse_driver: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+              <TextField
+                label="Coach Drivers"
+                type="number"
+                value={formData.requirements.coach_driver}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  requirements: { ...formData.requirements, coach_driver: parseInt(e.target.value) || 0 }
+                })}
+                InputProps={{ inputProps: { min: 0 } }}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>

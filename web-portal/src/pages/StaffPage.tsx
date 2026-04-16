@@ -270,7 +270,8 @@ export default function StaffPage() {
                 <MenuItem value="conductor">Conductor</MenuItem>
                 <MenuItem value="funeral_director_assistant">Funeral Director Assistant</MenuItem>
                 <MenuItem value="embalmer">Embalmer</MenuItem>
-                <MenuItem value="driver">Driver</MenuItem>
+                <MenuItem value="hearse_driver">Hearse Driver</MenuItem>
+                <MenuItem value="coach_driver">Coach Driver</MenuItem>
               </Select>
             </FormControl>
             <TextField
