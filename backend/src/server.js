@@ -17,6 +17,7 @@ app.use('/uploads', express.static(config.UPLOAD_DIR || './uploads'));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/arrangements', require('./routes/arrangements'));
 app.use('/api/messages', require('./routes/messages'));

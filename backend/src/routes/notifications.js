@@ -18,7 +18,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const params = [userId];
 
     if (unreadOnly === 'true') {
-      query += ` AND is_read = false`;
+      query += ` AND read = false`;
     }
 
     query += ` ORDER BY created_at DESC LIMIT $2`;
@@ -30,12 +30,12 @@ router.get('/', authenticateToken, async (req, res, next) => {
       notifications: result.rows.map(row => ({
         id: row.id,
         title: row.title,
-        message: row.message,
+        message: row.body,
         type: row.type,
         category: row.category,
         entityType: row.entity_type,
         entityId: row.entity_id,
-        isRead: row.is_read,
+        isRead: row.read,
         readAt: row.read_at,
         actionUrl: row.action_url,
         createdAt: row.created_at,
@@ -54,7 +54,7 @@ router.get('/unread-count', authenticateToken, async (req, res, next) => {
     const result = await db.query(`
       SELECT COUNT(*) as count
       FROM notifications
-      WHERE user_id = $1 AND is_read = false
+      WHERE user_id = $1 AND read = false
     `, [userId]);
 
     res.json({
@@ -73,7 +73,7 @@ router.put('/:id/read', authenticateToken, async (req, res, next) => {
 
     const result = await db.query(`
       UPDATE notifications
-      SET is_read = true, read_at = NOW()
+      SET read = true, read_at = NOW()
       WHERE id = $1 AND user_id = $2
       RETURNING *
     `, [id, userId]);
@@ -86,7 +86,7 @@ router.put('/:id/read', authenticateToken, async (req, res, next) => {
       message: 'Notification marked as read',
       notification: {
         id: result.rows[0].id,
-        isRead: result.rows[0].is_read,
+        isRead: result.rows[0].read,
         readAt: result.rows[0].read_at,
       }
     });
@@ -102,8 +102,8 @@ router.put('/read-all', authenticateToken, async (req, res, next) => {
 
     const result = await db.query(`
       UPDATE notifications
-      SET is_read = true, read_at = NOW()
-      WHERE user_id = $1 AND is_read = false
+      SET read = true, read_at = NOW()
+      WHERE user_id = $1 AND read = false
       RETURNING id
     `, [userId]);
 
@@ -145,7 +145,7 @@ router.delete('/clear-read', authenticateToken, async (req, res, next) => {
 
     const result = await db.query(`
       DELETE FROM notifications
-      WHERE user_id = $1 AND is_read = true
+      WHERE user_id = $1 AND read = true
       RETURNING id
     `, [userId]);
 
@@ -294,7 +294,7 @@ router.get('/alerts', authenticateToken, async (req, res, next) => {
       alerts: result.rows.map(row => ({
         id: row.id,
         title: row.title,
-        message: row.message,
+        message: row.body,
         type: row.type,
         startsAt: row.starts_at,
         expiresAt: row.expires_at,

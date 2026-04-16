@@ -204,7 +204,7 @@ router.post('/arrangements/export',
       const result = await db.query(`
         SELECT
           a.*,
-          u.full_name as assigned_user_name,
+          u.name as assigned_user_name,
           uc.full_name as created_by_name
         FROM arrangements a
         LEFT JOIN users u ON a.assigned_to = u.id

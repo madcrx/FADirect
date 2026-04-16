@@ -230,7 +230,7 @@ router.get('/user-activity', authenticateToken, requireAdmin, async (req, res, n
     const query = `
       SELECT
         u.id,
-        u.full_name,
+        u.name,
         u.role,
         COUNT(DISTINCT a.id) as arrangements_count,
         COUNT(DISTINCT al.id) as audit_log_count,
@@ -239,7 +239,7 @@ router.get('/user-activity', authenticateToken, requireAdmin, async (req, res, n
       LEFT JOIN arrangements a ON a.created_by = u.id
       LEFT JOIN audit_logs al ON al.user_id = u.id
       WHERE u.deleted_at IS NULL
-      GROUP BY u.id, u.full_name, u.role
+      GROUP BY u.id, u.name, u.role
       ORDER BY audit_log_count DESC
     `;
 

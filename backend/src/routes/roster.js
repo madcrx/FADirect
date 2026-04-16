@@ -17,7 +17,7 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
         a.deceased_name,
         json_agg(DISTINCT jsonb_build_object(
           'id', u.id,
-          'fullName', u.full_name,
+          'fullName', u.name,
           'role', jsa.role,
           'isPrimary', jsa.is_primary
         )) FILTER (WHERE u.id IS NOT NULL) as staff,

@@ -9,15 +9,12 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const result = await db.query(`
       SELECT
         sp.*,
-        u.full_name,
-        u.email,
+        u.name as full_name,
         u.phone_number,
-        u.role,
-        u.is_active as user_is_active
+        u.role
       FROM staff_profiles sp
       JOIN users u ON sp.user_id = u.id
-      WHERE u.deleted_at IS NULL
-      ORDER BY u.full_name ASC
+      ORDER BY u.name ASC
     `);
 
     res.json({
@@ -25,7 +22,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         id: row.id,
         userId: row.user_id,
         fullName: row.full_name,
-        email: row.email,
+        email: row.email || '',
         phoneNumber: row.phone_number,
         role: row.role,
         photoUrl: row.photo_url,
@@ -36,7 +33,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         emergencyContactName: row.emergency_contact_name,
         emergencyContactPhone: row.emergency_contact_phone,
         isAvailable: row.is_available,
-        userIsActive: row.user_is_active,
+        userIsActive: true,
       }))
     });
   } catch (error) {
