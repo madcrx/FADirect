@@ -14,6 +14,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         u.role
       FROM staff_profiles sp
       JOIN users u ON sp.user_id = u.id
+      WHERE u.role != 'mourner'
       ORDER BY u.name ASC
     `);
 

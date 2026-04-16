@@ -60,9 +60,10 @@ router.put('/me', authenticateToken, async (req, res, next) => {
   try {
     const { name, role, profilePhotoUrl, email } = req.body;
 
-    if (role && !['mourner', 'arranger'].includes(role)) {
+    const validRoles = ['admin', 'management', 'arranger', 'conductor', 'funeral_director_assistant', 'embalmer', 'driver', 'mourner'];
+    if (role && !validRoles.includes(role)) {
       return res.status(400).json({
-        error: { message: 'Role must be either "mourner" or "arranger"' }
+        error: { message: `Role must be one of: ${validRoles.join(', ')}` }
       });
     }
 

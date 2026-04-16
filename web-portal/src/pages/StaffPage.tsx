@@ -15,6 +15,7 @@ import {
   DialogActions,
   TextField,
   Alert,
+  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,6 +48,7 @@ export default function StaffPage() {
   const [formData, setFormData] = useState({
     phoneNumber: '',
     fullName: '',
+    role: 'arranger',
     position: '',
     licenseNumber: '',
     emergencyContactName: '',
@@ -75,7 +77,7 @@ export default function StaffPage() {
       const userResponse = await api.post('/users/find-or-create', {
         phoneNumber: formData.phoneNumber,
         name: formData.fullName,
-        role: 'arranger',
+        role: formData.role || 'arranger',
       });
 
       const userId = userResponse.data.user.id;
@@ -95,6 +97,7 @@ export default function StaffPage() {
       setFormData({
         phoneNumber: '',
         fullName: '',
+        role: 'arranger',
         position: '',
         licenseNumber: '',
         emergencyContactName: '',
@@ -240,10 +243,27 @@ export default function StaffPage() {
             />
             <TextField
               fullWidth
-              label="Position"
-              placeholder="e.g., Funeral Director, Driver"
+              select
+              label="Role"
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              required
+            >
+              <MenuItem value="admin">Admin</MenuItem>
+              <MenuItem value="management">Management</MenuItem>
+              <MenuItem value="arranger">Arranger</MenuItem>
+              <MenuItem value="conductor">Conductor</MenuItem>
+              <MenuItem value="funeral_director_assistant">Funeral Director Assistant</MenuItem>
+              <MenuItem value="embalmer">Embalmer</MenuItem>
+              <MenuItem value="driver">Driver</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              label="Position / Job Title"
+              placeholder="e.g., Senior Funeral Director, Head Embalmer"
               value={formData.position}
               onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+              helperText="Optional: Specific job title (different from role)"
             />
             <TextField
               fullWidth
