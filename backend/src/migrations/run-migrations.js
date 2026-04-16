@@ -11,6 +11,7 @@ async function runMigrations() {
     '003_add_soft_delete.sql',
     '004_add_price_lists_invoices.sql',
     '005_add_government_forms.sql',
+    '006_add_audit_logs.sql',
   ];
 
   try {
