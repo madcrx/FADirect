@@ -23,6 +23,7 @@ import {
   Assignment as AssignmentIcon,
   People as PeopleIcon,
   AttachMoney as AttachMoneyIcon,
+  Receipt as ReceiptIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
@@ -35,7 +36,8 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing', badge: 'Soon' },
+  { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
+  { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

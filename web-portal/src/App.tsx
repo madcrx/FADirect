@@ -6,7 +6,10 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ArrangementsPage from './pages/ArrangementsPage';
 import ArrangementDetailPage from './pages/ArrangementDetailPage';
+import ArrangementFormPage from './pages/ArrangementFormPage';
 import UsersPage from './pages/UsersPage';
+import PriceListsPage from './pages/PriceListsPage';
+import InvoicingPage from './pages/InvoicingPage';
 
 function App() {
   return (
@@ -19,9 +22,12 @@ function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="arrangements" element={<ArrangementsPage />} />
+            <Route path="arrangements/new" element={<ArrangementFormPage />} />
             <Route path="arrangements/:id" element={<ArrangementDetailPage />} />
+            <Route path="arrangements/:id/edit" element={<ArrangementFormPage />} />
             <Route path="users" element={<UsersPage />} />
-            <Route path="invoicing" element={<div>Invoicing Page (Coming Soon)</div>} />
+            <Route path="price-lists" element={<PriceListsPage />} />
+            <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="settings" element={<div>Settings Page (Coming Soon)</div>} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

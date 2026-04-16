@@ -24,6 +24,8 @@ app.use('/api/documents', require('./src/routes/documents'));
 app.use('/api/photos', require('./src/routes/photos'));
 app.use('/api/dashboard', require('./src/routes/dashboard'));
 app.use('/api/admin/users', require('./src/routes/users-management'));
+app.use('/api/price-lists', require('./src/routes/price-lists'));
+app.use('/api/invoices', require('./src/routes/invoices'));
 
 // Health check
 app.get('/health', (req, res) => {
