@@ -25,6 +25,7 @@ import {
   AttachMoney as AttachMoneyIcon,
   Receipt as ReceiptIcon,
   Gavel as GavelIcon,
+  BarChart as BarChartIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
@@ -40,6 +41,7 @@ const menuItems = [
   { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
   { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
+  { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

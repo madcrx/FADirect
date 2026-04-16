@@ -231,4 +231,80 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
   }
 });
 
+// Update workflow step
+router.put('/:id/workflow/:stepId', authenticateToken, async (req, res, next) => {
+  try {
+    const { id, stepId } = req.params;
+    const { status, notes } = req.body;
+
+    // Check if step exists for this arrangement
+    const stepResult = await db.query(
+      `SELECT ws.*, a.arranger_id
+       FROM workflow_steps ws
+       JOIN arrangements a ON ws.arrangement_id = a.id
+       WHERE ws.id = $1 AND ws.arrangement_id = $2`,
+      [stepId, id]
+    );
+
+    if (stepResult.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Workflow step not found' } });
+    }
+
+    // Update step
+    const updateResult = await db.query(
+      `UPDATE workflow_steps
+       SET status = COALESCE($1, status),
+           description = COALESCE($2, description),
+           completed_at = CASE WHEN $1 = 'completed' THEN CURRENT_TIMESTAMP ELSE completed_at END
+       WHERE id = $3
+       RETURNING *`,
+      [status, notes, stepId]
+    );
+
+    res.json({
+      step: {
+        id: updateResult.rows[0].id,
+        title: updateResult.rows[0].title,
+        description: updateResult.rows[0].description,
+        order: updateResult.rows[0].step_order,
+        status: updateResult.rows[0].status,
+        completedAt: updateResult.rows[0].completed_at,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Create workflow step
+router.post('/:id/workflow', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, description, order } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: { message: 'Title is required' } });
+    }
+
+    const result = await db.query(
+      `INSERT INTO workflow_steps (arrangement_id, title, description, step_order, status)
+       VALUES ($1, $2, $3, $4, 'pending')
+       RETURNING *`,
+      [id, title, description || null, order || 0]
+    );
+
+    res.status(201).json({
+      step: {
+        id: result.rows[0].id,
+        title: result.rows[0].title,
+        description: result.rows[0].description,
+        order: result.rows[0].step_order,
+        status: result.rows[0].status,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
