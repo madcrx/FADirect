@@ -1,0 +1,320 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Chip,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+} from '@mui/material';
+import {
+  Edit as EditIcon,
+  ArrowBack as ArrowBackIcon,
+  Message as MessageIcon,
+  Description as DescriptionIcon,
+  Photo as PhotoIcon,
+} from '@mui/icons-material';
+import { arrangementsApi, messagesApi, documentsApi, photosApi } from '@/services/api';
+import type { Arrangement, Message, Document, Photo } from '@/types';
+import { format } from 'date-fns';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div hidden={value !== index} {...other}>
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+export default function ArrangementDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [arrangement, setArrangement] = useState<Arrangement | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [tabValue, setTabValue] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (id) {
+      loadData();
+    }
+  }, [id]);
+
+  const loadData = async () => {
+    if (!id) return;
+
+    try {
+      const [arrData, msgData, docData, photoData] = await Promise.all([
+        arrangementsApi.getById(id),
+        messagesApi.getByArrangement(id).catch(() => []),
+        documentsApi.getByArrangement(id).catch(() => []),
+        photosApi.getByArrangement(id).catch(() => []),
+      ]);
+
+      setArrangement(arrData);
+      setMessages(msgData);
+      setDocuments(docData);
+      setPhotos(photoData);
+    } catch (error) {
+      console.error('Failed to load arrangement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !arrangement) {
+    return (
+      <Box p={3}>
+        <Typography>Loading...</Typography>
+      </Box>
+    );
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'success';
+      case 'completed':
+        return 'default';
+      case 'draft':
+        return 'warning';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  return (
+    <Box>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate('/arrangements')}
+        sx={{ mb: 2 }}
+      >
+        Back to Arrangements
+      </Button>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            {arrangement.deceasedName}
+          </Typography>
+          <Chip
+            label={arrangement.status}
+            color={getStatusColor(arrangement.status) as any}
+            sx={{ textTransform: 'capitalize' }}
+          />
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<EditIcon />}
+          onClick={() => navigate(`/arrangements/${id}/edit`)}
+        >
+          Edit Arrangement
+        </Button>
+      </Box>
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Arrangement Details
+              </Typography>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell component="th" width="40%"><strong>Deceased Name</strong></TableCell>
+                    <TableCell>{arrangement.deceasedName}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Funeral Type</strong></TableCell>
+                    <TableCell sx={{ textTransform: 'capitalize' }}>
+                      {arrangement.funeralType.replace('_', ' ')}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Status</strong></TableCell>
+                    <TableCell>
+                      <Chip
+                        label={arrangement.status}
+                        color={getStatusColor(arrangement.status) as any}
+                        size="small"
+                        sx={{ textTransform: 'capitalize' }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Service Date</strong></TableCell>
+                    <TableCell>
+                      {arrangement.serviceDate
+                        ? format(new Date(arrangement.serviceDate), 'dd MMMM yyyy')
+                        : 'To be determined'}
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Service Location</strong></TableCell>
+                    <TableCell>{arrangement.serviceLocation || 'Not specified'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Arranger</strong></TableCell>
+                    <TableCell>{arrangement.arrangerName || 'N/A'}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Created</strong></TableCell>
+                    <TableCell>{format(new Date(arrangement.createdAt), 'dd/MM/yyyy HH:mm')}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th"><strong>Last Updated</strong></TableCell>
+                    <TableCell>{format(new Date(arrangement.updatedAt), 'dd/MM/yyyy HH:mm')}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              {arrangement.notes && (
+                <Box mt={2}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                    Notes
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {arrangement.notes}
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Quick Stats
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <MessageIcon color="primary" />
+                    <Typography variant="body2">Messages</Typography>
+                  </Box>
+                  <Chip label={messages.length} size="small" />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DescriptionIcon color="primary" />
+                    <Typography variant="body2">Documents</Typography>
+                  </Box>
+                  <Chip label={documents.length} size="small" />
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PhotoIcon color="primary" />
+                    <Typography variant="body2">Photos</Typography>
+                  </Box>
+                  <Chip label={photos.length} size="small" />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Card sx={{ mt: 3 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+            <Tab label={`Messages (${messages.length})`} />
+            <Tab label={`Documents (${documents.length})`} />
+            <Tab label={`Photos (${photos.length})`} />
+          </Tabs>
+        </Box>
+
+        <TabPanel value={tabValue} index={0}>
+          {messages.length === 0 ? (
+            <Typography color="text.secondary">No messages yet</Typography>
+          ) : (
+            <List>
+              {messages.map((message, index) => (
+                <div key={message.id}>
+                  {index > 0 && <Divider />}
+                  <ListItem>
+                    <ListItemText
+                      primary={message.content}
+                      secondary={`${message.senderName} • ${format(new Date(message.timestamp), 'dd/MM/yyyy HH:mm')}`}
+                    />
+                  </ListItem>
+                </div>
+              ))}
+            </List>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          {documents.length === 0 ? (
+            <Typography color="text.secondary">No documents uploaded</Typography>
+          ) : (
+            <List>
+              {documents.map((doc, index) => (
+                <div key={doc.id}>
+                  {index > 0 && <Divider />}
+                  <ListItem>
+                    <ListItemText
+                      primary={doc.fileName}
+                      secondary={`Uploaded ${format(new Date(doc.createdAt), 'dd/MM/yyyy')} by ${doc.uploaderName}`}
+                    />
+                  </ListItem>
+                </div>
+              ))}
+            </List>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          {photos.length === 0 ? (
+            <Typography color="text.secondary">No photos uploaded</Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {photos.map((photo) => (
+                <Grid item xs={12} sm={6} md={4} key={photo.id}>
+                  <Card>
+                    <img
+                      src={photo.thumbnailUrl}
+                      alt={photo.caption || 'Photo'}
+                      style={{ width: '100%', height: 200, objectFit: 'cover' }}
+                    />
+                    {photo.caption && (
+                      <CardContent>
+                        <Typography variant="caption">{photo.caption}</Typography>
+                      </CardContent>
+                    )}
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </TabPanel>
+      </Card>
+    </Box>
+  );
+}
