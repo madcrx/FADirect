@@ -10,6 +10,12 @@ import {
   IconButton,
   Alert,
   CardMedia,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,6 +44,16 @@ export default function VehiclesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    vehicleType: 'hearse',
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
+    registration: '',
+    color: '',
+    seatingCapacity: 2,
+  });
 
   useEffect(() => {
     loadVehicles();
@@ -52,6 +68,35 @@ export default function VehiclesPage() {
       setError(err.response?.data?.error?.message || 'Failed to load vehicles');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddVehicle = async () => {
+    try {
+      await api.post('/vehicles', {
+        vehicleType: formData.vehicleType,
+        make: formData.make,
+        model: formData.model,
+        year: formData.year,
+        registration: formData.registration,
+        color: formData.color,
+        seatingCapacity: formData.seatingCapacity,
+      });
+
+      setSuccess('Vehicle added successfully');
+      setDialogOpen(false);
+      setFormData({
+        vehicleType: 'hearse',
+        make: '',
+        model: '',
+        year: new Date().getFullYear(),
+        registration: '',
+        color: '',
+        seatingCapacity: 2,
+      });
+      await loadVehicles();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to add vehicle');
     }
   };
 
@@ -93,7 +138,7 @@ export default function VehiclesPage() {
             Manage vehicles, photos, and maintenance schedules
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
           Add Vehicle
         </Button>
       </Box>
@@ -198,6 +243,84 @@ export default function VehiclesPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Add Vehicle Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Vehicle</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              select
+              label="Vehicle Type"
+              value={formData.vehicleType}
+              onChange={(e) => setFormData({ ...formData, vehicleType: e.target.value })}
+            >
+              <MenuItem value="hearse">Hearse</MenuItem>
+              <MenuItem value="limousine">Limousine</MenuItem>
+              <MenuItem value="family_car">Family Car</MenuItem>
+              <MenuItem value="van">Van</MenuItem>
+              <MenuItem value="other">Other</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              label="Make"
+              placeholder="e.g., Mercedes-Benz, Cadillac"
+              value={formData.make}
+              onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Model"
+              placeholder="e.g., E-Class, XTS"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Year"
+              type="number"
+              value={formData.year}
+              onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Registration"
+              placeholder="e.g., ABC123"
+              value={formData.registration}
+              onChange={(e) => setFormData({ ...formData, registration: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Seating Capacity"
+              type="number"
+              value={formData.seatingCapacity}
+              onChange={(e) => setFormData({ ...formData, seatingCapacity: parseInt(e.target.value) })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddVehicle}
+            disabled={!formData.make || !formData.model || !formData.registration}
+          >
+            Add Vehicle
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

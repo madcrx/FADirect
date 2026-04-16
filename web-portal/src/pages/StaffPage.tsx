@@ -43,6 +43,15 @@ export default function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    phoneNumber: '',
+    fullName: '',
+    position: '',
+    licenseNumber: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+  });
 
   useEffect(() => {
     loadStaff();
@@ -57,6 +66,43 @@ export default function StaffPage() {
       setError(err.response?.data?.error?.message || 'Failed to load staff');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    try {
+      // First, create or find the user
+      const userResponse = await api.post('/users/find-or-create', {
+        phoneNumber: formData.phoneNumber,
+        name: formData.fullName,
+        role: 'arranger',
+      });
+
+      const userId = userResponse.data.user.id;
+
+      // Then create the staff profile
+      await api.post('/staff-profiles', {
+        userId,
+        position: formData.position,
+        licenseNumber: formData.licenseNumber,
+        emergencyContactName: formData.emergencyContactName,
+        emergencyContactPhone: formData.emergencyContactPhone,
+        isAvailable: true,
+      });
+
+      setSuccess('Staff member added successfully');
+      setDialogOpen(false);
+      setFormData({
+        phoneNumber: '',
+        fullName: '',
+        position: '',
+        licenseNumber: '',
+        emergencyContactName: '',
+        emergencyContactPhone: '',
+      });
+      await loadStaff();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to add staff member');
     }
   };
 
@@ -79,7 +125,7 @@ export default function StaffPage() {
             Manage staff profiles, photos, and availability
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
           Add Staff Member
         </Button>
       </Box>
@@ -171,6 +217,65 @@ export default function StaffPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Add Staff Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Staff Member</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Phone Number"
+              placeholder="+61412345678"
+              value={formData.phoneNumber}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Full Name"
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Position"
+              placeholder="e.g., Funeral Director, Driver"
+              value={formData.position}
+              onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              label="License Number"
+              value={formData.licenseNumber}
+              onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              label="Emergency Contact Name"
+              value={formData.emergencyContactName}
+              onChange={(e) => setFormData({ ...formData, emergencyContactName: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              label="Emergency Contact Phone"
+              value={formData.emergencyContactPhone}
+              onChange={(e) => setFormData({ ...formData, emergencyContactPhone: e.target.value })}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAddStaff}
+            disabled={!formData.phoneNumber || !formData.fullName}
+          >
+            Add Staff Member
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
