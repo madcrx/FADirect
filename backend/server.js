@@ -31,6 +31,7 @@ app.use('/api/settings', require('./src/routes/settings'));
 app.use('/api/audit-logs', require('./src/routes/audit-logs'));
 app.use('/api/calendar', require('./src/routes/calendar'));
 app.use('/api/search', require('./src/routes/search'));
+app.use('/api/export', require('./src/routes/export'));
 
 // Health check
 app.get('/health', (req, res) => {

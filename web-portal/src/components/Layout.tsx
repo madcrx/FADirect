@@ -27,6 +27,7 @@ import {
   Gavel as GavelIcon,
   BarChart as BarChartIcon,
   CalendarMonth as CalendarIcon,
+  Backup as BackupIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   AccountCircle as AccountCircleIcon,
@@ -45,6 +46,7 @@ const menuItems = [
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
   { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
   { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
+  { text: 'Export & Backup', icon: <BackupIcon />, path: '/export' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 
