@@ -25,10 +25,15 @@ import {
   Message as MessageIcon,
   Description as DescriptionIcon,
   Photo as PhotoIcon,
+  Timeline as TimelineIcon,
+  PlaylistAddCheck as ChecklistIcon,
 } from '@mui/icons-material';
 import { arrangementsApi, messagesApi, documentsApi, photosApi } from '@/services/api';
 import type { Arrangement, Message, Document, Photo } from '@/types';
 import { format } from 'date-fns';
+import WorkflowTracker from '@/components/WorkflowTracker';
+import DocumentChecklist from '@/components/DocumentChecklist';
+import api from '@/services/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -80,6 +85,19 @@ export default function ArrangementDetailPage() {
       console.error('Failed to load arrangement:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateWorkflowStep = async (stepId: string, completed: boolean, notes?: string) => {
+    if (!id) return;
+    try {
+      await api.put(`/arrangements/${id}/workflow/${stepId}`, {
+        status: completed ? 'completed' : 'pending',
+        notes,
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Failed to update workflow step:', error);
     }
   };
 
@@ -243,14 +261,28 @@ export default function ArrangementDetailPage() {
 
       <Card sx={{ mt: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-            <Tab label={`Messages (${messages.length})`} />
-            <Tab label={`Documents (${documents.length})`} />
-            <Tab label={`Photos (${photos.length})`} />
+          <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="scrollable">
+            <Tab icon={<TimelineIcon />} iconPosition="start" label="Workflow" />
+            <Tab icon={<ChecklistIcon />} iconPosition="start" label="Checklist" />
+            <Tab icon={<MessageIcon />} iconPosition="start" label={`Messages (${messages.length})`} />
+            <Tab icon={<DescriptionIcon />} iconPosition="start" label={`Documents (${documents.length})`} />
+            <Tab icon={<PhotoIcon />} iconPosition="start" label={`Photos (${photos.length})`} />
           </Tabs>
         </Box>
 
         <TabPanel value={tabValue} index={0}>
+          <WorkflowTracker
+            arrangementId={id!}
+            steps={arrangement.workflowSteps || []}
+            onUpdateStep={handleUpdateWorkflowStep}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <DocumentChecklist arrangementId={id!} />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
           {messages.length === 0 ? (
             <Typography color="text.secondary">No messages yet</Typography>
           ) : (
@@ -270,7 +302,7 @@ export default function ArrangementDetailPage() {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={3}>
           {documents.length === 0 ? (
             <Typography color="text.secondary">No documents uploaded</Typography>
           ) : (
@@ -290,7 +322,7 @@ export default function ArrangementDetailPage() {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={2}>
+        <TabPanel value={tabValue} index={4}>
           {photos.length === 0 ? (
             <Typography color="text.secondary">No photos uploaded</Typography>
           ) : (
