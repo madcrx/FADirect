@@ -119,13 +119,19 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
       [req.params.arrangementId]
     );
 
-    // Ensure URLs are absolute
+    // Ensure URLs are absolute and transform to camelCase
     const protocol = req.protocol;
     const host = req.get('host');
     const photos = result.rows.map(photo => ({
-      ...photo,
-      file_url: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
-      thumbnail_url: photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url : `${protocol}://${host}${photo.thumbnail_url}`,
+      id: photo.id,
+      fileName: photo.file_name,
+      fileUrl: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
+      thumbnailUrl: photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url : `${protocol}://${host}${photo.thumbnail_url}`,
+      arrangementId: photo.arrangement_id,
+      uploadedBy: photo.uploaded_by,
+      uploaderName: photo.uploader_name,
+      caption: photo.caption,
+      createdAt: photo.created_at,
     }));
 
     res.json({ photos });

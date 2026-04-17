@@ -109,16 +109,28 @@ router.get('/', authenticateToken, async (req, res, next) => {
 router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
   try {
     const result = await db.query(
-      'SELECT * FROM documents WHERE arrangement_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC',
+      `SELECT d.*, u.name as uploader_name
+       FROM documents d
+       LEFT JOIN users u ON d.uploaded_by = u.id
+       WHERE d.arrangement_id = $1 AND d.deleted_at IS NULL
+       ORDER BY d.created_at DESC`,
       [req.params.arrangementId]
     );
 
-    // Ensure URLs are absolute
+    // Ensure URLs are absolute and transform to camelCase
     const protocol = req.protocol;
     const host = req.get('host');
     const documents = result.rows.map(doc => ({
-      ...doc,
-      file_url: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+      id: doc.id,
+      fileName: doc.file_name,
+      fileType: doc.file_type,
+      fileSize: doc.file_size,
+      fileUrl: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+      arrangementId: doc.arrangement_id,
+      uploadedBy: doc.uploaded_by,
+      uploaderName: doc.uploader_name,
+      documentType: doc.document_type,
+      createdAt: doc.created_at,
     }));
 
     res.json({ documents });
