@@ -1,7 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const multer = require('multer');
+const path = require('path');
+const config = require('../config');
 const { authenticateToken } = require('../middleware/auth');
+
+// Configure multer for photo uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, config.UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'staff-' + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: config.MAX_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|heic/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Invalid file type. Only images are allowed.'));
+  },
+});
 
 // Get all staff profiles
 router.get('/', authenticateToken, async (req, res, next) => {
@@ -37,6 +65,40 @@ router.get('/', authenticateToken, async (req, res, next) => {
         userIsActive: true,
       }))
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Upload staff photo
+router.post('/upload-photo', authenticateToken, upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: { message: 'No file uploaded' } });
+    }
+
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: { message: 'User ID is required' } });
+    }
+
+    // Generate full URL for the uploaded file
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+    // Update staff profile with photo URL
+    await db.query(
+      `INSERT INTO staff_profiles (user_id, photo_url)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id) DO UPDATE SET
+         photo_url = EXCLUDED.photo_url,
+         updated_at = NOW()`,
+      [userId, fileUrl]
+    );
+
+    res.json({ photoUrl: fileUrl });
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const multer = require('multer');
+const path = require('path');
+const config = require('../config');
 const { authenticateToken } = require('../middleware/auth');
+
+// Configure multer for photo uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, config.UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'vehicle-' + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: config.MAX_FILE_SIZE },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|heic/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Invalid file type. Only images are allowed.'));
+  },
+});
 
 // Get all vehicles
 router.get('/', authenticateToken, async (req, res, next) => {
@@ -28,6 +56,36 @@ router.get('/', authenticateToken, async (req, res, next) => {
         nextServiceDate: row.next_service_date,
       }))
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Upload vehicle photo
+router.post('/upload-photo', authenticateToken, upload.single('file'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: { message: 'No file uploaded' } });
+    }
+
+    const { vehicleId } = req.body;
+
+    if (!vehicleId) {
+      return res.status(400).json({ error: { message: 'Vehicle ID is required' } });
+    }
+
+    // Generate full URL for the uploaded file
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
+    // Update vehicle with photo URL
+    await db.query(
+      `UPDATE vehicles SET photo_url = $1, updated_at = NOW() WHERE id = $2`,
+      [fileUrl, vehicleId]
+    );
+
+    res.json({ photoUrl: fileUrl });
   } catch (error) {
     next(error);
   }
