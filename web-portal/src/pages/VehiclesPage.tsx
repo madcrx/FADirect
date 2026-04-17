@@ -45,6 +45,7 @@ export default function VehiclesPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [formData, setFormData] = useState({
     vehicleType: 'hearse',
     make: '',
@@ -71,32 +72,73 @@ export default function VehiclesPage() {
     }
   };
 
-  const handleAddVehicle = async () => {
-    try {
-      await api.post('/vehicles', {
-        vehicleType: formData.vehicleType,
-        make: formData.make,
-        model: formData.model,
-        year: formData.year,
-        registration: formData.registration,
-        color: formData.color,
-        seatingCapacity: formData.seatingCapacity,
-      });
+  const handleOpenEdit = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setFormData({
+      vehicleType: vehicle.vehicleType,
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      registration: vehicle.registration,
+      color: vehicle.color,
+      seatingCapacity: vehicle.seatingCapacity || 2,
+    });
+    setDialogOpen(true);
+  };
 
-      setSuccess('Vehicle added successfully');
-      setDialogOpen(false);
-      setFormData({
-        vehicleType: 'hearse',
-        make: '',
-        model: '',
-        year: new Date().getFullYear(),
-        registration: '',
-        color: '',
-        seatingCapacity: 2,
-      });
-      await loadVehicles();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to add vehicle');
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingVehicle(null);
+    setFormData({
+      vehicleType: 'hearse',
+      make: '',
+      model: '',
+      year: new Date().getFullYear(),
+      registration: '',
+      color: '',
+      seatingCapacity: 2,
+    });
+  };
+
+  const handleSaveVehicle = async () => {
+    if (editingVehicle) {
+      // Update existing vehicle
+      try {
+        await api.put(`/vehicles/${editingVehicle.id}`, {
+          vehicleType: formData.vehicleType,
+          make: formData.make,
+          model: formData.model,
+          year: formData.year,
+          registration: formData.registration,
+          color: formData.color,
+          seatingCapacity: formData.seatingCapacity,
+        });
+
+        setSuccess('Vehicle updated successfully');
+        handleCloseDialog();
+        await loadVehicles();
+      } catch (err: any) {
+        setError(err.response?.data?.error?.message || 'Failed to update vehicle');
+      }
+    } else {
+      // Add new vehicle
+      try {
+        await api.post('/vehicles', {
+          vehicleType: formData.vehicleType,
+          make: formData.make,
+          model: formData.model,
+          year: formData.year,
+          registration: formData.registration,
+          color: formData.color,
+          seatingCapacity: formData.seatingCapacity,
+        });
+
+        setSuccess('Vehicle added successfully');
+        handleCloseDialog();
+        await loadVehicles();
+      } catch (err: any) {
+        setError(err.response?.data?.error?.message || 'Failed to add vehicle');
+      }
     }
   };
 
@@ -218,7 +260,7 @@ export default function VehiclesPage() {
                 </Box>
 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                  <IconButton size="small">
+                  <IconButton size="small" onClick={() => handleOpenEdit(vehicle)}>
                     <EditIcon />
                   </IconButton>
                 </Box>
@@ -244,9 +286,9 @@ export default function VehiclesPage() {
         </Card>
       )}
 
-      {/* Add Vehicle Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Vehicle</DialogTitle>
+      {/* Add/Edit Vehicle Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
@@ -311,13 +353,13 @@ export default function VehiclesPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             variant="contained"
-            onClick={handleAddVehicle}
+            onClick={handleSaveVehicle}
             disabled={!formData.make || !formData.model || !formData.registration}
           >
-            Add Vehicle
+            {editingVehicle ? 'Update Vehicle' : 'Add Vehicle'}
           </Button>
         </DialogActions>
       </Dialog>
