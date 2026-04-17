@@ -22,6 +22,7 @@ async function runMigrations() {
     '014_rostering_enhancements.sql',
     '015_fix_notifications_columns.sql',
     '016_fix_notification_triggers.sql',
+    '017_add_equipment.sql',
   ];
 
   try {

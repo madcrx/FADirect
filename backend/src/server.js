@@ -34,6 +34,7 @@ app.use('/api/bulk', require('./routes/bulk-operations'));
 app.use('/api/roster', require('./routes/roster'));
 app.use('/api/staff-profiles', require('./routes/staff-profiles'));
 app.use('/api/vehicles', require('./routes/vehicles'));
+app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/digital-forms', require('./routes/digital-forms'));
 app.use('/api/leave', require('./routes/leave'));
 
