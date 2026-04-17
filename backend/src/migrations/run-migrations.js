@@ -17,6 +17,10 @@ async function runMigrations() {
     '009_add_phone_integration.sql',
     '010_add_notifications.sql',
     '011_add_rostering_system.sql',
+    '012_update_user_roles.sql',
+    '013_roles_to_array.sql',
+    '014_rostering_enhancements.sql',
+    '015_fix_notifications_columns.sql',
   ];
 
   try {
