@@ -1,15 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
-
-// Middleware to check admin access
-const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: { message: 'Admin access required' } });
-  }
-  next();
-};
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 // Get all deleted items (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
