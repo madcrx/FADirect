@@ -24,6 +24,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import RosteringPage from './pages/RosteringPage';
 import StaffPage from './pages/StaffPage';
 import VehiclesPage from './pages/VehiclesPage';
+import EquipmentPage from './pages/EquipmentPage';
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
             <Route path="roster" element={<RosteringPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
+            <Route path="equipment" element={<EquipmentPage />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="export" element={<ExportPage />} />
             <Route path="backups" element={<BackupsPage />} />

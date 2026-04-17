@@ -38,6 +38,7 @@ import {
   Analytics as AnalyticsIcon,
   EventNote as EventNoteIcon,
   DriveEta as DriveEtaIcon,
+  Inventory as InventoryIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -51,6 +52,7 @@ const menuItems = [
   { text: 'Rostering', icon: <EventNoteIcon />, path: '/roster' },
   { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
   { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
+  { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
   { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
   { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
