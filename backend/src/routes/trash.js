@@ -16,6 +16,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       calendarEvents: [],
       documents: [],
       photos: [],
+      videos: [],
       users: [],
     };
 
@@ -149,6 +150,25 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       }));
     }
 
+    // Get deleted videos
+    if (!type || type === 'videos') {
+      const result = await db.query(
+        `SELECT v.id, v.file_name, v.deleted_at, a.deceased_name
+         FROM videos v
+         LEFT JOIN arrangements a ON v.arrangement_id = a.id
+         WHERE v.deleted_at IS NOT NULL
+         ORDER BY v.deleted_at DESC
+         LIMIT 100`
+      );
+      deletedItems.videos = result.rows.map(row => ({
+        id: row.id,
+        type: 'video',
+        name: row.file_name,
+        details: row.deceased_name ? `Video - ${row.deceased_name}` : 'Video',
+        deletedAt: row.deleted_at,
+      }));
+    }
+
     // Count total
     const totalCount =
       deletedItems.arrangements.length +
@@ -157,7 +177,8 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       deletedItems.governmentForms.length +
       deletedItems.calendarEvents.length +
       deletedItems.documents.length +
-      deletedItems.photos.length;
+      deletedItems.photos.length +
+      deletedItems.videos.length;
 
     res.json({
       totalCount,
@@ -181,6 +202,7 @@ router.post('/restore/:type/:id', authenticateToken, requireAdmin, async (req, r
       'calendar-event': 'calendar_events',
       'document': 'documents',
       'photo': 'photos',
+      'video': 'videos',
     };
 
     const tableName = tableMap[type];
@@ -217,6 +239,7 @@ router.delete('/permanent/:type/:id', authenticateToken, requireAdmin, async (re
       'calendar-event': 'calendar_events',
       'document': 'documents',
       'photo': 'photos',
+      'video': 'videos',
     };
 
     const tableName = tableMap[type];

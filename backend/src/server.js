@@ -23,6 +23,7 @@ app.use('/api/arrangements', require('./routes/arrangements'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/photos', require('./routes/photos'));
+app.use('/api/videos', require('./routes/videos'));
 app.use('/api/trash', require('./routes/trash'));
 app.use('/api/email', require('./routes/email'));
 app.use('/api/print', require('./routes/print'));

@@ -42,6 +42,7 @@ interface DeletedItems {
   calendarEvents: DeletedItem[];
   documents: DeletedItem[];
   photos: DeletedItem[];
+  videos: DeletedItem[];
 }
 
 export default function TrashPage() {
@@ -113,6 +114,7 @@ export default function TrashPage() {
       'calendar-event': 'Event',
       'document': 'Document',
       'photo': 'Photo',
+      'video': 'Video',
     };
     return labels[type] || type;
   };
@@ -130,6 +132,7 @@ export default function TrashPage() {
           ...items.calendarEvents,
           ...items.documents,
           ...items.photos,
+          ...items.videos,
         ].sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime());
       case 1:
         return items.arrangements;
@@ -145,6 +148,8 @@ export default function TrashPage() {
         return items.documents;
       case 7:
         return items.photos;
+      case 8:
+        return items.videos;
       default:
         return [];
     }
@@ -158,7 +163,8 @@ export default function TrashPage() {
     items.governmentForms.length +
     items.calendarEvents.length +
     items.documents.length +
-    items.photos.length : 0;
+    items.photos.length +
+    items.videos.length : 0;
 
   if (loading) {
     return (
@@ -213,6 +219,7 @@ export default function TrashPage() {
           <Tab label={`Events (${items?.calendarEvents.length || 0})`} />
           <Tab label={`Documents (${items?.documents.length || 0})`} />
           <Tab label={`Photos (${items?.photos.length || 0})`} />
+          <Tab label={`Videos (${items?.videos.length || 0})`} />
         </Tabs>
       </Box>
 
