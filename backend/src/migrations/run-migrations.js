@@ -21,6 +21,7 @@ async function runMigrations() {
     '013_roles_to_array.sql',
     '014_rostering_enhancements.sql',
     '015_fix_notifications_columns.sql',
+    '016_fix_notification_triggers.sql',
   ];
 
   try {
