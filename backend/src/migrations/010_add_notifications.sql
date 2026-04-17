@@ -8,12 +8,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
-  message TEXT NOT NULL,
+  body TEXT NOT NULL,
   type VARCHAR(20) DEFAULT 'info', -- 'info', 'success', 'warning', 'error'
   category VARCHAR(50) DEFAULT 'system', -- 'arrangement', 'invoice', 'message', 'system', 'user'
   entity_type VARCHAR(50), -- 'arrangement', 'invoice', 'message', etc.
   entity_id UUID, -- Reference to the related entity
-  is_read BOOLEAN DEFAULT false,
+  read BOOLEAN DEFAULT false,
   read_at TIMESTAMP,
   action_url TEXT, -- URL for clicking the notification
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
 CREATE TABLE IF NOT EXISTS system_alerts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(255) NOT NULL,
-  message TEXT NOT NULL,
+  body TEXT NOT NULL,
   type VARCHAR(20) DEFAULT 'info',
   target_roles TEXT[], -- Array of roles: ['admin', 'staff', 'viewer']
   is_active BOOLEAN DEFAULT true,
@@ -65,15 +65,15 @@ CREATE TABLE IF NOT EXISTS system_alert_dismissals (
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = false;
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, read) WHERE read = false;
 CREATE INDEX IF NOT EXISTS idx_system_alerts_active ON system_alerts(is_active) WHERE is_active = true;
 
 -- Function to create notification
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
   p_title VARCHAR,
-  p_message TEXT,
+  p_body TEXT,
   p_type VARCHAR DEFAULT 'info',
   p_category VARCHAR DEFAULT 'system',
   p_entity_type VARCHAR DEFAULT NULL,
@@ -87,7 +87,7 @@ BEGIN
   INSERT INTO notifications (
     user_id,
     title,
-    message,
+    body,
     type,
     category,
     entity_type,
@@ -96,7 +96,7 @@ BEGIN
   ) VALUES (
     p_user_id,
     p_title,
-    p_message,
+    p_body,
     p_type,
     p_category,
     p_entity_type,
@@ -112,7 +112,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION create_role_notification(
   p_role VARCHAR,
   p_title VARCHAR,
-  p_message TEXT,
+  p_body TEXT,
   p_type VARCHAR DEFAULT 'info',
   p_category VARCHAR DEFAULT 'system'
 )
@@ -122,12 +122,12 @@ DECLARE
   v_user RECORD;
 BEGIN
   FOR v_user IN
-    SELECT id FROM users WHERE role = p_role AND deleted_at IS NULL
+    SELECT id FROM users WHERE role = p_role
   LOOP
     PERFORM create_notification(
       v_user.id,
       p_title,
-      p_message,
+      p_body,
       p_type,
       p_category
     );

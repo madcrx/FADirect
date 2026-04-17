@@ -346,7 +346,7 @@ router.post('/alerts',
       const result = await db.query(`
         INSERT INTO system_alerts (
           title,
-          message,
+          body,
           type,
           target_roles,
           starts_at,
@@ -369,7 +369,7 @@ router.post('/alerts',
         alert: {
           id: result.rows[0].id,
           title: result.rows[0].title,
-          message: result.rows[0].message,
+          message: result.rows[0].body,
           type: result.rows[0].type,
           targetRoles: result.rows[0].target_roles,
           startsAt: result.rows[0].starts_at,
