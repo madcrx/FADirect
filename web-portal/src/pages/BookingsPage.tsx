@@ -116,11 +116,39 @@ export default function BookingsPage() {
         return;
       }
 
+      const startTime = new Date(formData.startTime).toISOString();
+      const endTime = new Date(formData.endTime).toISOString();
+
+      // Check equipment availability
+      if (formData.equipmentIds.length > 0) {
+        const unavailableEquipment: string[] = [];
+
+        for (const equipmentId of formData.equipmentIds) {
+          const response = await api.post('/equipment/check-availability', {
+            equipmentId,
+            startTime,
+            endTime,
+          });
+
+          if (!response.data.available) {
+            const item = equipment.find(e => e.id === equipmentId);
+            if (item) {
+              unavailableEquipment.push(item.name);
+            }
+          }
+        }
+
+        if (unavailableEquipment.length > 0) {
+          setError(`The following equipment is already assigned to another job during this time: ${unavailableEquipment.join(', ')}`);
+          return;
+        }
+      }
+
       // Convert datetime-local format to ISO8601
       const payload = {
         ...formData,
-        startTime: formData.startTime ? new Date(formData.startTime).toISOString() : '',
-        endTime: formData.endTime ? new Date(formData.endTime).toISOString() : '',
+        startTime,
+        endTime,
       };
 
       await api.post('/roster/jobs', payload);
