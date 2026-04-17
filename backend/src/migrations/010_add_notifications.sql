@@ -299,16 +299,21 @@ BEGIN
       SELECT * INTO v_arrangement FROM arrangements WHERE id = NEW.arrangement_id;
 
       IF v_arrangement.assigned_to IS NOT NULL AND v_arrangement.assigned_to != NEW.sender_id THEN
-        PERFORM create_notification(
-          v_arrangement.assigned_to,
-          'New Message Received',
-          'New message from ' || COALESCE(NEW.sender_phone, NEW.sender_email),
-          'info',
-          'message',
-          'message',
-          NEW.id,
-          '/arrangements/' || NEW.arrangement_id
-        );
+        DECLARE
+          v_sender RECORD;
+        BEGIN
+          SELECT name, phone_number INTO v_sender FROM users WHERE id = NEW.sender_id;
+          PERFORM create_notification(
+            v_arrangement.assigned_to,
+            'New Message Received',
+            'New message from ' || COALESCE(v_sender.name, v_sender.phone_number, 'Unknown'),
+            'info',
+            'message',
+            'message',
+            NEW.id,
+            '/arrangements/' || NEW.arrangement_id
+          );
+        END;
       END IF;
     END;
   END IF;
@@ -321,7 +326,6 @@ DROP TRIGGER IF EXISTS trigger_notify_message_received ON messages;
 CREATE TRIGGER trigger_notify_message_received
   AFTER INSERT ON messages
   FOR EACH ROW
-  WHEN (NEW.direction = 'inbound')
   EXECUTE FUNCTION notify_message_received();
 
 COMMENT ON TABLE notifications IS 'User notifications for events and updates';
