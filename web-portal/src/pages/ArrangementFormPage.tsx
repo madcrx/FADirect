@@ -47,7 +47,10 @@ export default function ArrangementFormPage() {
   const loadMourners = async () => {
     try {
       const users = await usersApi.getAll();
-      setMourners(users.filter(u => u.role === 'mourner'));
+      setMourners(users.filter(u => {
+        const roles = Array.isArray(u.role) ? u.role : [u.role];
+        return roles.includes('mourner');
+      }));
     } catch (error) {
       console.error('Failed to load mourners:', error);
     }

@@ -2,7 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'arranger' | 'mourner';
+  role: Array<'admin' | 'management' | 'arranger' | 'conductor' | 'funeral_director_assistant' | 'embalmer' | 'hearse_driver' | 'coach_driver' | 'mourner'>;
   phoneNumber: string;
   organizationId?: string;
   organizationName?: string;

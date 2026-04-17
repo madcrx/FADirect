@@ -72,9 +72,12 @@ export default function LoginPage() {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       const response = await authApi.login(formattedPhone, code);
 
-      // Check if user is admin or arranger
-      if (response.user.role !== 'admin' && response.user.role !== 'arranger') {
-        setError('Access denied. Portal is for administrators and arrangers only.');
+      // Check if user has staff access (any role except mourner)
+      const userRoles = Array.isArray(response.user.role) ? response.user.role : [response.user.role];
+      const hasStaffAccess = userRoles.some(role => role !== 'mourner');
+
+      if (!hasStaffAccess) {
+        setError('Access denied. Portal is for staff members only.');
         return;
       }
 
