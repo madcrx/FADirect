@@ -202,12 +202,12 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
   }
 });
 
-// Soft delete arrangement (arranger only)
+// Soft delete arrangement (arranger or admin)
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
-    // Check if user is arranger
+    // Check if arrangement exists
     const arrangement = await db.query(
-      'SELECT arranger_id FROM arrangements WHERE id = $1',
+      'SELECT arranger_id FROM arrangements WHERE id = $1 AND deleted_at IS NULL',
       [req.params.id]
     );
 
@@ -215,8 +215,13 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
       return res.status(404).json({ error: { message: 'Arrangement not found' } });
     }
 
-    if (arrangement.rows[0].arranger_id !== req.user.id) {
-      return res.status(403).json({ error: { message: 'Only arrangers can delete arrangements' } });
+    // Check if user is arranger or admin
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isAdmin = userRoles.includes('admin');
+    const isArranger = arrangement.rows[0].arranger_id === req.user.id;
+
+    if (!isAdmin && !isArranger) {
+      return res.status(403).json({ error: { message: 'Only arrangers or admins can delete arrangements' } });
     }
 
     // Soft delete
