@@ -116,6 +116,7 @@ router.post('/jobs',
       requirements,
       staffIds,
       vehicleIds,
+      equipmentIds,
     } = req.body;
 
     try {
@@ -170,6 +171,16 @@ router.post('/jobs',
             INSERT INTO job_vehicle_assignments (job_id, vehicle_id)
             VALUES ($1, $2)
           `, [job.id, vehicleId]);
+        }
+      }
+
+      // Assign equipment
+      if (equipmentIds && equipmentIds.length > 0) {
+        for (const equipmentId of equipmentIds) {
+          await db.query(`
+            INSERT INTO job_equipment_assignments (job_id, equipment_id)
+            VALUES ($1, $2)
+          `, [job.id, equipmentId]);
         }
       }
 

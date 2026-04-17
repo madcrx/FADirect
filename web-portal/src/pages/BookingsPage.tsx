@@ -18,6 +18,8 @@ import {
   Select,
   MenuItem,
   Alert,
+  OutlinedInput,
+  SelectChangeEvent,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -52,6 +54,7 @@ export default function BookingsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [arrangements, setArrangements] = useState<Array<{id: string; deceasedName: string}>>([]);
+  const [equipment, setEquipment] = useState<Array<{id: string; name: string; equipmentType: string; status: string}>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -64,6 +67,7 @@ export default function BookingsPage() {
     startTime: '',
     endTime: '',
     location: '',
+    equipmentIds: [] as string[],
     requirements: {
       arranger: 0,
       conductor: 0,
@@ -84,17 +88,19 @@ export default function BookingsPage() {
       const startDate = format(startOfWeek(selectedDate), 'yyyy-MM-dd');
       const endDate = format(addDays(startOfWeek(selectedDate), 6), 'yyyy-MM-dd');
 
-      const [jobsRes, typesRes, arrangementsRes] = await Promise.all([
+      const [jobsRes, typesRes, arrangementsRes, equipmentRes] = await Promise.all([
         api.get('/roster/jobs', {
           params: { startDate, endDate },
         }),
         api.get('/roster/job-types'),
         api.get('/arrangements'),
+        api.get('/equipment'),
       ]);
 
       setJobs(jobsRes.data.jobs);
       setJobTypes(typesRes.data.jobTypes);
       setArrangements(arrangementsRes.data.arrangements.filter((a: any) => a.status !== 'completed'));
+      setEquipment(equipmentRes.data.equipment.filter((e: any) => e.status !== 'retired'));
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load roster data');
     } finally {
@@ -127,6 +133,7 @@ export default function BookingsPage() {
         startTime: '',
         endTime: '',
         location: '',
+        equipmentIds: [],
         requirements: {
           arranger: 0,
           conductor: 0,
@@ -357,6 +364,50 @@ export default function BookingsPage() {
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             />
+
+            {/* Equipment Assignment */}
+            <FormControl fullWidth>
+              <InputLabel>Equipment</InputLabel>
+              <Select
+                multiple
+                value={formData.equipmentIds}
+                onChange={(e: SelectChangeEvent<string[]>) => {
+                  const value = e.target.value;
+                  setFormData({ ...formData, equipmentIds: typeof value === 'string' ? value.split(',') : value });
+                }}
+                input={<OutlinedInput label="Equipment" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((id) => {
+                      const item = equipment.find(e => e.id === id);
+                      return item ? (
+                        <Chip key={id} label={item.name} size="small" />
+                      ) : null;
+                    })}
+                  </Box>
+                )}
+              >
+                {equipment.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                      <Typography sx={{ flex: 1 }}>{item.name}</Typography>
+                      <Chip
+                        label={item.equipmentType.replace(/_/g, ' ')}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                      <Chip
+                        label={item.status}
+                        size="small"
+                        color={item.status === 'available' ? 'success' : 'default'}
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             {/* Staff Requirements */}
             <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
