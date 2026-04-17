@@ -51,6 +51,7 @@ interface JobType {
 export default function BookingsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
+  const [arrangements, setArrangements] = useState<Array<{id: string; deceasedName: string}>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,6 +60,7 @@ export default function BookingsPage() {
   const [formData, setFormData] = useState({
     title: '',
     jobTypeId: '',
+    arrangementId: '',
     startTime: '',
     endTime: '',
     location: '',
@@ -82,15 +84,17 @@ export default function BookingsPage() {
       const startDate = format(startOfWeek(selectedDate), 'yyyy-MM-dd');
       const endDate = format(addDays(startOfWeek(selectedDate), 6), 'yyyy-MM-dd');
 
-      const [jobsRes, typesRes] = await Promise.all([
+      const [jobsRes, typesRes, arrangementsRes] = await Promise.all([
         api.get('/roster/jobs', {
           params: { startDate, endDate },
         }),
         api.get('/roster/job-types'),
+        api.get('/arrangements'),
       ]);
 
       setJobs(jobsRes.data.jobs);
       setJobTypes(typesRes.data.jobTypes);
+      setArrangements(arrangementsRes.data.arrangements.filter((a: any) => a.status !== 'completed'));
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load roster data');
     } finally {
@@ -119,6 +123,7 @@ export default function BookingsPage() {
       setFormData({
         title: '',
         jobTypeId: '',
+        arrangementId: '',
         startTime: '',
         endTime: '',
         location: '',
@@ -309,6 +314,23 @@ export default function BookingsPage() {
                       />
                       {type.name}
                     </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Arrangement (Deceased)</InputLabel>
+              <Select
+                value={formData.arrangementId}
+                label="Arrangement (Deceased)"
+                onChange={(e) => setFormData({ ...formData, arrangementId: e.target.value })}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {arrangements.map((arrangement) => (
+                  <MenuItem key={arrangement.id} value={arrangement.id}>
+                    {arrangement.deceasedName}
                   </MenuItem>
                 ))}
               </Select>
