@@ -49,7 +49,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
   { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
   { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Rostering', icon: <EventNoteIcon />, path: '/roster' },
+  { text: 'Bookings', icon: <EventNoteIcon />, path: '/bookings' },
   { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
   { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
   { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },

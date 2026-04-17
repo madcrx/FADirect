@@ -48,7 +48,7 @@ interface JobType {
   defaultDuration: number;
 }
 
-export default function RosteringPage() {
+export default function BookingsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -162,7 +162,7 @@ export default function RosteringPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Daily Rostering Board
+            Bookings Board
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Schedule jobs and assign staff/vehicles
