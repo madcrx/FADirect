@@ -51,9 +51,9 @@ router.get('/overview', authenticateToken, async (req, res, next) => {
     const usersQuery = `
       SELECT
         COUNT(*) as total_users,
-        COUNT(*) FILTER (WHERE role = 'admin') as admin_users,
-        COUNT(*) FILTER (WHERE role = 'arranger') as arranger_users,
-        COUNT(*) FILTER (WHERE role = 'mourner') as mourner_users,
+        COUNT(*) FILTER (WHERE role @> ARRAY['admin']::TEXT[]) as admin_users,
+        COUNT(*) FILTER (WHERE role @> ARRAY['arranger']::TEXT[]) as arranger_users,
+        COUNT(*) FILTER (WHERE role @> ARRAY['mourner']::TEXT[]) as mourner_users,
         COUNT(*) FILTER (WHERE last_seen >= NOW() - INTERVAL '30 days') as active_users
       FROM users
     `;

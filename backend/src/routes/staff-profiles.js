@@ -14,7 +14,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         u.role
       FROM staff_profiles sp
       JOIN users u ON sp.user_id = u.id
-      WHERE u.role != 'mourner'
+      WHERE NOT (u.role @> ARRAY['mourner']::TEXT[])
       ORDER BY u.name ASC
     `);
 

@@ -40,7 +40,11 @@ const requireAdmin = (req, res, next) => {
     return res.status(401).json({ error: { message: 'Authentication required' } });
   }
 
-  if (req.user.role !== 'admin') {
+  // Handle both string and array role formats
+  const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+  const hasAdminRole = userRoles.includes('admin');
+
+  if (!hasAdminRole) {
     return res.status(403).json({ error: { message: 'Admin access required' } });
   }
 
