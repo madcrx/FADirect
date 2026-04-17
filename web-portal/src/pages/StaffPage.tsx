@@ -50,6 +50,7 @@ export default function StaffPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [formData, setFormData] = useState({
     phoneNumber: '',
     fullName: '',
@@ -76,41 +77,88 @@ export default function StaffPage() {
     }
   };
 
-  const handleAddStaff = async () => {
-    try {
-      // First, create or find the user
-      const userResponse = await api.post('/users/find-or-create', {
-        phoneNumber: formData.phoneNumber,
-        name: formData.fullName,
-        role: formData.roles.length > 0 ? formData.roles : ['arranger'],
-      });
+  const handleOpenEdit = (member: StaffMember) => {
+    setEditingStaff(member);
+    setFormData({
+      phoneNumber: member.phoneNumber,
+      fullName: member.fullName,
+      roles: Array.isArray(member.role) ? member.role : [member.role],
+      position: member.position || '',
+      licenseNumber: member.licenseNumber || '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
+    });
+    setDialogOpen(true);
+  };
 
-      const userId = userResponse.data.user.id;
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingStaff(null);
+    setFormData({
+      phoneNumber: '',
+      fullName: '',
+      roles: ['arranger'],
+      position: '',
+      licenseNumber: '',
+      emergencyContactName: '',
+      emergencyContactPhone: '',
+    });
+  };
 
-      // Then create the staff profile
-      await api.post('/staff-profiles', {
-        userId,
-        position: formData.position,
-        licenseNumber: formData.licenseNumber,
-        emergencyContactName: formData.emergencyContactName,
-        emergencyContactPhone: formData.emergencyContactPhone,
-        isAvailable: true,
-      });
+  const handleSaveStaff = async () => {
+    if (editingStaff) {
+      // Update existing staff
+      try {
+        // Update user roles
+        await api.put(`/users/${editingStaff.userId}`, {
+          name: formData.fullName,
+          role: formData.roles,
+        });
 
-      setSuccess('Staff member added successfully');
-      setDialogOpen(false);
-      setFormData({
-        phoneNumber: '',
-        fullName: '',
-        roles: ['arranger'],
-        position: '',
-        licenseNumber: '',
-        emergencyContactName: '',
-        emergencyContactPhone: '',
-      });
-      await loadStaff();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to add staff member');
+        // Update staff profile
+        await api.post('/staff-profiles', {
+          userId: editingStaff.userId,
+          position: formData.position,
+          licenseNumber: formData.licenseNumber,
+          emergencyContactName: formData.emergencyContactName,
+          emergencyContactPhone: formData.emergencyContactPhone,
+          isAvailable: true,
+        });
+
+        setSuccess('Staff member updated successfully');
+        handleCloseDialog();
+        await loadStaff();
+      } catch (err: any) {
+        setError(err.response?.data?.error?.message || 'Failed to update staff member');
+      }
+    } else {
+      // Add new staff
+      try {
+        // First, create or find the user
+        const userResponse = await api.post('/users/find-or-create', {
+          phoneNumber: formData.phoneNumber,
+          name: formData.fullName,
+          role: formData.roles.length > 0 ? formData.roles : ['arranger'],
+        });
+
+        const userId = userResponse.data.user.id;
+
+        // Then create the staff profile
+        await api.post('/staff-profiles', {
+          userId,
+          position: formData.position,
+          licenseNumber: formData.licenseNumber,
+          emergencyContactName: formData.emergencyContactName,
+          emergencyContactPhone: formData.emergencyContactPhone,
+          isAvailable: true,
+        });
+
+        setSuccess('Staff member added successfully');
+        handleCloseDialog();
+        await loadStaff();
+      } catch (err: any) {
+        setError(err.response?.data?.error?.message || 'Failed to add staff member');
+      }
     }
   };
 
@@ -200,7 +248,7 @@ export default function StaffPage() {
                 </Box>
 
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                  <IconButton size="small">
+                  <IconButton size="small" onClick={() => handleOpenEdit(member)}>
                     <EditIcon />
                   </IconButton>
                 </Box>
@@ -226,9 +274,9 @@ export default function StaffPage() {
         </Card>
       )}
 
-      {/* Add Staff Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Staff Member</DialogTitle>
+      {/* Add/Edit Staff Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
@@ -238,6 +286,8 @@ export default function StaffPage() {
               value={formData.phoneNumber}
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
               required
+              disabled={!!editingStaff}
+              helperText={editingStaff ? "Phone number cannot be changed" : ""}
             />
             <TextField
               fullWidth
@@ -303,13 +353,13 @@ export default function StaffPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button
             variant="contained"
-            onClick={handleAddStaff}
-            disabled={!formData.phoneNumber || !formData.fullName}
+            onClick={handleSaveStaff}
+            disabled={!formData.fullName || (!editingStaff && !formData.phoneNumber)}
           >
-            Add Staff Member
+            {editingStaff ? 'Update Staff Member' : 'Add Staff Member'}
           </Button>
         </DialogActions>
       </Dialog>
