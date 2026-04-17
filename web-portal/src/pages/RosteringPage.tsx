@@ -100,7 +100,20 @@ export default function RosteringPage() {
 
   const handleCreateJob = async () => {
     try {
-      await api.post('/roster/jobs', formData);
+      // Validate required fields
+      if (!formData.title || !formData.jobTypeId || !formData.startTime || !formData.endTime) {
+        setError('Please fill in all required fields: Title, Job Type, Start Time, and End Time');
+        return;
+      }
+
+      // Convert datetime-local format to ISO8601
+      const payload = {
+        ...formData,
+        startTime: formData.startTime ? new Date(formData.startTime).toISOString() : '',
+        endTime: formData.endTime ? new Date(formData.endTime).toISOString() : '',
+      };
+
+      await api.post('/roster/jobs', payload);
       setSuccess('Job created successfully');
       setJobDialog(false);
       setFormData({
@@ -120,7 +133,10 @@ export default function RosteringPage() {
       });
       await loadData();
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to create job');
+      const errorMsg = err.response?.data?.error?.message || 'Failed to create job';
+      const details = err.response?.data?.error?.details;
+      const detailsMsg = details ? '\n' + details.map((d: any) => `- ${d.msg}`).join('\n') : '';
+      setError(errorMsg + detailsMsg);
     }
   };
 
