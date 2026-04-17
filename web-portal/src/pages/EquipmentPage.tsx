@@ -21,6 +21,7 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Inventory as EquipmentIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
@@ -46,6 +47,8 @@ export default function EquipmentPage() {
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     equipmentType: 'trolley',
@@ -85,12 +88,28 @@ export default function EquipmentPage() {
       location: item.location || '',
       notes: item.notes || '',
     });
+    setPhotoPreview(item.photoUrl);
+    setSelectedPhoto(null);
     setDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingEquipment(null);
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
     setFormData({
       name: '',
       equipmentType: 'trolley',
@@ -104,9 +123,11 @@ export default function EquipmentPage() {
   };
 
   const handleSaveEquipment = async () => {
-    if (editingEquipment) {
-      // Update existing equipment
-      try {
+    try {
+      let equipmentId = editingEquipment?.id;
+
+      if (editingEquipment) {
+        // Update existing equipment
         await api.put(`/equipment/${editingEquipment.id}`, {
           name: formData.name,
           equipmentType: formData.equipmentType,
@@ -117,17 +138,9 @@ export default function EquipmentPage() {
           location: formData.location,
           notes: formData.notes,
         });
-
-        setSuccess('Equipment updated successfully');
-        handleCloseDialog();
-        await loadEquipment();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to update equipment');
-      }
-    } else {
-      // Add new equipment
-      try {
-        await api.post('/equipment', {
+      } else {
+        // Add new equipment
+        const response = await api.post('/equipment', {
           name: formData.name,
           equipmentType: formData.equipmentType,
           description: formData.description,
@@ -137,13 +150,25 @@ export default function EquipmentPage() {
           location: formData.location,
           notes: formData.notes,
         });
-
-        setSuccess('Equipment added successfully');
-        handleCloseDialog();
-        await loadEquipment();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to add equipment');
+        equipmentId = response.data.equipment.id;
       }
+
+      // Upload photo if selected
+      if (selectedPhoto && equipmentId) {
+        const photoFormData = new FormData();
+        photoFormData.append('file', selectedPhoto);
+        photoFormData.append('equipmentId', equipmentId);
+
+        await api.post('/equipment/upload-photo', photoFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+
+      setSuccess(editingEquipment ? 'Equipment updated successfully' : 'Equipment added successfully');
+      handleCloseDialog();
+      await loadEquipment();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to save equipment');
     }
   };
 
@@ -315,6 +340,44 @@ export default function EquipmentPage() {
               <MenuItem value="flowers">Flowers</MenuItem>
               <MenuItem value="other">Other</MenuItem>
             </TextField>
+
+            {/* Photo Upload */}
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Equipment Photo
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {photoPreview && (
+                  <Box
+                    component="img"
+                    src={photoPreview}
+                    alt="Equipment preview"
+                    sx={{
+                      width: 120,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: 'divider',
+                    }}
+                  />
+                )}
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                >
+                  {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                  />
+                </Button>
+              </Box>
+            </Box>
+
             <TextField
               fullWidth
               label="Description"

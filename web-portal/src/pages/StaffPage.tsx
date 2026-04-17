@@ -28,6 +28,7 @@ import {
   Person as PersonIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
@@ -51,6 +52,8 @@ export default function StaffPage() {
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     phoneNumber: '',
     fullName: '',
@@ -88,12 +91,28 @@ export default function StaffPage() {
       emergencyContactName: '',
       emergencyContactPhone: '',
     });
+    setPhotoPreview(member.photoUrl);
+    setSelectedPhoto(null);
     setDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingStaff(null);
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
     setFormData({
       phoneNumber: '',
       fullName: '',
@@ -106,9 +125,24 @@ export default function StaffPage() {
   };
 
   const handleSaveStaff = async () => {
-    if (editingStaff) {
-      // Update existing staff
-      try {
+    try {
+      let photoUrl = null;
+
+      if (editingStaff) {
+        // Update existing staff
+
+        // Upload photo if selected
+        if (selectedPhoto) {
+          const photoFormData = new FormData();
+          photoFormData.append('file', selectedPhoto);
+          photoFormData.append('userId', editingStaff.userId);
+
+          const photoResponse = await api.post('/staff-profiles/upload-photo', photoFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          photoUrl = photoResponse.data.photoUrl;
+        }
+
         // Update user roles
         await api.put(`/users/${editingStaff.userId}`, {
           name: formData.fullName,
@@ -118,6 +152,7 @@ export default function StaffPage() {
         // Update staff profile
         await api.post('/staff-profiles', {
           userId: editingStaff.userId,
+          photoUrl: photoUrl,
           position: formData.position,
           licenseNumber: formData.licenseNumber,
           emergencyContactName: formData.emergencyContactName,
@@ -128,12 +163,9 @@ export default function StaffPage() {
         setSuccess('Staff member updated successfully');
         handleCloseDialog();
         await loadStaff();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to update staff member');
-      }
-    } else {
-      // Add new staff
-      try {
+      } else {
+        // Add new staff
+
         // First, create or find the user
         const userResponse = await api.post('/users/find-or-create', {
           phoneNumber: formData.phoneNumber,
@@ -143,9 +175,22 @@ export default function StaffPage() {
 
         const userId = userResponse.data.user.id;
 
+        // Upload photo if selected
+        if (selectedPhoto) {
+          const photoFormData = new FormData();
+          photoFormData.append('file', selectedPhoto);
+          photoFormData.append('userId', userId);
+
+          const photoResponse = await api.post('/staff-profiles/upload-photo', photoFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          photoUrl = photoResponse.data.photoUrl;
+        }
+
         // Then create the staff profile
         await api.post('/staff-profiles', {
           userId,
+          photoUrl: photoUrl,
           position: formData.position,
           licenseNumber: formData.licenseNumber,
           emergencyContactName: formData.emergencyContactName,
@@ -156,9 +201,9 @@ export default function StaffPage() {
         setSuccess('Staff member added successfully');
         handleCloseDialog();
         await loadStaff();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to add staff member');
       }
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to save staff member');
     }
   };
 
@@ -296,6 +341,37 @@ export default function StaffPage() {
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               required
             />
+
+            {/* Photo Upload */}
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Staff Photo
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {photoPreview && (
+                  <Avatar
+                    src={photoPreview}
+                    sx={{ width: 80, height: 80 }}
+                  >
+                    <PersonIcon sx={{ fontSize: 40 }} />
+                  </Avatar>
+                )}
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                >
+                  {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                  />
+                </Button>
+              </Box>
+            </Box>
+
             <FormControl fullWidth required>
               <InputLabel>Roles</InputLabel>
               <Select

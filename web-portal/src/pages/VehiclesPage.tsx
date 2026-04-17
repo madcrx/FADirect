@@ -21,6 +21,7 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   DriveEta as CarIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
@@ -46,6 +47,8 @@ export default function VehiclesPage() {
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     vehicleType: 'hearse',
     make: '',
@@ -83,12 +86,28 @@ export default function VehiclesPage() {
       color: vehicle.color,
       seatingCapacity: vehicle.seatingCapacity || 2,
     });
+    setPhotoPreview(vehicle.photoUrl);
+    setSelectedPhoto(null);
     setDialogOpen(true);
+  };
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingVehicle(null);
+    setSelectedPhoto(null);
+    setPhotoPreview(null);
     setFormData({
       vehicleType: 'hearse',
       make: '',
@@ -101,9 +120,11 @@ export default function VehiclesPage() {
   };
 
   const handleSaveVehicle = async () => {
-    if (editingVehicle) {
-      // Update existing vehicle
-      try {
+    try {
+      let vehicleId = editingVehicle?.id;
+
+      if (editingVehicle) {
+        // Update existing vehicle
         await api.put(`/vehicles/${editingVehicle.id}`, {
           vehicleType: formData.vehicleType,
           make: formData.make,
@@ -113,17 +134,9 @@ export default function VehiclesPage() {
           color: formData.color,
           seatingCapacity: formData.seatingCapacity,
         });
-
-        setSuccess('Vehicle updated successfully');
-        handleCloseDialog();
-        await loadVehicles();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to update vehicle');
-      }
-    } else {
-      // Add new vehicle
-      try {
-        await api.post('/vehicles', {
+      } else {
+        // Add new vehicle
+        const response = await api.post('/vehicles', {
           vehicleType: formData.vehicleType,
           make: formData.make,
           model: formData.model,
@@ -132,13 +145,25 @@ export default function VehiclesPage() {
           color: formData.color,
           seatingCapacity: formData.seatingCapacity,
         });
-
-        setSuccess('Vehicle added successfully');
-        handleCloseDialog();
-        await loadVehicles();
-      } catch (err: any) {
-        setError(err.response?.data?.error?.message || 'Failed to add vehicle');
+        vehicleId = response.data.vehicle.id;
       }
+
+      // Upload photo if selected
+      if (selectedPhoto && vehicleId) {
+        const photoFormData = new FormData();
+        photoFormData.append('file', selectedPhoto);
+        photoFormData.append('vehicleId', vehicleId);
+
+        await api.post('/vehicles/upload-photo', photoFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
+
+      setSuccess(editingVehicle ? 'Vehicle updated successfully' : 'Vehicle added successfully');
+      handleCloseDialog();
+      await loadVehicles();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to save vehicle');
     }
   };
 
@@ -304,6 +329,44 @@ export default function VehiclesPage() {
               <MenuItem value="van">Van</MenuItem>
               <MenuItem value="other">Other</MenuItem>
             </TextField>
+
+            {/* Photo Upload */}
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Vehicle Photo
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {photoPreview && (
+                  <Box
+                    component="img"
+                    src={photoPreview}
+                    alt="Vehicle preview"
+                    sx={{
+                      width: 120,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: 'divider',
+                    }}
+                  />
+                )}
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                >
+                  {photoPreview ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handlePhotoSelect}
+                  />
+                </Button>
+              </Box>
+            </Box>
+
             <TextField
               fullWidth
               label="Make"
