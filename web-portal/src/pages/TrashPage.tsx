@@ -40,6 +40,8 @@ interface DeletedItems {
   priceListItems: DeletedItem[];
   governmentForms: DeletedItem[];
   calendarEvents: DeletedItem[];
+  documents: DeletedItem[];
+  photos: DeletedItem[];
 }
 
 export default function TrashPage() {
@@ -109,6 +111,8 @@ export default function TrashPage() {
       'price-list': 'Price Item',
       'government-form': 'Government Form',
       'calendar-event': 'Event',
+      'document': 'Document',
+      'photo': 'Photo',
     };
     return labels[type] || type;
   };
@@ -124,6 +128,8 @@ export default function TrashPage() {
           ...items.priceListItems,
           ...items.governmentForms,
           ...items.calendarEvents,
+          ...items.documents,
+          ...items.photos,
         ].sort((a, b) => new Date(b.deletedAt).getTime() - new Date(a.deletedAt).getTime());
       case 1:
         return items.arrangements;
@@ -135,6 +141,10 @@ export default function TrashPage() {
         return items.governmentForms;
       case 5:
         return items.calendarEvents;
+      case 6:
+        return items.documents;
+      case 7:
+        return items.photos;
       default:
         return [];
     }
@@ -146,7 +156,9 @@ export default function TrashPage() {
     items.invoices.length +
     items.priceListItems.length +
     items.governmentForms.length +
-    items.calendarEvents.length : 0;
+    items.calendarEvents.length +
+    items.documents.length +
+    items.photos.length : 0;
 
   if (loading) {
     return (
@@ -199,6 +211,8 @@ export default function TrashPage() {
           <Tab label={`Price Items (${items?.priceListItems.length || 0})`} />
           <Tab label={`Government Forms (${items?.governmentForms.length || 0})`} />
           <Tab label={`Events (${items?.calendarEvents.length || 0})`} />
+          <Tab label={`Documents (${items?.documents.length || 0})`} />
+          <Tab label={`Photos (${items?.photos.length || 0})`} />
         </Tabs>
       </Box>
 

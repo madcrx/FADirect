@@ -14,6 +14,8 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       priceListItems: [],
       governmentForms: [],
       calendarEvents: [],
+      documents: [],
+      photos: [],
       users: [],
     };
 
@@ -109,13 +111,53 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       }));
     }
 
+    // Get deleted documents
+    if (!type || type === 'documents') {
+      const result = await db.query(
+        `SELECT d.id, d.file_name, d.document_type, d.deleted_at, a.deceased_name
+         FROM documents d
+         LEFT JOIN arrangements a ON d.arrangement_id = a.id
+         WHERE d.deleted_at IS NOT NULL
+         ORDER BY d.deleted_at DESC
+         LIMIT 100`
+      );
+      deletedItems.documents = result.rows.map(row => ({
+        id: row.id,
+        type: 'document',
+        name: row.file_name,
+        details: `${row.document_type || 'Document'}${row.deceased_name ? ` - ${row.deceased_name}` : ''}`,
+        deletedAt: row.deleted_at,
+      }));
+    }
+
+    // Get deleted photos
+    if (!type || type === 'photos') {
+      const result = await db.query(
+        `SELECT p.id, p.file_name, p.deleted_at, a.deceased_name
+         FROM photos p
+         LEFT JOIN arrangements a ON p.arrangement_id = a.id
+         WHERE p.deleted_at IS NOT NULL
+         ORDER BY p.deleted_at DESC
+         LIMIT 100`
+      );
+      deletedItems.photos = result.rows.map(row => ({
+        id: row.id,
+        type: 'photo',
+        name: row.file_name,
+        details: row.deceased_name ? `Photo - ${row.deceased_name}` : 'Photo',
+        deletedAt: row.deleted_at,
+      }));
+    }
+
     // Count total
     const totalCount =
       deletedItems.arrangements.length +
       deletedItems.invoices.length +
       deletedItems.priceListItems.length +
       deletedItems.governmentForms.length +
-      deletedItems.calendarEvents.length;
+      deletedItems.calendarEvents.length +
+      deletedItems.documents.length +
+      deletedItems.photos.length;
 
     res.json({
       totalCount,
@@ -137,6 +179,8 @@ router.post('/restore/:type/:id', authenticateToken, requireAdmin, async (req, r
       'price-list': 'price_list_items',
       'government-form': 'government_submissions',
       'calendar-event': 'calendar_events',
+      'document': 'documents',
+      'photo': 'photos',
     };
 
     const tableName = tableMap[type];
@@ -171,6 +215,8 @@ router.delete('/permanent/:type/:id', authenticateToken, requireAdmin, async (re
       'price-list': 'price_list_items',
       'government-form': 'government_submissions',
       'calendar-event': 'calendar_events',
+      'document': 'documents',
+      'photo': 'photos',
     };
 
     const tableName = tableMap[type];
