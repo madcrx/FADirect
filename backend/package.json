@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "node src/migrations/run.js",
+    "migrate": "node src/migrations/run-migrations.js",
     "test": "jest"
   },
   "keywords": [
