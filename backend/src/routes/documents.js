@@ -146,8 +146,8 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
     const doc = await db.query(
       `SELECT d.*, a.arranger_id
        FROM documents d
-       JOIN arrangements a ON d.arrangement_id = a.id
-       WHERE d.id = $1`,
+       LEFT JOIN arrangements a ON d.arrangement_id = a.id
+       WHERE d.id = $1 AND d.deleted_at IS NULL`,
       [req.params.id]
     );
 
@@ -156,9 +156,13 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
     }
 
     const isUploader = doc.rows[0].uploaded_by === req.user.id;
-    const isArranger = doc.rows[0].arranger_id === req.user.id;
+    const isArranger = doc.rows[0].arranger_id && doc.rows[0].arranger_id === req.user.id;
+    const isAdmin = Array.isArray(req.user.role) ? req.user.role.includes('admin') : req.user.role === 'admin';
 
-    if (!isUploader && !isArranger) {
+    // Allow deletion if: uploader, arranger, admin, or unassigned file
+    const canDelete = isUploader || isArranger || isAdmin || !doc.rows[0].arrangement_id;
+
+    if (!canDelete) {
       return res.status(403).json({ error: { message: 'Unauthorized' } });
     }
 

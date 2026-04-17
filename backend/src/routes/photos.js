@@ -140,15 +140,15 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
   }
 });
 
-// Soft delete photo (uploader or arranger)
+// Soft delete photo (uploader, arranger, admin, or unassigned)
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
     // Get photo and check permissions
     const photo = await db.query(
       `SELECT p.*, a.arranger_id
        FROM photos p
-       JOIN arrangements a ON p.arrangement_id = a.id
-       WHERE p.id = $1`,
+       LEFT JOIN arrangements a ON p.arrangement_id = a.id
+       WHERE p.id = $1 AND p.deleted_at IS NULL`,
       [req.params.id]
     );
 
@@ -157,9 +157,13 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
     }
 
     const isUploader = photo.rows[0].uploaded_by === req.user.id;
-    const isArranger = photo.rows[0].arranger_id === req.user.id;
+    const isArranger = photo.rows[0].arranger_id && photo.rows[0].arranger_id === req.user.id;
+    const isAdmin = Array.isArray(req.user.role) ? req.user.role.includes('admin') : req.user.role === 'admin';
 
-    if (!isUploader && !isArranger) {
+    // Allow deletion if: uploader, arranger, admin, or unassigned file
+    const canDelete = isUploader || isArranger || isAdmin || !photo.rows[0].arrangement_id;
+
+    if (!canDelete) {
       return res.status(403).json({ error: { message: 'Unauthorized' } });
     }
 
