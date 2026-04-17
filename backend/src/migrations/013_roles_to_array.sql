@@ -1,18 +1,28 @@
 -- Migration 013: Convert role to array to support multiple roles per user
 -- Staff members can now have multiple roles (e.g., Driver + Embalmer)
 
--- Add new roles column as array
-ALTER TABLE users ADD COLUMN IF NOT EXISTS roles TEXT[];
+DO $$
+BEGIN
+  -- Only convert if role column is not already an array
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'users' AND column_name = 'role'
+    AND data_type IN ('character varying', 'text')
+  ) THEN
+    -- Add new roles column as array
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS roles TEXT[];
 
--- Migrate existing role data to roles array
-UPDATE users SET roles = ARRAY[role] WHERE roles IS NULL;
+    -- Migrate existing role data to roles array
+    UPDATE users SET roles = ARRAY[role] WHERE roles IS NULL;
 
--- Drop the old role column and constraint
-ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
-ALTER TABLE users DROP COLUMN IF EXISTS role;
+    -- Drop the old role column and constraint
+    ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+    ALTER TABLE users DROP COLUMN IF EXISTS role;
 
--- Rename roles to role for backwards compatibility
-ALTER TABLE users RENAME COLUMN roles TO role;
+    -- Rename roles to role for backwards compatibility
+    ALTER TABLE users RENAME COLUMN roles TO role;
+  END IF;
+END $$;
 
 -- Add constraint to ensure at least one role
 ALTER TABLE users ADD CONSTRAINT users_role_not_empty
