@@ -13,7 +13,7 @@ import InvoicingPage from './pages/InvoicingPage';
 import GovernmentFormsPage from './pages/GovernmentFormsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
-import CalendarPage from './pages/CalendarPage';
+// CalendarPage deprecated - redirects to BookingsPage (unified scheduling)
 import SearchPage from './pages/SearchPage';
 import ExportPage from './pages/ExportPage';
 import TrashPage from './pages/TrashPage';
@@ -46,7 +46,7 @@ function App() {
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="calendar" element={<Navigate to="/bookings" replace />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />

@@ -69,6 +69,11 @@ export default function BookingsPage() {
     startTime: '',
     endTime: '',
     location: '',
+    description: '',
+    notes: '',
+    allDay: false,
+    attendees: '',
+    reminderMinutes: 0,
     equipmentIds: [] as string[],
     requirements: {
       arranger: 0,
@@ -151,10 +156,17 @@ export default function BookingsPage() {
       }
 
       // Convert datetime-local format to ISO8601
+      // Parse attendees string into array
+      const attendeesArray = formData.attendees
+        ? formData.attendees.split(',').map(name => ({ name: name.trim() }))
+        : null;
+
       const payload = {
         ...formData,
         startTime,
         endTime,
+        attendees: attendeesArray,
+        reminderMinutes: formData.reminderMinutes || null,
       };
 
       await api.post('/roster/jobs', payload);
@@ -167,6 +179,11 @@ export default function BookingsPage() {
         startTime: '',
         endTime: '',
         location: '',
+        description: '',
+        notes: '',
+        allDay: false,
+        attendees: '',
+        reminderMinutes: 0,
         equipmentIds: [],
         requirements: {
           arranger: 0,
@@ -436,6 +453,39 @@ export default function BookingsPage() {
               label="Location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={2}
+              label="Notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              label="Attendees (comma-separated names)"
+              value={formData.attendees}
+              onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
+              placeholder="John Doe, Jane Smith"
+              helperText="Optional: List people attending this event"
+            />
+            <TextField
+              fullWidth
+              label="Reminder (minutes before)"
+              type="number"
+              value={formData.reminderMinutes}
+              onChange={(e) => setFormData({ ...formData, reminderMinutes: parseInt(e.target.value) || 0 })}
+              InputProps={{ inputProps: { min: 0, step: 15 } }}
+              helperText="Optional: Set reminder notification (e.g., 30 for 30 minutes before)"
             />
 
             {/* Equipment Assignment */}

@@ -45,26 +45,64 @@ import NotificationCenter from './NotificationCenter';
 
 const drawerWidth = 260;
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
-  { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
-  { text: 'Bookings', icon: <EventNoteIcon />, path: '/bookings' },
-  { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
-  { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
-  { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
-  { text: 'Users', icon: <PeopleIcon />, path: '/users' },
-  { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
-  { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
-  { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
-  { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
-  { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
-  { text: 'Files', icon: <FolderIcon />, path: '/files' },
-  { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
-  { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },
-  { text: 'Trash', icon: <TrashIcon />, path: '/trash' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+interface MenuItem {
+  text: string;
+  icon: React.ReactNode;
+  path: string;
+  badge?: string;
+}
+
+interface MenuSection {
+  heading?: string;
+  items: MenuItem[];
+}
+
+const menuSections: MenuSection[] = [
+  {
+    items: [
+      { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+      { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
+      { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
+    ],
+  },
+  {
+    heading: 'OPERATIONS',
+    items: [
+      { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
+      { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
+      { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
+      { text: 'Users', icon: <PeopleIcon />, path: '/users' },
+      { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
+      { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
+    ],
+  },
+  {
+    heading: 'PLANNING',
+    items: [
+      { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
+      { text: 'Files', icon: <FolderIcon />, path: '/files' },
+    ],
+  },
+  {
+    heading: 'FINANCES',
+    items: [
+      { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
+      { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
+    ],
+  },
+  {
+    heading: 'ADMIN',
+    items: [
+      { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },
+      { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
+      { text: 'Trash', icon: <TrashIcon />, path: '/trash' },
+      { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    ],
+  },
 ];
+
+// Flatten menu items for easy lookup
+const menuItems = menuSections.flatMap(section => section.items);
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -106,30 +144,52 @@ export default function Layout() {
         </Typography>
       </Toolbar>
       <Divider />
-      <List>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton
-              selected={location.pathname === item.path}
-              onClick={() => handleMenuClick(item.path)}
-              disabled={item.badge === 'Soon'}
-            >
-              <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText
-                primary={item.text}
-                primaryTypographyProps={{
-                  fontWeight: location.pathname === item.path ? 600 : 400,
-                }}
-              />
-              {item.badge && (
-                <Typography variant="caption" color="text.secondary">
-                  {item.badge}
+      <List sx={{ py: 0 }}>
+        {menuSections.map((section, sectionIndex) => (
+          <Box key={sectionIndex}>
+            {section.heading && (
+              <ListItem sx={{ py: 1.5, px: 2 }}>
+                <Typography
+                  variant="overline"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    color: 'warning.main',
+                    letterSpacing: 1,
+                  }}
+                >
+                  {section.heading}
                 </Typography>
-              )}
-            </ListItemButton>
-          </ListItem>
+              </ListItem>
+            )}
+            {section.items.map((item) => (
+              <ListItem key={item.text} disablePadding>
+                <ListItemButton
+                  selected={location.pathname === item.path}
+                  onClick={() => handleMenuClick(item.path)}
+                  disabled={item.badge === 'Soon'}
+                  sx={{ pl: section.heading ? 3 : 2 }}
+                >
+                  <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit', minWidth: 40 }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{
+                      fontWeight: location.pathname === item.path ? 600 : 400,
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                  {item.badge && (
+                    <Typography variant="caption" color="text.secondary">
+                      {item.badge}
+                    </Typography>
+                  )}
+                </ListItemButton>
+              </ListItem>
+            ))}
+            {sectionIndex < menuSections.length - 1 && <Divider sx={{ my: 0.5 }} />}
+          </Box>
         ))}
       </List>
     </Box>

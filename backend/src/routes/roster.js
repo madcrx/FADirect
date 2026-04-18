@@ -84,6 +84,11 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
         priority: row.priority,
         notes: row.notes,
         specialInstructions: row.special_instructions,
+        allDay: row.all_day,
+        attendees: row.attendees,
+        reminderMinutes: row.reminder_minutes,
+        color: row.color,
+        requirements: row.requirements,
         staff: row.staff || [],
         vehicles: row.vehicles || [],
         createdAt: row.created_at,
@@ -121,6 +126,10 @@ router.post('/jobs',
       notes,
       specialInstructions,
       requirements,
+      allDay,
+      attendees,
+      reminderMinutes,
+      color,
       staffIds,
       vehicleIds,
       equipmentIds,
@@ -141,8 +150,12 @@ router.post('/jobs',
           notes,
           special_instructions,
           requirements,
+          all_day,
+          attendees,
+          reminder_minutes,
+          color,
           created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *
       `, [
         jobTypeId,
@@ -156,6 +169,10 @@ router.post('/jobs',
         notes || null,
         specialInstructions || null,
         requirements ? JSON.stringify(requirements) : '{}',
+        allDay || false,
+        attendees ? JSON.stringify(attendees) : null,
+        reminderMinutes || null,
+        color || null,
         req.user.id,
       ]);
 
@@ -220,6 +237,10 @@ router.put('/jobs/:id', authenticateToken, async (req, res, next) => {
       priority,
       notes,
       specialInstructions,
+      allDay,
+      attendees,
+      reminderMinutes,
+      color,
       staffIds,
       vehicleIds,
     } = req.body;
@@ -236,8 +257,12 @@ router.put('/jobs/:id', authenticateToken, async (req, res, next) => {
         priority = COALESCE($7, priority),
         notes = COALESCE($8, notes),
         special_instructions = COALESCE($9, special_instructions),
+        all_day = COALESCE($10, all_day),
+        attendees = COALESCE($11, attendees),
+        reminder_minutes = COALESCE($12, reminder_minutes),
+        color = COALESCE($13, color),
         updated_at = NOW()
-      WHERE id = $10 AND deleted_at IS NULL
+      WHERE id = $14 AND deleted_at IS NULL
     `, [
       title,
       description,
@@ -248,6 +273,10 @@ router.put('/jobs/:id', authenticateToken, async (req, res, next) => {
       priority,
       notes,
       specialInstructions,
+      allDay,
+      attendees ? JSON.stringify(attendees) : null,
+      reminderMinutes,
+      color,
       id,
     ]);
 
