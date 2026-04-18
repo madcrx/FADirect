@@ -27,9 +27,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   CalendarMonth as CalendarIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Today as TodayIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, addDays, startOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, addWeeks, subMonths, addMonths, startOfDay, endOfDay, isSameDay } from 'date-fns';
 
 interface Job {
   id: string;
@@ -57,6 +60,7 @@ export default function BookingsPage() {
   const [arrangements, setArrangements] = useState<Array<{id: string; deceasedName: string}>>([]);
   const [equipment, setEquipment] = useState<Array<{id: string; name: string; equipmentType: string; status: string}>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [deletedFilter, setDeletedFilter] = useState<'hide' | 'only' | 'all'>('hide');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -87,13 +91,85 @@ export default function BookingsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedDate, deletedFilter]);
+  }, [selectedDate, deletedFilter, viewMode]);
+
+  const getDateRange = () => {
+    switch (viewMode) {
+      case 'day':
+        return {
+          start: startOfDay(selectedDate),
+          end: endOfDay(selectedDate),
+        };
+      case 'week':
+        return {
+          start: startOfWeek(selectedDate),
+          end: addDays(startOfWeek(selectedDate), 6),
+        };
+      case 'month':
+        return {
+          start: startOfMonth(selectedDate),
+          end: endOfMonth(selectedDate),
+        };
+      default:
+        return {
+          start: startOfWeek(selectedDate),
+          end: addDays(startOfWeek(selectedDate), 6),
+        };
+    }
+  };
+
+  const handlePreviousDate = () => {
+    switch (viewMode) {
+      case 'day':
+        setSelectedDate(subDays(selectedDate, 1));
+        break;
+      case 'week':
+        setSelectedDate(subWeeks(selectedDate, 1));
+        break;
+      case 'month':
+        setSelectedDate(subMonths(selectedDate, 1));
+        break;
+    }
+  };
+
+  const handleNextDate = () => {
+    switch (viewMode) {
+      case 'day':
+        setSelectedDate(addDays(selectedDate, 1));
+        break;
+      case 'week':
+        setSelectedDate(addWeeks(selectedDate, 1));
+        break;
+      case 'month':
+        setSelectedDate(addMonths(selectedDate, 1));
+        break;
+    }
+  };
+
+  const handleToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  const getDateRangeLabel = () => {
+    const { start, end } = getDateRange();
+    switch (viewMode) {
+      case 'day':
+        return format(selectedDate, 'EEEE, d MMMM yyyy');
+      case 'week':
+        return `${format(start, 'd MMM')} - ${format(end, 'd MMM yyyy')}`;
+      case 'month':
+        return format(selectedDate, 'MMMM yyyy');
+      default:
+        return '';
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const startDate = format(startOfWeek(selectedDate), 'yyyy-MM-dd');
-      const endDate = format(addDays(startOfWeek(selectedDate), 6), 'yyyy-MM-dd');
+      const { start, end } = getDateRange();
+      const startDate = format(start, 'yyyy-MM-dd');
+      const endDate = format(end, 'yyyy-MM-dd');
 
       const [jobsRes, typesRes, arrangementsRes, equipmentRes] = await Promise.all([
         api.get('/roster/jobs', {
@@ -222,7 +298,20 @@ export default function BookingsPage() {
     });
   };
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(selectedDate), i));
+  const getDaysToDisplay = () => {
+    const { start, end } = getDateRange();
+    const days = [];
+    let currentDay = start;
+
+    while (currentDay <= end) {
+      days.push(currentDay);
+      currentDay = addDays(currentDay, 1);
+    }
+
+    return days;
+  };
+
+  const daysToDisplay = getDaysToDisplay();
 
   if (loading) {
     return (
@@ -237,20 +326,13 @@ export default function BookingsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Bookings Board
+            Schedule
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Schedule jobs and assign staff/vehicles
+            Manage jobs, events, and resource allocation
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<CalendarIcon />}
-            onClick={() => setSelectedDate(new Date())}
-          >
-            Today
-          </Button>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setJobDialog(true)}>
             Add Job
           </Button>
@@ -269,36 +351,93 @@ export default function BookingsPage() {
         </Alert>
       )}
 
-      {/* Filter Section */}
-      <Box sx={{ mb: 3 }}>
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel>Deleted Items</InputLabel>
-          <Select
-            value={deletedFilter}
-            label="Deleted Items"
-            onChange={(e) => setDeletedFilter(e.target.value as 'hide' | 'only' | 'all')}
-          >
-            <MenuItem value="hide">Hide Deleted</MenuItem>
-            <MenuItem value="only">Only Deleted</MenuItem>
-            <MenuItem value="all">All Including Deleted</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+      {/* Navigation and Filter Section */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+            {/* Date Navigation */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconButton onClick={handlePreviousDate} size="small">
+                <ChevronLeftIcon />
+              </IconButton>
+              <Box sx={{ minWidth: 200, textAlign: 'center' }}>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Date, from 6 am
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {getDateRangeLabel()}
+                </Typography>
+              </Box>
+              <IconButton onClick={handleNextDate} size="small">
+                <ChevronRightIcon />
+              </IconButton>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<TodayIcon />}
+                onClick={handleToday}
+                sx={{ ml: 1 }}
+              >
+                Today
+              </Button>
+            </Box>
 
-      {/* Week View */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Week of {format(startOfWeek(selectedDate), 'MMM d, yyyy')}
-        </Typography>
-      </Box>
+            {/* View Mode Selector */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                size="small"
+                variant={viewMode === 'day' ? 'contained' : 'outlined'}
+                onClick={() => setViewMode('day')}
+              >
+                Day
+              </Button>
+              <Button
+                size="small"
+                variant={viewMode === 'week' ? 'contained' : 'outlined'}
+                onClick={() => setViewMode('week')}
+              >
+                Week
+              </Button>
+              <Button
+                size="small"
+                variant={viewMode === 'month' ? 'contained' : 'outlined'}
+                onClick={() => setViewMode('month')}
+              >
+                Month
+              </Button>
+            </Box>
 
+            {/* Deleted Items Filter */}
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>Deleted Items</InputLabel>
+              <Select
+                value={deletedFilter}
+                label="Deleted Items"
+                onChange={(e) => setDeletedFilter(e.target.value as 'hide' | 'only' | 'all')}
+              >
+                <MenuItem value="hide">Hide Deleted</MenuItem>
+                <MenuItem value="only">Only Deleted</MenuItem>
+                <MenuItem value="all">All Including Deleted</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Jobs View */}
       <Grid container spacing={2}>
-        {weekDays.map((day) => {
+        {daysToDisplay.map((day) => {
           const dayJobs = getJobsForDay(day);
-          const isToday = format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+          const isToday = isSameDay(day, new Date());
 
           return (
-            <Grid item xs={12} md={6} lg={3} key={day.toString()}>
+            <Grid
+              item
+              xs={12}
+              md={viewMode === 'day' ? 12 : viewMode === 'week' ? 6 : 4}
+              lg={viewMode === 'day' ? 12 : viewMode === 'week' ? 3 : 2}
+              key={day.toString()}
+            >
               <Card
                 sx={{
                   minHeight: 400,
