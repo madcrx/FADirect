@@ -21,13 +21,17 @@ const upload = multer({
   storage,
   limits: { fileSize: config.MAX_FILE_SIZE },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|heic/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    // Allow common image mimetypes
+    const allowedMimetypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/heic', 'image/heif'];
+    const allowedExtensions = /jpeg|jpg|png|gif|heic|heif/;
+
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedMimetypes.includes(file.mimetype.toLowerCase());
+
     if (extname && mimetype) {
       return cb(null, true);
     }
-    cb(new Error('Invalid file type. Only images are allowed.'));
+    cb(new Error('Invalid file type. Only images are allowed (jpg, png, gif, heic).'));
   },
 });
 
