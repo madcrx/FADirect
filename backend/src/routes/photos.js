@@ -40,10 +40,8 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 
     const { arrangementId, caption } = req.body;
 
-    // Generate full URL for the uploaded file
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    // Use relative URL for the uploaded file
+    const fileUrl = `/uploads/${req.file.filename}`;
     const thumbnailUrl = fileUrl; // TODO: Generate actual thumbnail
 
     const result = await db.query(
@@ -84,9 +82,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
 
     const result = await db.query(query, params);
 
-    // Ensure URLs are absolute
-    const protocol = req.protocol;
-    const host = req.get('host');
+    // Map to response format with relative URLs
     const photos = result.rows.map(photo => ({
       id: photo.id,
       fileName: photo.file_name,
@@ -97,7 +93,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       deceasedName: photo.deceased_name,
       uploadedBy: photo.uploaded_by_name,
       uploadedAt: photo.created_at,
-      url: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
+      url: photo.file_url,
     }));
 
     res.json({ photos });
@@ -119,14 +115,12 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
       [req.params.arrangementId]
     );
 
-    // Ensure URLs are absolute and transform to camelCase
-    const protocol = req.protocol;
-    const host = req.get('host');
+    // Transform to camelCase with relative URLs
     const photos = result.rows.map(photo => ({
       id: photo.id,
       fileName: photo.file_name,
-      fileUrl: photo.file_url.startsWith('http') ? photo.file_url : `${protocol}://${host}${photo.file_url}`,
-      thumbnailUrl: photo.thumbnail_url.startsWith('http') ? photo.thumbnail_url : `${protocol}://${host}${photo.thumbnail_url}`,
+      fileUrl: photo.file_url,
+      thumbnailUrl: photo.thumbnail_url,
       arrangementId: photo.arrangement_id,
       uploadedBy: photo.uploaded_by,
       uploaderName: photo.uploader_name,

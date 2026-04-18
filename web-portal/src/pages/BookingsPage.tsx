@@ -21,6 +21,15 @@ import {
   OutlinedInput,
   SelectChangeEvent,
   Menu,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  Tabs,
+  Tab,
+  Avatar,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,6 +39,11 @@ import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Today as TodayIcon,
+  Person as PersonIcon,
+  DriveEta as VehicleIcon,
+  Inventory as EquipmentIcon,
+  Close as CloseIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, addWeeks, subMonths, addMonths, startOfDay, endOfDay, isSameDay } from 'date-fns';
@@ -66,6 +80,14 @@ export default function BookingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [jobDialog, setJobDialog] = useState(false);
+
+  // Resource allocation sidebar state
+  const [resourceDrawerOpen, setResourceDrawerOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [resourceTab, setResourceTab] = useState<'staff' | 'vehicles' | 'equipment'>('staff');
+  const [availableStaff, setAvailableStaff] = useState<Array<any>>([]);
+  const [availableVehicles, setAvailableVehicles] = useState<Array<any>>([]);
+  const [availableEquipment, setAvailableEquipment] = useState<Array<any>>([]);
   const [formData, setFormData] = useState({
     title: '',
     jobTypeId: '',
@@ -291,6 +313,77 @@ export default function BookingsPage() {
     }
   };
 
+  // Load available resources for the selected job
+  const loadAvailableResources = async (job: Job) => {
+    try {
+      const [staffRes, vehiclesRes, equipmentRes] = await Promise.all([
+        api.get('/staff-profiles'),
+        api.get('/vehicles'),
+        api.get('/equipment'),
+      ]);
+
+      // Filter out already assigned resources
+      const assignedStaffIds = job.staff.map((s: any) => s.id);
+      const assignedVehicleIds = job.vehicles.map((v: any) => v.id);
+      const assignedEquipmentIds: string[] = []; // TODO: Get from job
+
+      setAvailableStaff(staffRes.data.staffProfiles.filter((s: any) => !assignedStaffIds.includes(s.id)));
+      setAvailableVehicles(vehiclesRes.data.vehicles.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available'));
+      setAvailableEquipment(equipmentRes.data.equipment.filter((e: any) => !assignedEquipmentIds.includes(e.id) && e.status === 'available'));
+    } catch (err: any) {
+      console.error('Failed to load resources:', err);
+    }
+  };
+
+  // Assign staff to job
+  const handleAssignStaff = async (staffId: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId });
+      setSuccess('Staff assigned successfully');
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to assign staff');
+    }
+  };
+
+  // Assign vehicle to job
+  const handleAssignVehicle = async (vehicleId: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-vehicle`, { vehicleId });
+      setSuccess('Vehicle assigned successfully');
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to assign vehicle');
+    }
+  };
+
+  // Assign equipment to job
+  const handleAssignEquipment = async (equipmentId: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-equipment`, { equipmentId });
+      setSuccess('Equipment assigned successfully');
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to assign equipment');
+    }
+  };
+
+  // Load resources when job is selected
+  useEffect(() => {
+    if (selectedJob && resourceDrawerOpen) {
+      loadAvailableResources(selectedJob);
+    }
+  }, [selectedJob, resourceDrawerOpen]);
+
   const getJobsForDay = (date: Date) => {
     return jobs.filter((job) => {
       const jobDate = new Date(job.startTime);
@@ -464,6 +557,12 @@ export default function BookingsPage() {
                         mb: 1,
                         borderLeft: 4,
                         borderColor: job.jobTypeColor || 'primary.main',
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'action.hover' },
+                      }}
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setResourceDrawerOpen(true);
                       }}
                     >
                       <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -746,6 +845,196 @@ export default function BookingsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Resource Allocation Drawer */}
+      <Drawer
+        anchor="right"
+        open={resourceDrawerOpen}
+        onClose={() => {
+          setResourceDrawerOpen(false);
+          setSelectedJob(null);
+        }}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 400,
+            p: 2,
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" fontWeight="bold">
+            Assign Resources
+          </Typography>
+          <IconButton
+            onClick={() => {
+              setResourceDrawerOpen(false);
+              setSelectedJob(null);
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {selectedJob && (
+          <>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body1" fontWeight="medium">
+                {selectedJob.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {format(new Date(selectedJob.startTime), 'MMM d, HH:mm')} -{' '}
+                {format(new Date(selectedJob.endTime), 'HH:mm')}
+              </Typography>
+            </Box>
+
+            <Tabs
+              value={resourceTab}
+              onChange={(_, val) => setResourceTab(val)}
+              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+            >
+              <Tab label="Staff" value="staff" icon={<PersonIcon />} iconPosition="start" />
+              <Tab label="Vehicles" value="vehicles" icon={<VehicleIcon />} iconPosition="start" />
+              <Tab label="Equipment" value="equipment" icon={<EquipmentIcon />} iconPosition="start" />
+            </Tabs>
+
+            {/* Currently Assigned Section */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                Currently Assigned
+              </Typography>
+              <List dense>
+                {resourceTab === 'staff' && selectedJob.staff.length > 0 ? (
+                  selectedJob.staff.map((staff: any, index: number) => (
+                    <ListItem key={index}>
+                      <ListItemIcon>
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={staff.fullName}
+                        secondary={staff.role}
+                      />
+                    </ListItem>
+                  ))
+                ) : resourceTab === 'vehicles' && selectedJob.vehicles.length > 0 ? (
+                  selectedJob.vehicles.map((vehicle: any, index: number) => (
+                    <ListItem key={index}>
+                      <ListItemIcon>
+                        <CheckCircleIcon color="success" fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={vehicle.registration}
+                        secondary={vehicle.type}
+                      />
+                    </ListItem>
+                  ))
+                ) : (
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                    No {resourceTab} assigned yet
+                  </Typography>
+                )}
+              </List>
+            </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Available Resources Section */}
+            <Box>
+              <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                Available {resourceTab.charAt(0).toUpperCase() + resourceTab.slice(1)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Double-click to assign
+              </Typography>
+
+              <List dense>
+                {resourceTab === 'staff' && availableStaff.map((staff: any) => (
+                  <ListItem
+                    key={staff.id}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      borderRadius: 1,
+                      mb: 0.5,
+                    }}
+                    onDoubleClick={() => handleAssignStaff(staff.id)}
+                  >
+                    <ListItemIcon>
+                      <Avatar
+                        src={staff.photoUrl}
+                        sx={{ width: 32, height: 32 }}
+                      >
+                        {staff.fullName?.charAt(0)}
+                      </Avatar>
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={staff.fullName}
+                      secondary={staff.role}
+                    />
+                  </ListItem>
+                ))}
+
+                {resourceTab === 'vehicles' && availableVehicles.map((vehicle: any) => (
+                  <ListItem
+                    key={vehicle.id}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      borderRadius: 1,
+                      mb: 0.5,
+                    }}
+                    onDoubleClick={() => handleAssignVehicle(vehicle.id)}
+                  >
+                    <ListItemIcon>
+                      <VehicleIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={vehicle.registration}
+                      secondary={`${vehicle.make} ${vehicle.model} - ${vehicle.vehicleType}`}
+                    />
+                  </ListItem>
+                ))}
+
+                {resourceTab === 'equipment' && availableEquipment.map((equip: any) => (
+                  <ListItem
+                    key={equip.id}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      borderRadius: 1,
+                      mb: 0.5,
+                    }}
+                    onDoubleClick={() => handleAssignEquipment(equip.id)}
+                  >
+                    <ListItemIcon>
+                      <EquipmentIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={equip.name}
+                      secondary={equip.equipmentType.replace(/_/g, ' ')}
+                    />
+                  </ListItem>
+                ))}
+
+                {resourceTab === 'staff' && availableStaff.length === 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                    All staff are assigned or unavailable
+                  </Typography>
+                )}
+                {resourceTab === 'vehicles' && availableVehicles.length === 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                    All vehicles are assigned or unavailable
+                  </Typography>
+                )}
+                {resourceTab === 'equipment' && availableEquipment.length === 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                    All equipment is assigned or unavailable
+                  </Typography>
+                )}
+              </List>
+            </Box>
+          </>
+        )}
+      </Drawer>
     </Box>
   );
 }

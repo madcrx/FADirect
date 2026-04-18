@@ -40,10 +40,8 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 
     const { arrangementId, documentType } = req.body;
 
-    // Generate full URL for the uploaded file
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    // Use relative URL for the uploaded file
+    const fileUrl = `/uploads/${req.file.filename}`;
 
     const result = await db.query(
       `INSERT INTO documents (arrangement_id, uploaded_by, file_name, file_type, file_size, file_url, document_type)
@@ -83,9 +81,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
 
     const result = await db.query(query, params);
 
-    // Ensure URLs are absolute
-    const protocol = req.protocol;
-    const host = req.get('host');
+    // Map to response format with relative URLs
     const documents = result.rows.map(doc => ({
       id: doc.id,
       fileName: doc.file_name,
@@ -96,7 +92,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       deceasedName: doc.deceased_name,
       uploadedBy: doc.uploaded_by_name,
       uploadedAt: doc.created_at,
-      url: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+      url: doc.file_url,
     }));
 
     res.json({ documents });
@@ -117,15 +113,13 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
       [req.params.arrangementId]
     );
 
-    // Ensure URLs are absolute and transform to camelCase
-    const protocol = req.protocol;
-    const host = req.get('host');
+    // Transform to camelCase with relative URLs
     const documents = result.rows.map(doc => ({
       id: doc.id,
       fileName: doc.file_name,
       fileType: doc.file_type,
       fileSize: doc.file_size,
-      fileUrl: doc.file_url.startsWith('http') ? doc.file_url : `${protocol}://${host}${doc.file_url}`,
+      fileUrl: doc.file_url,
       arrangementId: doc.arrangement_id,
       uploadedBy: doc.uploaded_by,
       uploaderName: doc.uploader_name,

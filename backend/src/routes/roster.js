@@ -508,4 +508,100 @@ router.get('/available-staff', authenticateToken, async (req, res, next) => {
   }
 });
 
+// Assign staff to job
+router.post('/jobs/:jobId/assign-staff', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { staffId, role, isPrimary } = req.body;
+
+    if (!staffId) {
+      return res.status(400).json({ error: { message: 'Staff ID is required' } });
+    }
+
+    // Check if assignment already exists
+    const existing = await db.query(
+      'SELECT id FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2',
+      [jobId, staffId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: { message: 'Staff member already assigned to this job' } });
+    }
+
+    // Create assignment
+    await db.query(
+      'INSERT INTO job_staff_assignments (job_id, staff_id, role, is_primary) VALUES ($1, $2, $3, $4)',
+      [jobId, staffId, role || null, isPrimary || false]
+    );
+
+    res.json({ message: 'Staff assigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Assign vehicle to job
+router.post('/jobs/:jobId/assign-vehicle', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { vehicleId, isPrimary } = req.body;
+
+    if (!vehicleId) {
+      return res.status(400).json({ error: { message: 'Vehicle ID is required' } });
+    }
+
+    // Check if assignment already exists
+    const existing = await db.query(
+      'SELECT id FROM job_vehicle_assignments WHERE job_id = $1 AND vehicle_id = $2',
+      [jobId, vehicleId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: { message: 'Vehicle already assigned to this job' } });
+    }
+
+    // Create assignment
+    await db.query(
+      'INSERT INTO job_vehicle_assignments (job_id, vehicle_id, is_primary) VALUES ($1, $2, $3)',
+      [jobId, vehicleId, isPrimary || false]
+    );
+
+    res.json({ message: 'Vehicle assigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Assign equipment to job
+router.post('/jobs/:jobId/assign-equipment', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { equipmentId } = req.body;
+
+    if (!equipmentId) {
+      return res.status(400).json({ error: { message: 'Equipment ID is required' } });
+    }
+
+    // Check if assignment already exists
+    const existing = await db.query(
+      'SELECT id FROM job_equipment_assignments WHERE job_id = $1 AND equipment_id = $2',
+      [jobId, equipmentId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: { message: 'Equipment already assigned to this job' } });
+    }
+
+    // Create assignment
+    await db.query(
+      'INSERT INTO job_equipment_assignments (job_id, equipment_id) VALUES ($1, $2)',
+      [jobId, equipmentId]
+    );
+
+    res.json({ message: 'Equipment assigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
