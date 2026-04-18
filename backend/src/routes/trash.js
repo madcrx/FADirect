@@ -150,26 +150,32 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       }));
     }
 
-    // Get deleted videos
+    // Get deleted videos (conditionally, table may not exist yet)
     if (!type || type === 'videos') {
-      const result = await db.query(
-        `SELECT v.id, v.file_name, v.deleted_at, a.deceased_name
-         FROM videos v
-         LEFT JOIN arrangements a ON v.arrangement_id = a.id
-         WHERE v.deleted_at IS NOT NULL
-         ORDER BY v.deleted_at DESC
-         LIMIT 100`
-      );
-      deletedItems.videos = result.rows.map(row => ({
-        id: row.id,
-        type: 'video',
-        name: row.file_name,
-        details: row.deceased_name ? `Video - ${row.deceased_name}` : 'Video',
-        deletedAt: row.deleted_at,
-      }));
+      try {
+        const result = await db.query(
+          `SELECT v.id, v.file_name, v.deleted_at, a.deceased_name
+           FROM videos v
+           LEFT JOIN arrangements a ON v.arrangement_id = a.id
+           WHERE v.deleted_at IS NOT NULL
+           ORDER BY v.deleted_at DESC
+           LIMIT 100`
+        );
+        deletedItems.videos = result.rows.map(row => ({
+          id: row.id,
+          type: 'video',
+          name: row.file_name,
+          details: row.deceased_name ? `Video - ${row.deceased_name}` : 'Video',
+          deletedAt: row.deleted_at,
+        }));
+      } catch (err) {
+        // Videos table may not exist yet if migration hasn't run
+        console.log('Videos table not found, skipping deleted videos');
+        deletedItems.videos = [];
+      }
     }
 
-    // Count total
+    // Count total (videos might be 0 if table doesn't exist)
     const totalCount =
       deletedItems.arrangements.length +
       deletedItems.invoices.length +
@@ -178,7 +184,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
       deletedItems.calendarEvents.length +
       deletedItems.documents.length +
       deletedItems.photos.length +
-      deletedItems.videos.length;
+      (deletedItems.videos?.length || 0);
 
     res.json({
       totalCount,

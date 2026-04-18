@@ -119,13 +119,22 @@ router.post('/', authenticateToken, async (req, res, next) => {
       isAvailable,
     } = req.body;
 
+    // Check if profile exists to determine if we should update photo_url
+    const existingProfile = await db.query(
+      'SELECT photo_url FROM staff_profiles WHERE user_id = $1',
+      [userId]
+    );
+
+    // Use existing photo URL if no new photo URL provided
+    const finalPhotoUrl = photoUrl || (existingProfile.rows[0]?.photo_url) || null;
+
     const result = await db.query(`
       INSERT INTO staff_profiles (
         user_id, photo_url, position, license_number, license_expiry,
         qualifications, emergency_contact_name, emergency_contact_phone, is_available
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       ON CONFLICT (user_id) DO UPDATE SET
-        photo_url = EXCLUDED.photo_url,
+        photo_url = COALESCE(EXCLUDED.photo_url, staff_profiles.photo_url),
         position = EXCLUDED.position,
         license_number = EXCLUDED.license_number,
         license_expiry = EXCLUDED.license_expiry,
@@ -137,7 +146,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
       RETURNING *
     `, [
       userId,
-      photoUrl,
+      finalPhotoUrl,
       position,
       licenseNumber,
       licenseExpiry,

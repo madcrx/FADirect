@@ -126,16 +126,34 @@ router.post('/', authenticateToken, async (req, res, next) => {
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { status, lastServiceDate, nextServiceDate } = req.body;
+    const {
+      vehicleType,
+      make,
+      model,
+      year,
+      registration,
+      color,
+      seatingCapacity,
+      status,
+      lastServiceDate,
+      nextServiceDate
+    } = req.body;
 
     await db.query(`
       UPDATE vehicles SET
-        status = COALESCE($1, status),
-        last_service_date = COALESCE($2, last_service_date),
-        next_service_date = COALESCE($3, next_service_date),
+        vehicle_type = COALESCE($1, vehicle_type),
+        make = COALESCE($2, make),
+        model = COALESCE($3, model),
+        year = COALESCE($4, year),
+        registration = COALESCE($5, registration),
+        color = COALESCE($6, color),
+        seating_capacity = COALESCE($7, seating_capacity),
+        status = COALESCE($8, status),
+        last_service_date = COALESCE($9, last_service_date),
+        next_service_date = COALESCE($10, next_service_date),
         updated_at = NOW()
-      WHERE id = $4
-    `, [status, lastServiceDate, nextServiceDate, id]);
+      WHERE id = $11
+    `, [vehicleType, make, model, year, registration, color, seatingCapacity, status, lastServiceDate, nextServiceDate, id]);
 
     res.json({ message: 'Vehicle updated successfully' });
   } catch (error) {
