@@ -44,7 +44,11 @@ app.use('/api/bulk', require('./src/routes/bulk-operations'));
 app.use('/api/roster', require('./src/routes/roster'));
 app.use('/api/staff-profiles', require('./src/routes/staff-profiles'));
 app.use('/api/vehicles', require('./src/routes/vehicles'));
+app.use('/api/equipment', require('./src/routes/equipment'));
+app.use('/api/videos', require('./src/routes/videos'));
 app.use('/api/digital-forms', require('./src/routes/digital-forms'));
+app.use('/api/leave', require('./src/routes/leave'));
+app.use('/api/config', require('./src/routes/config'));
 
 // Health check
 app.get('/health', (req, res) => {
