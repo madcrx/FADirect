@@ -93,12 +93,12 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 // Create arrangement
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
-    const { deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, funeralType, mournerId, jobId } = req.body;
+    const { deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, funeralType, mournerId, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship } = req.body;
 
     const result = await db.query(
-      `INSERT INTO arrangements (deceased_name, deceased_date_of_birth, deceased_date_of_death, arranger_id, mourner_id, funeral_type, job_id, service_date, service_location, notes, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'draft') RETURNING *`,
-      [deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, req.user.id, mournerId, funeralType || 'burial', jobId, serviceDate, serviceLocation, notes]
+      `INSERT INTO arrangements (deceased_name, deceased_date_of_birth, deceased_date_of_death, arranger_id, mourner_id, funeral_type, job_id, service_date, service_location, notes, mourner_phone, mourner_name, mourner_email, mourner_relationship, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'draft') RETURNING *`,
+      [deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, req.user.id, mournerId, funeralType || 'burial', jobId, serviceDate, serviceLocation, notes, mournerPhone, mournerName, mournerEmail, mournerRelationship]
     );
 
     const arrangement = result.rows[0];
@@ -153,7 +153,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // Update arrangement
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const { deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId } = req.body;
+    const { deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship } = req.body;
     const result = await db.query(
       `UPDATE arrangements
        SET deceased_name = COALESCE($1, deceased_name),
@@ -163,10 +163,14 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
            status = COALESCE($5, status),
            funeral_type = COALESCE($6, funeral_type),
            current_step_index = COALESCE($7, current_step_index),
-           job_id = $8
-       WHERE id = $9 AND arranger_id = $10
+           job_id = $8,
+           mourner_phone = COALESCE($9, mourner_phone),
+           mourner_name = COALESCE($10, mourner_name),
+           mourner_email = COALESCE($11, mourner_email),
+           mourner_relationship = COALESCE($12, mourner_relationship)
+       WHERE id = $13 AND arranger_id = $14
        RETURNING *`,
-      [deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId, req.params.id, req.user.id]
+      [deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship, req.params.id, req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Arrangement not found or unauthorized' } });

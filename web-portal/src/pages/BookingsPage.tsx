@@ -336,11 +336,11 @@ export default function BookingsPage() {
   };
 
   // Assign staff to job
-  const handleAssignStaff = async (staffId: string) => {
+  const handleAssignStaff = async (staffId: string, userId: string) => {
     if (!selectedJob) return;
 
     try {
-      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId });
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId: userId });
       setSuccess('Staff assigned successfully');
       await loadData();
       await loadAvailableResources(selectedJob);
@@ -956,7 +956,7 @@ export default function BookingsPage() {
                       borderRadius: 1,
                       mb: 0.5,
                     }}
-                    onDoubleClick={() => handleAssignStaff(staff.id)}
+                    onDoubleClick={() => handleAssignStaff(staff.id, staff.userId)}
                   >
                     <ListItemIcon>
                       <Avatar

@@ -29,6 +29,7 @@ async function runMigrations() {
     '021_add_vehicle_to_equipment.sql',
     '022_add_locations.sql',
     '023_add_job_to_arrangements.sql',
+    '024_add_mourner_fields.sql',
   ];
 
   try {
