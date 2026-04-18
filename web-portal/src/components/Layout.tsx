@@ -79,7 +79,7 @@ const menuSections: MenuSection[] = [
     heading: 'PLANNING',
     items: [
       { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
-      { text: 'Files', icon: <FolderIcon />, path: '/files' },
+      { text: 'Forms', icon: <FolderIcon />, path: '/files' },
     ],
   },
   {
