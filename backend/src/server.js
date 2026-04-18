@@ -38,6 +38,7 @@ app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/digital-forms', require('./routes/digital-forms'));
 app.use('/api/leave', require('./routes/leave'));
+app.use('/api/config', require('./routes/config'));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -11,8 +11,29 @@ import {
   Tabs,
   Tab,
   Divider,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
-import { Save as SaveIcon } from '@mui/icons-material';
+import {
+  Save as SaveIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import api from '@/services/api';
 
 interface TabPanelProps {
@@ -30,12 +51,39 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+interface ConfigValue {
+  id: string;
+  value: string;
+  label: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+interface Category {
+  value: string;
+  label: string;
+  description: string;
+}
+
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [tabValue, setTabValue] = useState(0);
+
+  // Dropdown management state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [configValues, setConfigValues] = useState<ConfigValue[]>([]);
+  const [configDialog, setConfigDialog] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<ConfigValue | null>(null);
+  const [configFormData, setConfigFormData] = useState({
+    value: '',
+    label: '',
+    isActive: true,
+    sortOrder: 0,
+  });
   const [formData, setFormData] = useState({
     companyName: '',
     abn: '',
@@ -58,7 +106,14 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadSettings();
+    loadCategories();
   }, []);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      loadConfigValues();
+    }
+  }, [selectedCategory]);
 
   const loadSettings = async () => {
     try {
@@ -88,6 +143,79 @@ export default function SettingsPage() {
       setError('Failed to load settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await api.get('/config/categories');
+      setCategories(response.data.categories);
+      if (response.data.categories.length > 0) {
+        setSelectedCategory(response.data.categories[0].value);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+    }
+  };
+
+  const loadConfigValues = async () => {
+    try {
+      const response = await api.get(`/config/values/${selectedCategory}`, {
+        params: { includeInactive: true }
+      });
+      setConfigValues(response.data.values);
+    } catch (err) {
+      console.error('Failed to load config values:', err);
+    }
+  };
+
+  const handleOpenConfigDialog = (config?: ConfigValue) => {
+    if (config) {
+      setEditingConfig(config);
+      setConfigFormData({
+        value: config.value,
+        label: config.label,
+        isActive: config.isActive,
+        sortOrder: config.sortOrder,
+      });
+    } else {
+      setEditingConfig(null);
+      setConfigFormData({
+        value: '',
+        label: '',
+        isActive: true,
+        sortOrder: configValues.length,
+      });
+    }
+    setConfigDialog(true);
+  };
+
+  const handleSaveConfig = async () => {
+    try {
+      if (editingConfig) {
+        await api.put(`/config/values/${editingConfig.id}`, configFormData);
+      } else {
+        await api.post(`/config/values/${selectedCategory}`, configFormData);
+      }
+      setConfigDialog(false);
+      await loadConfigValues();
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to save config value');
+    }
+  };
+
+  const handleDeleteConfig = async (id: string, label: string) => {
+    if (!confirm(`Are you sure you want to delete "${label}"?`)) return;
+
+    try {
+      await api.delete(`/config/values/${id}`);
+      await loadConfigValues();
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to delete config value');
     }
   };
 
@@ -153,6 +281,7 @@ export default function SettingsPage() {
             <Tab label="Email Configuration" />
             <Tab label="Invoice Settings" />
             <Tab label="Appearance" />
+            <Tab label="Dropdown Lists" />
           </Tabs>
         </Box>
 
@@ -383,19 +512,169 @@ export default function SettingsPage() {
             </Grid>
           </TabPanel>
 
+          <TabPanel value={tabValue} index={4}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Dropdown List Management
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Manage dropdown options used throughout the system
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={selectedCategory}
+                    label="Category"
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    {categories.map((cat) => (
+                      <MenuItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {selectedCategory && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                    {categories.find(c => c.value === selectedCategory)?.description}
+                  </Typography>
+                )}
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => handleOpenConfigDialog()}
+                    disabled={!selectedCategory}
+                  >
+                    Add New Option
+                  </Button>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12}>
+                {selectedCategory && (
+                  <Card variant="outlined">
+                    <List>
+                      {configValues.map((config, index) => (
+                        <div key={config.id}>
+                          {index > 0 && <Divider />}
+                          <ListItem>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="body1">{config.label}</Typography>
+                                  {!config.isActive && (
+                                    <Chip label="Inactive" size="small" color="default" />
+                                  )}
+                                </Box>
+                              }
+                              secondary={`Value: ${config.value} • Sort Order: ${config.sortOrder}`}
+                            />
+                            <ListItemSecondaryAction>
+                              <IconButton
+                                edge="end"
+                                onClick={() => handleOpenConfigDialog(config)}
+                                sx={{ mr: 1 }}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                onClick={() => handleDeleteConfig(config.id, config.label)}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        </div>
+                      ))}
+                      {configValues.length === 0 && (
+                        <ListItem>
+                          <ListItemText
+                            primary="No options configured"
+                            secondary="Click 'Add New Option' to create one"
+                          />
+                        </ListItem>
+                      )}
+                    </List>
+                  </Card>
+                )}
+              </Grid>
+            </Grid>
+          </TabPanel>
+
           <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<SaveIcon />}
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Settings'}
-            </Button>
+            {tabValue !== 4 && (
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<SaveIcon />}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Settings'}
+              </Button>
+            )}
           </Box>
         </CardContent>
       </Card>
+
+      {/* Config Value Dialog */}
+      <Dialog open={configDialog} onClose={() => setConfigDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{editingConfig ? 'Edit Option' : 'Add New Option'}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Value"
+              value={configFormData.value}
+              onChange={(e) => setConfigFormData({ ...configFormData, value: e.target.value })}
+              disabled={!!editingConfig}
+              helperText="Internal value used in database (lowercase, underscores for spaces)"
+              placeholder="e.g., direct_cremation"
+            />
+            <TextField
+              fullWidth
+              label="Label"
+              value={configFormData.label}
+              onChange={(e) => setConfigFormData({ ...configFormData, label: e.target.value })}
+              helperText="Display name shown to users"
+              placeholder="e.g., Direct Cremation"
+            />
+            <TextField
+              fullWidth
+              type="number"
+              label="Sort Order"
+              value={configFormData.sortOrder}
+              onChange={(e) => setConfigFormData({ ...configFormData, sortOrder: parseInt(e.target.value) || 0 })}
+              helperText="Controls the display order (lower numbers appear first)"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={configFormData.isActive}
+                  onChange={(e) => setConfigFormData({ ...configFormData, isActive: e.target.checked })}
+                />
+              }
+              label="Active"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfigDialog(false)}>Cancel</Button>
+          <Button onClick={handleSaveConfig} variant="contained" disabled={!configFormData.label || !configFormData.value}>
+            {editingConfig ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
