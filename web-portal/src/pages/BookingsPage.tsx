@@ -20,6 +20,7 @@ import {
   Alert,
   OutlinedInput,
   SelectChangeEvent,
+  Menu,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -56,6 +57,7 @@ export default function BookingsPage() {
   const [arrangements, setArrangements] = useState<Array<{id: string; deceasedName: string}>>([]);
   const [equipment, setEquipment] = useState<Array<{id: string; name: string; equipmentType: string; status: string}>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [deletedFilter, setDeletedFilter] = useState<'hide' | 'only' | 'all'>('hide');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -80,7 +82,7 @@ export default function BookingsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedDate]);
+  }, [selectedDate, deletedFilter]);
 
   const loadData = async () => {
     setLoading(true);
@@ -90,7 +92,11 @@ export default function BookingsPage() {
 
       const [jobsRes, typesRes, arrangementsRes, equipmentRes] = await Promise.all([
         api.get('/roster/jobs', {
-          params: { startDate, endDate },
+          params: {
+            startDate,
+            endDate,
+            includeDeleted: deletedFilter,
+          },
         }),
         api.get('/roster/job-types'),
         api.get('/arrangements'),
@@ -180,6 +186,18 @@ export default function BookingsPage() {
     }
   };
 
+  const handleDeleteJob = async (jobId: string, jobTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the job "${jobTitle}"?`)) return;
+
+    try {
+      await api.delete(`/roster/jobs/${jobId}`);
+      setSuccess('Job deleted successfully');
+      await loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to delete job');
+    }
+  };
+
   const getJobsForDay = (date: Date) => {
     return jobs.filter((job) => {
       const jobDate = new Date(job.startTime);
@@ -234,6 +252,22 @@ export default function BookingsPage() {
         </Alert>
       )}
 
+      {/* Filter Section */}
+      <Box sx={{ mb: 3 }}>
+        <FormControl sx={{ minWidth: 200 }}>
+          <InputLabel>Deleted Items</InputLabel>
+          <Select
+            value={deletedFilter}
+            label="Deleted Items"
+            onChange={(e) => setDeletedFilter(e.target.value as 'hide' | 'only' | 'all')}
+          >
+            <MenuItem value="hide">Hide Deleted</MenuItem>
+            <MenuItem value="only">Only Deleted</MenuItem>
+            <MenuItem value="all">All Including Deleted</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+
       {/* Week View */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom>
@@ -277,37 +311,48 @@ export default function BookingsPage() {
                       }}
                     >
                       <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <Typography variant="body2" fontWeight="bold" gutterBottom>
-                          {job.title}
-                        </Typography>
-                        <Chip
-                          label={job.jobTypeName}
-                          size="small"
-                          sx={{
-                            bgcolor: job.jobTypeColor || 'primary.main',
-                            color: 'white',
-                            mb: 1,
-                          }}
-                        />
-                        <Typography variant="caption" display="block">
-                          {format(new Date(job.startTime), 'HH:mm')} -{' '}
-                          {format(new Date(job.endTime), 'HH:mm')}
-                        </Typography>
-                        {job.location && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            📍 {job.location}
-                          </Typography>
-                        )}
-                        {job.staff.length > 0 && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            👤 {job.staff.map((s) => s.fullName).join(', ')}
-                          </Typography>
-                        )}
-                        {job.vehicles.length > 0 && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            🚗 {job.vehicles.map((v) => v.registration).join(', ')}
-                          </Typography>
-                        )}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight="bold" gutterBottom>
+                              {job.title}
+                            </Typography>
+                            <Chip
+                              label={job.jobTypeName}
+                              size="small"
+                              sx={{
+                                bgcolor: job.jobTypeColor || 'primary.main',
+                                color: 'white',
+                                mb: 1,
+                              }}
+                            />
+                            <Typography variant="caption" display="block">
+                              {format(new Date(job.startTime), 'HH:mm')} -{' '}
+                              {format(new Date(job.endTime), 'HH:mm')}
+                            </Typography>
+                            {job.location && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                📍 {job.location}
+                              </Typography>
+                            )}
+                            {job.staff.length > 0 && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                👤 {job.staff.map((s) => s.fullName).join(', ')}
+                              </Typography>
+                            )}
+                            {job.vehicles.length > 0 && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                🚗 {job.vehicles.map((v) => v.registration).join(', ')}
+                              </Typography>
+                            )}
+                          </Box>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteJob(job.id, job.title)}
+                            sx={{ ml: 1 }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </CardContent>
                     </Card>
                   ))}

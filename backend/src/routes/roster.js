@@ -7,7 +7,7 @@ const { body, validationResult } = require('express-validator');
 // Get jobs for a date range (rostering board)
 router.get('/jobs', authenticateToken, async (req, res, next) => {
   try {
-    const { startDate, endDate, status } = req.query;
+    const { startDate, endDate, status, includeDeleted } = req.query;
 
     let query = `
       SELECT
@@ -35,14 +35,21 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
       LEFT JOIN users u ON jsa.staff_id = u.id
       LEFT JOIN job_vehicle_assignments jva ON j.id = jva.job_id
       LEFT JOIN vehicles v ON jva.vehicle_id = v.id
-      WHERE j.deleted_at IS NULL
+      WHERE 1=1
     `;
 
     const params = [];
     let paramCount = 1;
 
+    // Filter by deleted status
+    if (includeDeleted === 'only') {
+      query += ` AND j.deleted_at IS NOT NULL`;
+    } else if (includeDeleted !== 'all') {
+      query += ` AND j.deleted_at IS NULL`;
+    }
+
     if (startDate && endDate) {
-      query += ` AND j.start_time BETWEEN $${paramCount} AND $${paramCount + 1}`;
+      query += ` AND DATE(j.start_time) BETWEEN $${paramCount}::date AND $${paramCount + 1}::date`;
       params.push(startDate, endDate);
       paramCount += 2;
     }
