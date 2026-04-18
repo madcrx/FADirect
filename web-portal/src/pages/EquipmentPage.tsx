@@ -16,6 +16,11 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,17 +42,21 @@ interface Equipment {
   lastMaintenanceDate: string | null;
   nextMaintenanceDate: string | null;
   location: string | null;
+  vehicleId: string | null;
+  vehicleRegistration: string | null;
   notes: string | null;
 }
 
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [vehicles, setVehicles] = useState<Array<{id: string; registration: string; make: string; model: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [locationType, setLocationType] = useState<'vehicle' | 'custom'>('custom');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +66,7 @@ export default function EquipmentPage() {
     status: 'available',
     purchaseDate: '',
     location: '',
+    vehicleId: '',
     notes: '',
   });
 
@@ -77,8 +87,25 @@ export default function EquipmentPage() {
     }
   };
 
+  const loadVehicles = async () => {
+    try {
+      const response = await api.get('/vehicles');
+      setVehicles(response.data.vehicles);
+    } catch (err: any) {
+      console.error('Failed to load vehicles:', err);
+    }
+  };
+
   const handleOpenEdit = (item: Equipment) => {
     setEditingEquipment(item);
+
+    // Determine location type
+    if (item.vehicleId) {
+      setLocationType('vehicle');
+    } else {
+      setLocationType('custom');
+    }
+
     setFormData({
       name: item.name,
       equipmentType: item.equipmentType,
@@ -87,6 +114,7 @@ export default function EquipmentPage() {
       status: item.status,
       purchaseDate: item.purchaseDate || '',
       location: item.location || '',
+      vehicleId: item.vehicleId || '',
       notes: item.notes || '',
     });
     setPhotoPreview(item.photoUrl);
@@ -111,6 +139,7 @@ export default function EquipmentPage() {
     setEditingEquipment(null);
     setSelectedPhoto(null);
     setPhotoPreview(null);
+    setLocationType('custom');
     setFormData({
       name: '',
       equipmentType: 'trolley',
@@ -119,6 +148,7 @@ export default function EquipmentPage() {
       status: 'available',
       purchaseDate: '',
       location: '',
+      vehicleId: '',
       notes: '',
     });
   };
@@ -136,7 +166,8 @@ export default function EquipmentPage() {
           serialNumber: formData.serialNumber,
           status: formData.status,
           purchaseDate: formData.purchaseDate || null,
-          location: formData.location,
+          location: locationType === 'custom' ? formData.location : null,
+          vehicleId: locationType === 'vehicle' ? formData.vehicleId : null,
           notes: formData.notes,
         });
       } else {
@@ -148,7 +179,8 @@ export default function EquipmentPage() {
           serialNumber: formData.serialNumber,
           status: formData.status,
           purchaseDate: formData.purchaseDate || null,
-          location: formData.location,
+          location: locationType === 'custom' ? formData.location : null,
+          vehicleId: locationType === 'vehicle' ? formData.vehicleId : null,
           notes: formData.notes,
         });
         equipmentId = response.data.equipment.id;
@@ -413,13 +445,47 @@ export default function EquipmentPage() {
               onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })}
               InputLabelProps={{ shrink: true }}
             />
-            <TextField
-              fullWidth
-              label="Location"
-              placeholder="e.g., Storage Room A"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            />
+            {/* Location Selection */}
+            <FormControl component="fieldset">
+              <FormLabel component="legend">Location</FormLabel>
+              <RadioGroup
+                row
+                value={locationType}
+                onChange={(e) => setLocationType(e.target.value as 'vehicle' | 'custom')}
+              >
+                <FormControlLabel value="vehicle" control={<Radio />} label="Assigned to Vehicle" />
+                <FormControlLabel value="custom" control={<Radio />} label="Custom Location" />
+              </RadioGroup>
+            </FormControl>
+
+            {locationType === 'vehicle' ? (
+              <TextField
+                select
+                fullWidth
+                label="Select Vehicle"
+                value={formData.vehicleId}
+                onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+                helperText="Equipment is currently assigned to this vehicle"
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {vehicles.map((vehicle) => (
+                  <MenuItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.registration} - {vehicle.make} {vehicle.model}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : (
+              <TextField
+                fullWidth
+                label="Custom Location"
+                placeholder="e.g., Storage Room A, Head Office"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                helperText="Enter the storage location or facility name"
+              />
+            )}
             <TextField
               fullWidth
               label="Notes"
