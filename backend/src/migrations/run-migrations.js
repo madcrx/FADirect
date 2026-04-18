@@ -23,6 +23,11 @@ async function runMigrations() {
     '015_fix_notifications_columns.sql',
     '016_fix_notification_triggers.sql',
     '017_add_equipment.sql',
+    '018_add_videos.sql',
+    '019_combine_events_and_jobs.sql',
+    '020_add_config_values.sql',
+    '021_add_vehicle_to_equipment.sql',
+    '022_add_locations.sql',
   ];
 
   try {
