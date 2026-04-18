@@ -1,0 +1,225 @@
+import { useEffect, useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Avatar,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Alert,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Person as PersonIcon,
+} from '@mui/icons-material';
+import api from '@/services/api';
+import { format } from 'date-fns';
+
+interface Mourner {
+  id: string;
+  arrangementId: string;
+  deceasedName: string;
+  mournerName: string;
+  relationship: string;
+  phoneNumber: string;
+  email: string | null;
+  serviceDate: string | null;
+  status: string;
+}
+
+export default function MournersPage() {
+  const [mourners, setMourners] = useState<Mourner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    loadMourners();
+  }, []);
+
+  const loadMourners = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get('/arrangements');
+
+      // Extract mourners from arrangements
+      const mournersData: Mourner[] = [];
+      response.data.arrangements.forEach((arrangement: any) => {
+        if (arrangement.mournerPhone) {
+          mournersData.push({
+            id: arrangement.id,
+            arrangementId: arrangement.id,
+            deceasedName: arrangement.deceasedName,
+            mournerName: arrangement.mournerName || 'Unknown',
+            relationship: arrangement.mournerRelationship || 'Family',
+            phoneNumber: arrangement.mournerPhone,
+            email: arrangement.mournerEmail,
+            serviceDate: arrangement.serviceDate,
+            status: arrangement.status,
+          });
+        }
+      });
+
+      setMourners(mournersData);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to load mourners');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredMourners = mourners.filter((mourner) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      mourner.mournerName.toLowerCase().includes(search) ||
+      mourner.deceasedName.toLowerCase().includes(search) ||
+      mourner.phoneNumber.includes(search)
+    );
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'success';
+      case 'confirmed':
+        return 'info';
+      case 'in_progress':
+        return 'warning';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box p={3}>
+        <Typography>Loading mourners...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            Mourners
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Contact information for family members and mourners
+          </Typography>
+        </Box>
+      </Box>
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
+
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <TextField
+            fullWidth
+            placeholder="Search by mourner name, deceased name, or phone number..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Mourner</TableCell>
+                <TableCell>Deceased</TableCell>
+                <TableCell>Relationship</TableCell>
+                <TableCell>Contact</TableCell>
+                <TableCell>Service Date</TableCell>
+                <TableCell>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredMourners.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Box sx={{ py: 8 }}>
+                      <PersonIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                      <Typography variant="h6" color="text.secondary">
+                        No mourners found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Mourners will appear here when phone numbers are added to arrangements
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredMourners.map((mourner) => (
+                  <TableRow key={mourner.id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <PersonIcon />
+                        </Avatar>
+                        <Typography fontWeight="medium">{mourner.mournerName}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{mourner.deceasedName}</TableCell>
+                    <TableCell>{mourner.relationship}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PhoneIcon fontSize="small" color="action" />
+                          <Typography variant="body2">{mourner.phoneNumber}</Typography>
+                        </Box>
+                        {mourner.email && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <EmailIcon fontSize="small" color="action" />
+                            <Typography variant="body2">{mourner.email}</Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {mourner.serviceDate ? format(new Date(mourner.serviceDate), 'dd MMM yyyy') : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={mourner.status.replace('_', ' ').toUpperCase()}
+                        size="small"
+                        color={getStatusColor(mourner.status) as any}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Card>
+    </Box>
+  );
+}

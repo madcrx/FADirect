@@ -327,9 +327,9 @@ export default function BookingsPage() {
       const assignedVehicleIds = job.vehicles.map((v: any) => v.id);
       const assignedEquipmentIds: string[] = []; // TODO: Get from job
 
-      setAvailableStaff(staffRes.data.staffProfiles.filter((s: any) => !assignedStaffIds.includes(s.id)));
-      setAvailableVehicles(vehiclesRes.data.vehicles.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available'));
-      setAvailableEquipment(equipmentRes.data.equipment.filter((e: any) => !assignedEquipmentIds.includes(e.id) && e.status === 'available'));
+      setAvailableStaff(staffRes.data.staff?.filter((s: any) => !assignedStaffIds.includes(s.id)) || []);
+      setAvailableVehicles(vehiclesRes.data.vehicles?.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available') || []);
+      setAvailableEquipment(equipmentRes.data.equipment?.filter((e: any) => !assignedEquipmentIds.includes(e.id) && e.status === 'available') || []);
     } catch (err: any) {
       console.error('Failed to load resources:', err);
     }

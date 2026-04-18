@@ -25,6 +25,7 @@ import BookingsPage from './pages/BookingsPage';
 import StaffPage from './pages/StaffPage';
 import VehiclesPage from './pages/VehiclesPage';
 import EquipmentPage from './pages/EquipmentPage';
+import MournersPage from './pages/MournersPage';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="calendar" element={<Navigate to="/bookings" replace />} />
             <Route path="bookings" element={<BookingsPage />} />
+            <Route path="mourners" element={<MournersPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="equipment" element={<EquipmentPage />} />

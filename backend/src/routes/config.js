@@ -58,6 +58,7 @@ router.get('/categories', authenticateToken, async (req, res, next) => {
       { value: 'job_status', label: 'Job Status', description: 'Status values for jobs and events' },
       { value: 'job_priority', label: 'Job Priority', description: 'Priority levels for jobs' },
       { value: 'location', label: 'Locations', description: 'Office branches, venues, cemeteries, and other locations' },
+      { value: 'service_location', label: 'Service Locations', description: 'Locations where funeral services are held' },
     ];
 
     res.json({ categories });
