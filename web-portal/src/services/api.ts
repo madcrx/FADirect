@@ -138,4 +138,11 @@ export const photosApi = {
   },
 };
 
+export const videosApi = {
+  getByArrangement: async (arrangementId: string): Promise<any[]> => {
+    const response = await api.get(`/videos/arrangement/${arrangementId}`);
+    return response.data.videos;
+  },
+};
+
 export default api;

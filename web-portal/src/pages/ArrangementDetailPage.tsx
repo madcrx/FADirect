@@ -28,13 +28,14 @@ import {
   Message as MessageIcon,
   Description as DescriptionIcon,
   Photo as PhotoIcon,
+  VideoLibrary as VideoIcon,
   Timeline as TimelineIcon,
   PlaylistAddCheck as ChecklistIcon,
   CloudUpload as UploadIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { arrangementsApi, messagesApi, documentsApi, photosApi } from '@/services/api';
+import { arrangementsApi, messagesApi, documentsApi, photosApi, videosApi } from '@/services/api';
 import type { Arrangement, Message, Document, Photo } from '@/types';
 import { format } from 'date-fns';
 import WorkflowTracker from '@/components/WorkflowTracker';
@@ -63,6 +64,7 @@ export default function ArrangementDetailPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [videos, setVideos] = useState<any[]>([]);
   const [tabValue, setTabValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -82,17 +84,19 @@ export default function ArrangementDetailPage() {
     if (!id) return;
 
     try {
-      const [arrData, msgData, docData, photoData] = await Promise.all([
+      const [arrData, msgData, docData, photoData, videoData] = await Promise.all([
         arrangementsApi.getById(id),
         messagesApi.getByArrangement(id).catch(() => []),
         documentsApi.getByArrangement(id).catch(() => []),
         photosApi.getByArrangement(id).catch(() => []),
+        videosApi.getByArrangement(id).catch(() => []),
       ]);
 
       setArrangement(arrData);
       setMessages(msgData);
       setDocuments(docData);
       setPhotos(photoData);
+      setVideos(videoData);
     } catch (error) {
       console.error('Failed to load arrangement:', error);
     } finally {
@@ -161,6 +165,34 @@ export default function ArrangementDetailPage() {
       setSnackbar({
         open: true,
         message: error.response?.data?.error?.message || 'Failed to upload photo',
+        severity: 'error'
+      });
+    } finally {
+      setUploading(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !id) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('arrangementId', id);
+
+      await api.post('/videos/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      setSnackbar({ open: true, message: 'Video uploaded successfully', severity: 'success' });
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to upload video',
         severity: 'error'
       });
     } finally {
@@ -335,6 +367,7 @@ export default function ArrangementDetailPage() {
             <Tab icon={<MessageIcon />} iconPosition="start" label={`Messages (${messages.length})`} />
             <Tab icon={<DescriptionIcon />} iconPosition="start" label={`Documents (${documents.length})`} />
             <Tab icon={<PhotoIcon />} iconPosition="start" label={`Photos (${photos.length})`} />
+            <Tab icon={<VideoIcon />} iconPosition="start" label={`Videos (${videos.length})`} />
           </Tabs>
         </Box>
 
@@ -445,6 +478,49 @@ export default function ArrangementDetailPage() {
                     {photo.caption && (
                       <CardContent>
                         <Typography variant="caption">{photo.caption}</Typography>
+                      </CardContent>
+                    )}
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={5}>
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadIcon />}
+              disabled={uploading}
+            >
+              Upload Video
+              <input
+                type="file"
+                hidden
+                accept="video/*"
+                onChange={handleVideoUpload}
+              />
+            </Button>
+          </Box>
+          {videos.length === 0 ? (
+            <Typography color="text.secondary">No videos uploaded</Typography>
+          ) : (
+            <Grid container spacing={2}>
+              {videos.map((video) => (
+                <Grid item xs={12} sm={6} md={4} key={video.id}>
+                  <Card>
+                    <video
+                      controls
+                      style={{ width: '100%', height: 200 }}
+                    >
+                      <source src={video.fileUrl} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                    {video.caption && (
+                      <CardContent>
+                        <Typography variant="caption">{video.caption}</Typography>
                       </CardContent>
                     )}
                   </Card>
