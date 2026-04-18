@@ -71,7 +71,6 @@ const menuSections: MenuSection[] = [
       { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
       { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
-      { text: 'Users', icon: <PeopleIcon />, path: '/users' },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
       { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
     ],

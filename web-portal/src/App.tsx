@@ -40,7 +40,7 @@ function App() {
             <Route path="arrangements/new" element={<ArrangementFormPage />} />
             <Route path="arrangements/:id" element={<ArrangementDetailPage />} />
             <Route path="arrangements/:id/edit" element={<ArrangementFormPage />} />
-            <Route path="users" element={<UsersPage />} />
+            <Route path="users" element={<Navigate to="/staff" replace />} />
             <Route path="price-lists" element={<PriceListsPage />} />
             <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="government-forms" element={<GovernmentFormsPage />} />
