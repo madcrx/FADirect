@@ -24,6 +24,7 @@ import {
   Warning as WarningIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
+  CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
@@ -58,13 +59,25 @@ const defaultDocuments = [
 
 export default function DocumentChecklist({ arrangementId }: DocumentChecklistProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [uploadedDocs, setUploadedDocs] = useState<any[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newDocName, setNewDocName] = useState('');
   const [newDocRequired, setNewDocRequired] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
 
   useEffect(() => {
     loadDocuments();
+    loadUploadedDocuments();
   }, [arrangementId]);
+
+  const loadUploadedDocuments = async () => {
+    try {
+      const response = await api.get(`/documents/arrangement/${arrangementId}`);
+      setUploadedDocs(response.data.documents || []);
+    } catch (error) {
+      console.error('Failed to load uploaded documents:', error);
+    }
+  };
 
   const loadDocuments = async () => {
     try {
@@ -92,11 +105,37 @@ export default function DocumentChecklist({ arrangementId }: DocumentChecklistPr
     setDocuments(docs);
   };
 
-  const handleToggleDocument = (id: string) => {
-    const updated = documents.map(doc =>
-      doc.id === id ? { ...doc, collected: !doc.collected } : doc
+  const isDocumentUploaded = (docName: string) => {
+    return uploadedDocs.some(uploaded =>
+      uploaded.documentType?.toLowerCase() === docName.toLowerCase() ||
+      uploaded.fileName?.toLowerCase().includes(docName.toLowerCase().substring(0, 10))
     );
-    saveDocuments(updated);
+  };
+
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>, docName: string) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(docName);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('arrangementId', arrangementId);
+      formData.append('documentType', docName);
+
+      await api.post('/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      // Reload uploaded documents to update checkboxes
+      await loadUploadedDocuments();
+    } catch (error: any) {
+      console.error('Failed to upload document:', error);
+      alert(error.response?.data?.error?.message || 'Failed to upload document');
+    } finally {
+      setUploading(null);
+      event.target.value = '';
+    }
   };
 
   const handleAddDocument = () => {
@@ -121,8 +160,8 @@ export default function DocumentChecklist({ arrangementId }: DocumentChecklistPr
   };
 
   const requiredDocs = documents.filter(d => d.required);
-  const collectedRequired = requiredDocs.filter(d => d.collected).length;
-  const totalCollected = documents.filter(d => d.collected).length;
+  const collectedRequired = requiredDocs.filter(d => isDocumentUploaded(d.name)).length;
+  const totalCollected = documents.filter(d => isDocumentUploaded(d.name)).length;
   const progressPercentage = requiredDocs.length > 0
     ? (collectedRequired / requiredDocs.length) * 100
     : 0;
@@ -185,55 +224,75 @@ export default function DocumentChecklist({ arrangementId }: DocumentChecklistPr
         )}
 
         <List dense>
-          {documents.map((doc) => (
-            <ListItem
-              key={doc.id}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-              secondaryAction={
-                doc.id.startsWith('custom_') && (
-                  <IconButton
-                    edge="end"
-                    size="small"
-                    onClick={() => handleDeleteDocument(doc.id)}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                )
-              }
-            >
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={doc.collected}
-                  onChange={() => handleToggleDocument(doc.id)}
-                  color={doc.collected ? 'success' : 'default'}
-                />
-              </ListItemIcon>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        textDecoration: doc.collected ? 'line-through' : 'none',
-                        color: doc.collected ? 'text.secondary' : 'text.primary',
-                      }}
+          {documents.map((doc) => {
+            const isUploaded = isDocumentUploaded(doc.name);
+            return (
+              <ListItem
+                key={doc.id}
+                sx={{
+                  borderRadius: 1,
+                  mb: 0.5,
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+                secondaryAction={
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      component="label"
+                      size="small"
+                      variant={isUploaded ? 'outlined' : 'contained'}
+                      startIcon={<UploadIcon />}
+                      disabled={uploading === doc.name}
                     >
-                      {doc.name}
-                    </Typography>
-                    {doc.required && !doc.collected && (
-                      <Chip label="Required" size="small" color="error" sx={{ height: 20 }} />
+                      {isUploaded ? 'Re-upload' : 'Upload'}
+                      <input
+                        type="file"
+                        hidden
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        onChange={(e) => handleDocumentUpload(e, doc.name)}
+                      />
+                    </Button>
+                    {doc.id.startsWith('custom_') && (
+                      <IconButton
+                        edge="end"
+                        size="small"
+                        onClick={() => handleDeleteDocument(doc.id)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     )}
                   </Box>
                 }
-                secondary={doc.notes}
-              />
-            </ListItem>
-          ))}
+              >
+                <ListItemIcon>
+                  <Checkbox
+                    edge="start"
+                    checked={isUploaded}
+                    disabled={true}
+                    color={isUploaded ? 'success' : 'default'}
+                  />
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          textDecoration: isUploaded ? 'line-through' : 'none',
+                          color: isUploaded ? 'text.secondary' : 'text.primary',
+                        }}
+                      >
+                        {doc.name}
+                      </Typography>
+                      {doc.required && !isUploaded && (
+                        <Chip label="Required" size="small" color="error" sx={{ height: 20 }} />
+                      )}
+                    </Box>
+                  }
+                  secondary={doc.notes}
+                />
+              </ListItem>
+            );
+          })}
         </List>
 
         <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
