@@ -13,7 +13,9 @@ import {
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { arrangementsApi, usersApi } from '@/services/api';
+import api from '@/services/api';
 import type { Arrangement, User } from '@/types';
+import { format } from 'date-fns';
 
 export default function ArrangementFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +23,7 @@ export default function ArrangementFormPage() {
   const isEdit = id && id !== 'new';
 
   const [mourners, setMourners] = useState<User[]>([]);
+  const [jobs, setJobs] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -29,6 +32,7 @@ export default function ArrangementFormPage() {
     deceasedDateOfDeath: '',
     funeralType: 'burial' as const,
     status: 'draft' as const,
+    jobId: '',
     serviceDate: '',
     serviceLocation: '',
     notes: '',
@@ -39,10 +43,39 @@ export default function ArrangementFormPage() {
 
   useEffect(() => {
     loadMourners();
+    loadJobs();
     if (isEdit) {
       loadArrangement();
     }
   }, [id]);
+
+  const loadJobs = async () => {
+    try {
+      const response = await api.get('/roster/jobs', {
+        params: {
+          startDate: format(new Date(), 'yyyy-MM-dd'),
+          endDate: format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Next 90 days
+        },
+      });
+      setJobs(response.data.jobs || []);
+    } catch (error) {
+      console.error('Failed to load jobs:', error);
+    }
+  };
+
+  const handleJobSelect = (jobId: string) => {
+    const selectedJob = jobs.find(j => j.id === jobId);
+    if (selectedJob) {
+      setFormData({
+        ...formData,
+        jobId: jobId,
+        serviceDate: selectedJob.startTime ? format(new Date(selectedJob.startTime), 'yyyy-MM-dd') : formData.serviceDate,
+        serviceLocation: selectedJob.location || formData.serviceLocation,
+      });
+    } else {
+      setFormData({ ...formData, jobId: '' });
+    }
+  };
 
   const loadMourners = async () => {
     try {
@@ -66,6 +99,7 @@ export default function ArrangementFormPage() {
         deceasedDateOfDeath: arrangement.deceasedDateOfDeath || '',
         funeralType: arrangement.funeralType || 'burial',
         status: arrangement.status || 'draft',
+        jobId: arrangement.jobId || '',
         serviceDate: arrangement.serviceDate || '',
         serviceLocation: arrangement.serviceLocation || '',
         notes: arrangement.notes || '',
@@ -91,6 +125,7 @@ export default function ArrangementFormPage() {
         deceasedDateOfDeath: formData.deceasedDateOfDeath || null,
         funeralType: formData.funeralType,
         status: formData.status,
+        jobId: formData.jobId || null,
         serviceDate: formData.serviceDate || null,
         serviceLocation: formData.serviceLocation || null,
         notes: formData.notes || null,
@@ -178,6 +213,26 @@ export default function ArrangementFormPage() {
                 <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                   Funeral Details
                 </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Select from Schedule (Optional)"
+                  value={formData.jobId}
+                  onChange={(e) => handleJobSelect(e.target.value)}
+                  helperText="Link this arrangement to a scheduled job/service"
+                >
+                  <MenuItem value="">
+                    <em>None - Enter manually</em>
+                  </MenuItem>
+                  {jobs.map((job) => (
+                    <MenuItem key={job.id} value={job.id}>
+                      {job.title} - {format(new Date(job.startTime), 'dd MMM yyyy HH:mm')} - {job.location || 'No location'}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
 
               <Grid item xs={12} md={6}>
