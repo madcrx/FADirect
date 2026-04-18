@@ -37,8 +37,10 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const { status, type } = req.query;
 
     let query = `
-      SELECT * FROM equipment
-      WHERE deleted_at IS NULL
+      SELECT e.*, v.registration as vehicle_registration
+      FROM equipment e
+      LEFT JOIN vehicles v ON e.vehicle_id = v.id
+      WHERE e.deleted_at IS NULL
     `;
 
     const params = [];
@@ -73,6 +75,8 @@ router.get('/', authenticateToken, async (req, res, next) => {
         lastMaintenanceDate: row.last_maintenance_date,
         nextMaintenanceDate: row.next_maintenance_date,
         location: row.location,
+        vehicleId: row.vehicle_id,
+        vehicleRegistration: row.vehicle_registration,
         notes: row.notes,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -132,10 +136,8 @@ router.post('/upload-photo', authenticateToken, upload.single('file'), async (re
       return res.status(400).json({ error: { message: 'Equipment ID is required' } });
     }
 
-    // Generate full URL for the uploaded file
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    // Generate relative URL for the uploaded file
+    const fileUrl = `/uploads/${req.file.filename}`;
 
     // Update equipment with photo URL
     await db.query(
@@ -161,6 +163,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
       status,
       purchaseDate,
       location,
+      vehicleId,
       notes,
     } = req.body;
 
@@ -173,8 +176,8 @@ router.post('/', authenticateToken, async (req, res, next) => {
     const result = await db.query(
       `INSERT INTO equipment (
         name, equipment_type, description, serial_number, photo_url,
-        status, purchase_date, location, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        status, purchase_date, location, vehicle_id, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
         name,
@@ -185,6 +188,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
         status || 'available',
         purchaseDate || null,
         location || null,
+        vehicleId || null,
         notes || null,
       ]
     );
@@ -216,6 +220,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
       lastMaintenanceDate,
       nextMaintenanceDate,
       location,
+      vehicleId,
       notes,
     } = req.body;
 
@@ -231,8 +236,9 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         last_maintenance_date = COALESCE($8, last_maintenance_date),
         next_maintenance_date = COALESCE($9, next_maintenance_date),
         location = COALESCE($10, location),
-        notes = COALESCE($11, notes)
-      WHERE id = $12 AND deleted_at IS NULL
+        vehicle_id = $11,
+        notes = COALESCE($12, notes)
+      WHERE id = $13 AND deleted_at IS NULL
       RETURNING *`,
       [
         name,
@@ -245,6 +251,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         lastMaintenanceDate,
         nextMaintenanceDate,
         location,
+        vehicleId,
         notes,
         id,
       ]

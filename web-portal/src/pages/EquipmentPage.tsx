@@ -62,6 +62,7 @@ export default function EquipmentPage() {
 
   useEffect(() => {
     loadEquipment();
+    loadVehicles();
   }, []);
 
   const loadEquipment = async () => {

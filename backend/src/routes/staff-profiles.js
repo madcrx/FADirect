@@ -83,10 +83,8 @@ router.post('/upload-photo', authenticateToken, upload.single('file'), async (re
       return res.status(400).json({ error: { message: 'User ID is required' } });
     }
 
-    // Generate full URL for the uploaded file
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+    // Generate relative URL for the uploaded file
+    const fileUrl = `/uploads/${req.file.filename}`;
 
     // Update staff profile with photo URL
     await db.query(
