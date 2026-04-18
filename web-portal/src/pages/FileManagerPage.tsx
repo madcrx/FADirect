@@ -222,7 +222,7 @@ export default function FileManagerPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            File Manager
+            Files
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Manage all documents and photos

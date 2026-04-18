@@ -104,8 +104,8 @@ export default function ArrangementFormPage() {
         serviceLocation: arrangement.serviceLocation || '',
         notes: arrangement.notes || '',
         mournerId: arrangement.mournerId || '',
-        mournerPhone: '',
-        mournerName: '',
+        mournerPhone: arrangement.mournerPhone || '',
+        mournerName: arrangement.mournerName || '',
       });
     } catch (error) {
       console.error('Failed to load arrangement:', error);
@@ -131,6 +131,7 @@ export default function ArrangementFormPage() {
         notes: formData.notes || null,
         mournerId: formData.mournerId || null,
         mournerPhone: formData.mournerPhone || null,
+        mournerName: formData.mournerName || null,
       };
 
       if (isEdit) {
