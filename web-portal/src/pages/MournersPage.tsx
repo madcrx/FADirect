@@ -145,7 +145,13 @@ export default function MournersPage() {
     if (!selectedMourner) return;
 
     try {
-      await api.delete(`/arrangements/${selectedMourner.arrangementId}`);
+      // Clear mourner fields instead of deleting the arrangement
+      await api.put(`/arrangements/${selectedMourner.arrangementId}`, {
+        mournerName: null,
+        mournerRelationship: null,
+        mournerPhone: null,
+        mournerEmail: null,
+      });
       await loadMourners();
       setDeleteDialogOpen(false);
       setSelectedMourner(null);
@@ -361,20 +367,20 @@ export default function MournersPage() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm">
-        <DialogTitle>Delete Mourner</DialogTitle>
+        <DialogTitle>Remove Mourner</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this mourner? This will soft delete the entire arrangement for{' '}
-            <strong>{selectedMourner?.deceasedName}</strong>.
+            Are you sure you want to remove <strong>{selectedMourner?.mournerName}</strong> from the arrangement for{' '}
+            <strong>{selectedMourner?.deceasedName}</strong>?
           </Typography>
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            This action can be reversed from the Trash page.
+          <Alert severity="info" sx={{ mt: 2 }}>
+            This will clear the mourner contact information. The arrangement will remain intact.
           </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDeleteCancel}>Cancel</Button>
           <Button onClick={handleDeleteConfirm} variant="contained" color="error">
-            Delete
+            Remove Mourner
           </Button>
         </DialogActions>
       </Dialog>
