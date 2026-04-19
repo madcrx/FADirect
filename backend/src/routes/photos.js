@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const config = require('../config');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { validators } = require('../validators');
 
 // Configure multer for photo uploads
 const storage = multer.diskStorage({
@@ -57,10 +59,17 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 });
 
 // Get all photos (with optional arrangement filter)
-router.get('/', authenticateToken, async (req, res, next) => {
+router.get('/', authenticateToken, validateRequest(validators.pagination()), async (req, res, next) => {
   try {
     const { arrangementId } = req.query;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
 
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM photos p
+      WHERE p.deleted_at IS NULL
+    `;
     let query = `
       SELECT
         p.*,
@@ -73,12 +82,24 @@ router.get('/', authenticateToken, async (req, res, next) => {
     `;
 
     const params = [];
+    const countParams = [];
+    let paramIndex = 1;
+
     if (arrangementId) {
-      query += ` AND p.arrangement_id = $1`;
+      query += ` AND p.arrangement_id = $${paramIndex}`;
+      countQuery += ` AND p.arrangement_id = $${paramIndex}`;
       params.push(arrangementId);
+      countParams.push(arrangementId);
+      paramIndex++;
     }
 
-    query += ` ORDER BY p.created_at DESC LIMIT 100`;
+    // Get total count
+    const countResult = await db.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Get paginated photos
+    query += ` ORDER BY p.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
 
     const result = await db.query(query, params);
 
@@ -96,7 +117,15 @@ router.get('/', authenticateToken, async (req, res, next) => {
       url: photo.file_url,
     }));
 
-    res.json({ photos });
+    res.json({
+      photos,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
   } catch (error) {
     next(error);
   }

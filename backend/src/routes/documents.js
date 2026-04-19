@@ -58,10 +58,17 @@ router.post('/upload', authenticateToken, upload.single('file'), validateRequest
 });
 
 // Get all documents (with optional arrangement filter)
-router.get('/', authenticateToken, async (req, res, next) => {
+router.get('/', authenticateToken, validateRequest(validators.pagination()), async (req, res, next) => {
   try {
     const { arrangementId } = req.query;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
 
+    let countQuery = `
+      SELECT COUNT(*) as total
+      FROM documents d
+      WHERE d.deleted_at IS NULL
+    `;
     let query = `
       SELECT
         d.*,
@@ -74,12 +81,24 @@ router.get('/', authenticateToken, async (req, res, next) => {
     `;
 
     const params = [];
+    const countParams = [];
+    let paramIndex = 1;
+
     if (arrangementId) {
-      query += ` AND d.arrangement_id = $1`;
+      query += ` AND d.arrangement_id = $${paramIndex}`;
+      countQuery += ` AND d.arrangement_id = $${paramIndex}`;
       params.push(arrangementId);
+      countParams.push(arrangementId);
+      paramIndex++;
     }
 
-    query += ` ORDER BY d.created_at DESC LIMIT 100`;
+    // Get total count
+    const countResult = await db.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].total);
+
+    // Get paginated documents
+    query += ` ORDER BY d.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
 
     const result = await db.query(query, params);
 
@@ -97,7 +116,15 @@ router.get('/', authenticateToken, async (req, res, next) => {
       url: doc.file_url,
     }));
 
-    res.json({ documents });
+    res.json({
+      documents,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
   } catch (error) {
     next(error);
   }

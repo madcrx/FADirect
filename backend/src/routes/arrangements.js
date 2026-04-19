@@ -6,9 +6,23 @@ const { validateRequest } = require('../middleware/validate');
 const { schemas, validators } = require('../validators');
 
 // Get all arrangements for current user
-router.get('/', authenticateToken, async (req, res, next) => {
+router.get('/', authenticateToken, validateRequest(validators.pagination()), async (req, res, next) => {
   try {
-    // Get arrangements
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    // Get total count for pagination
+    const countResult = await db.query(
+      `SELECT COUNT(DISTINCT a.id) as total
+       FROM arrangements a
+       LEFT JOIN arrangement_participants ap ON a.id = ap.arrangement_id
+       WHERE (a.arranger_id = $1 OR ap.user_id = $1)
+         AND a.deleted_at IS NULL`,
+      [req.user.id]
+    );
+    const total = parseInt(countResult.rows[0].total);
+
+    // Get arrangements with pagination
     const arrangementsResult = await db.query(
       `SELECT a.*, u.name as arranger_name
        FROM arrangements a
@@ -16,8 +30,9 @@ router.get('/', authenticateToken, async (req, res, next) => {
        LEFT JOIN arrangement_participants ap ON a.id = ap.arrangement_id
        WHERE (a.arranger_id = $1 OR ap.user_id = $1)
          AND a.deleted_at IS NULL
-       ORDER BY a.created_at DESC`,
-      [req.user.id]
+       ORDER BY a.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [req.user.id, limit, offset]
     );
 
     if (arrangementsResult.rows.length === 0) {
@@ -88,7 +103,15 @@ router.get('/', authenticateToken, async (req, res, next) => {
       currentStepIndex: arrangement.current_step_index || 0,
     }));
 
-    res.json({ arrangements: arrangementsWithSteps });
+    res.json({
+      arrangements: arrangementsWithSteps,
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
   } catch (error) {
     next(error);
   }
