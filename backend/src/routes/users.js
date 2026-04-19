@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Find or create user by phone
 router.post('/find-or-create', authenticateToken, async (req, res, next) => {
@@ -38,7 +40,7 @@ router.post('/find-or-create', authenticateToken, async (req, res, next) => {
 });
 
 // Get user profile
-router.get('/:id', authenticateToken, async (req, res, next) => {
+router.get('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     const result = await db.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
     if (result.rows.length === 0) {
@@ -59,7 +61,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // Update user profile
-router.put('/me', authenticateToken, async (req, res, next) => {
+router.put('/me', authenticateToken, validateRequest(schemas.updateProfile), async (req, res, next) => {
   try {
     const { name, role, profilePhotoUrl, email } = req.body;
 

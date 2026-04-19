@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Send a file to a mourner
-router.post('/', authenticateToken, async (req, res, next) => {
+router.post('/', authenticateToken, validateRequest(schemas.sendFile), async (req, res, next) => {
   try {
     const { fileId, fileType, arrangementId, sentToUserId, notes } = req.body;
 
@@ -63,7 +65,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 });
 
 // Get all sent files for an arrangement
-router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
+router.get('/arrangement/:arrangementId', authenticateToken, validateRequest([validators.uuid('arrangementId')]), async (req, res, next) => {
   try {
     const { arrangementId } = req.params;
 
@@ -176,7 +178,7 @@ router.put('/:id/status', authenticateToken, async (req, res, next) => {
 });
 
 // Mark file as viewed (typically called from mobile app)
-router.post('/:id/viewed', authenticateToken, async (req, res, next) => {
+router.post('/:id/viewed', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -206,7 +208,7 @@ router.post('/:id/viewed', authenticateToken, async (req, res, next) => {
 });
 
 // Delete file send record
-router.delete('/:id', authenticateToken, async (req, res, next) => {
+router.delete('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     const { id } = req.params;
 

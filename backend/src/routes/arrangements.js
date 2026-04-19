@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Get all arrangements for current user
 router.get('/', authenticateToken, async (req, res, next) => {
@@ -18,53 +20,73 @@ router.get('/', authenticateToken, async (req, res, next) => {
       [req.user.id]
     );
 
-    // Get workflow steps for each arrangement
-    const arrangementsWithSteps = await Promise.all(
-      arrangementsResult.rows.map(async (arrangement) => {
-        const stepsResult = await db.query(
-          `SELECT id, title, description, step_order as "order", status, assigned_to, due_date, completed_at
-           FROM workflow_steps
-           WHERE arrangement_id = $1
-           ORDER BY step_order ASC`,
-          [arrangement.id]
-        );
+    if (arrangementsResult.rows.length === 0) {
+      return res.json({ arrangements: [] });
+    }
 
-        return {
-          id: arrangement.id,
-          arrangerId: arrangement.arranger_id,
-          mournerId: arrangement.mourner_id,
-          deceasedName: arrangement.deceased_name,
-          deceasedDateOfBirth: arrangement.deceased_date_of_birth,
-          deceasedDateOfDeath: arrangement.deceased_date_of_death,
-          funeralType: arrangement.funeral_type || 'burial',
-          status: arrangement.status,
-          jobId: arrangement.job_id,
-          serviceDate: arrangement.service_date,
-          serviceLocation: arrangement.service_location,
-          notes: arrangement.notes,
-          mournerPhone: arrangement.mourner_phone,
-          mournerName: arrangement.mourner_name,
-          mournerEmail: arrangement.mourner_email,
-          mournerRelationship: arrangement.mourner_relationship,
-          deceasedAddressLine1: arrangement.deceased_address_line1,
-          deceasedAddressLine2: arrangement.deceased_address_line2,
-          deceasedCity: arrangement.deceased_city,
-          deceasedState: arrangement.deceased_state,
-          deceasedPostcode: arrangement.deceased_postcode,
-          deceasedCountry: arrangement.deceased_country,
-          nextOfKinName: arrangement.next_of_kin_name,
-          nextOfKinRelationship: arrangement.next_of_kin_relationship,
-          nextOfKinPhone: arrangement.next_of_kin_phone,
-          nextOfKinEmail: arrangement.next_of_kin_email,
-          locationOfDeceased: arrangement.location_of_deceased,
-          createdAt: arrangement.created_at,
-          updatedAt: arrangement.updated_at,
-          scheduledDate: arrangement.service_date,
-          workflowSteps: stepsResult.rows,
-          currentStepIndex: arrangement.current_step_index || 0,
-        };
-      })
+    // Get all workflow steps in a single query (fix N+1 query problem)
+    const arrangementIds = arrangementsResult.rows.map(a => a.id);
+    const stepsResult = await db.query(
+      `SELECT id, arrangement_id, title, description, step_order as "order", status, assigned_to, due_date, completed_at
+       FROM workflow_steps
+       WHERE arrangement_id = ANY($1)
+       ORDER BY arrangement_id, step_order ASC`,
+      [arrangementIds]
     );
+
+    // Group workflow steps by arrangement_id
+    const stepsByArrangement = {};
+    stepsResult.rows.forEach(step => {
+      if (!stepsByArrangement[step.arrangement_id]) {
+        stepsByArrangement[step.arrangement_id] = [];
+      }
+      stepsByArrangement[step.arrangement_id].push({
+        id: step.id,
+        title: step.title,
+        description: step.description,
+        order: step.order,
+        status: step.status,
+        assignedTo: step.assigned_to,
+        dueDate: step.due_date,
+        completedAt: step.completed_at,
+      });
+    });
+
+    // Map arrangements with their workflow steps
+    const arrangementsWithSteps = arrangementsResult.rows.map(arrangement => ({
+      id: arrangement.id,
+      arrangerId: arrangement.arranger_id,
+      mournerId: arrangement.mourner_id,
+      deceasedName: arrangement.deceased_name,
+      deceasedDateOfBirth: arrangement.deceased_date_of_birth,
+      deceasedDateOfDeath: arrangement.deceased_date_of_death,
+      funeralType: arrangement.funeral_type || 'burial',
+      status: arrangement.status,
+      jobId: arrangement.job_id,
+      serviceDate: arrangement.service_date,
+      serviceLocation: arrangement.service_location,
+      notes: arrangement.notes,
+      mournerPhone: arrangement.mourner_phone,
+      mournerName: arrangement.mourner_name,
+      mournerEmail: arrangement.mourner_email,
+      mournerRelationship: arrangement.mourner_relationship,
+      deceasedAddressLine1: arrangement.deceased_address_line1,
+      deceasedAddressLine2: arrangement.deceased_address_line2,
+      deceasedCity: arrangement.deceased_city,
+      deceasedState: arrangement.deceased_state,
+      deceasedPostcode: arrangement.deceased_postcode,
+      deceasedCountry: arrangement.deceased_country,
+      nextOfKinName: arrangement.next_of_kin_name,
+      nextOfKinRelationship: arrangement.next_of_kin_relationship,
+      nextOfKinPhone: arrangement.next_of_kin_phone,
+      nextOfKinEmail: arrangement.next_of_kin_email,
+      locationOfDeceased: arrangement.location_of_deceased,
+      createdAt: arrangement.created_at,
+      updatedAt: arrangement.updated_at,
+      scheduledDate: arrangement.service_date,
+      workflowSteps: stepsByArrangement[arrangement.id] || [],
+      currentStepIndex: arrangement.current_step_index || 0,
+    }));
 
     res.json({ arrangements: arrangementsWithSteps });
   } catch (error) {
@@ -73,7 +95,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
 });
 
 // Get single arrangement
-router.get('/:id', authenticateToken, async (req, res, next) => {
+router.get('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     // Check if user has access to this arrangement
     const accessCheck = await db.query(
@@ -144,7 +166,7 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // Create arrangement
-router.post('/', authenticateToken, async (req, res, next) => {
+router.post('/', authenticateToken, validateRequest(schemas.createArrangement), async (req, res, next) => {
   try {
     const {
       deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, funeralType,
@@ -244,7 +266,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 });
 
 // Update arrangement
-router.put('/:id', authenticateToken, async (req, res, next) => {
+router.put('/:id', authenticateToken, validateRequest([validators.uuid('id'), ...schemas.updateArrangement]), async (req, res, next) => {
   try {
     const {
       deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId,
@@ -350,7 +372,7 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // Soft delete arrangement (arranger or admin)
-router.delete('/:id', authenticateToken, async (req, res, next) => {
+router.delete('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     // Check if arrangement exists
     const arrangement = await db.query(
@@ -384,7 +406,7 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
 });
 
 // Update workflow step
-router.put('/:id/workflow/:stepId', authenticateToken, async (req, res, next) => {
+router.put('/:id/workflow/:stepId', authenticateToken, validateRequest([validators.uuid('id'), validators.uuid('stepId'), ...schemas.updateWorkflowStep]), async (req, res, next) => {
   try {
     const { id, stepId } = req.params;
     const { status, notes } = req.body;

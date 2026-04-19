@@ -39,6 +39,7 @@ async function runMigrations() {
     '031_add_vehicle_details.sql',
     '032_add_maintenance_and_leave.sql',
     '033_add_file_sending.sql',
+    '034_add_performance_indexes.sql',
   ];
 
   try {

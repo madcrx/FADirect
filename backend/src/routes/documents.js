@@ -5,6 +5,8 @@ const multer = require('multer');
 const path = require('path');
 const config = require('../config');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -32,7 +34,7 @@ const upload = multer({
 });
 
 // Upload document
-router.post('/upload', authenticateToken, upload.single('file'), async (req, res, next) => {
+router.post('/upload', authenticateToken, upload.single('file'), validateRequest(schemas.uploadDocument), async (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: { message: 'No file uploaded' } });
@@ -102,7 +104,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
 });
 
 // Get documents for arrangement
-router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
+router.get('/arrangement/:arrangementId', authenticateToken, validateRequest([validators.uuid('arrangementId')]), async (req, res, next) => {
   try {
     const result = await db.query(
       `SELECT d.*, u.name as uploader_name
@@ -134,7 +136,7 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
 });
 
 // Soft delete document (uploader or arranger)
-router.delete('/:id', authenticateToken, async (req, res, next) => {
+router.delete('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     // Get document and check permissions
     const doc = await db.query(

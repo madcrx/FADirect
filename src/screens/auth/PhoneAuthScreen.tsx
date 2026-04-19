@@ -63,8 +63,9 @@ const PhoneAuthScreen = () => {
       navigation.navigate('VerifyCode', {
         phoneNumber: formattedNumber,
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to send verification code. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send verification code. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

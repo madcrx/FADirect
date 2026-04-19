@@ -25,11 +25,25 @@ type RouteParams = {
   };
 };
 
+interface FormDataSection {
+  [key: string]: string | number | boolean | undefined;
+}
+
+interface FormDataStructure {
+  deceased: FormDataSection;
+  nextOfKin: FormDataSection;
+  funeralPreferences: FormDataSection;
+  burialCremation: FormDataSection;
+  serviceContent: FormDataSection;
+  coffinSelection: FormDataSection;
+  confirmation: FormDataSection;
+}
+
 export default function PreArrangementFormScreen() {
   const route = useRoute<RouteProp<RouteParams, 'PreArrangementForm'>>();
   const navigation = useNavigation();
   const [form, setForm] = useState<PreArrangementForm | null>(null);
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState<FormDataStructure>({
     deceased: {},
     nextOfKin: {},
     funeralPreferences: {},
@@ -95,8 +109,8 @@ export default function PreArrangementFormScreen() {
     }
   };
 
-  const updateField = (section: string, field: string, value: any) => {
-    setFormData((prev: any) => ({
+  const updateField = (section: keyof FormDataStructure, field: string, value: string | number | boolean) => {
+    setFormData((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],

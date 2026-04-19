@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Get messages for an arrangement
 router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
@@ -33,7 +35,7 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
 });
 
 // Send message
-router.post('/', authenticateToken, async (req, res, next) => {
+router.post('/', authenticateToken, validateRequest(schemas.sendMessage), async (req, res, next) => {
   try {
     const { recipientId, arrangementId, encryptedContent, messageType } = req.body;
     const result = await db.query(
@@ -48,7 +50,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 });
 
 // Mark message as read
-router.put('/:id/read', authenticateToken, async (req, res, next) => {
+router.put('/:id/read', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     await db.query(
       'UPDATE messages SET read = TRUE WHERE id = $1 AND recipient_id = $2',

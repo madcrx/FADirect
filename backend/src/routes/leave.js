@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Get leave requests (all for admin/management, own for staff)
 router.get('/', authenticateToken, async (req, res, next) => {
@@ -68,7 +70,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
 });
 
 // Create leave request
-router.post('/', authenticateToken, async (req, res, next) => {
+router.post('/', authenticateToken, validateRequest(schemas.createLeave), async (req, res, next) => {
   try {
     const { startDate, endDate, reason } = req.body;
 
@@ -95,7 +97,7 @@ router.post('/', authenticateToken, async (req, res, next) => {
 });
 
 // Approve/reject leave request (admin/management only)
-router.put('/:id/status', authenticateToken, async (req, res, next) => {
+router.put('/:id/status', authenticateToken, validateRequest([validators.uuid('id'), ...schemas.updateLeaveStatus]), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;

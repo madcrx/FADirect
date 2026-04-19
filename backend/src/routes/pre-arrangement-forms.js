@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Send pre-arrangement form to mourner
-router.post('/send', authenticateToken, async (req, res, next) => {
+router.post('/send', authenticateToken, validateRequest(schemas.sendForm), async (req, res, next) => {
   try {
     const { arrangementId } = req.body;
 
@@ -101,7 +103,7 @@ router.post('/send', authenticateToken, async (req, res, next) => {
 });
 
 // Get form by arrangement ID
-router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, next) => {
+router.get('/arrangement/:arrangementId', authenticateToken, validateRequest([validators.uuid('arrangementId')]), async (req, res, next) => {
   try {
     const { arrangementId } = req.params;
 
@@ -143,7 +145,7 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
 });
 
 // Submit/Update form data
-router.put('/:id', authenticateToken, async (req, res, next) => {
+router.put('/:id', authenticateToken, validateRequest([validators.uuid('id'), ...schemas.updateForm]), async (req, res, next) => {
   try {
     const { id } = req.params;
     const { formData, status } = req.body;
@@ -315,7 +317,7 @@ async function autoPopulateArrangement(arrangementId, formData) {
 }
 
 // Delete form
-router.delete('/:id', authenticateToken, async (req, res, next) => {
+router.delete('/:id', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     const { id } = req.params;
 

@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middleware/auth');
+const { validateRequest } = require('../middleware/validate');
+const { schemas } = require('../validators');
 
 // Public routes
-router.post('/send-code', authController.sendVerificationCode);
-router.post('/verify-code', authController.verifyCode);
+router.post('/send-code', validateRequest(schemas.phoneAuth), authController.sendVerificationCode);
+router.post('/verify-code', validateRequest(schemas.verifyCode), authController.verifyCode);
 
 // Protected routes
 router.get('/me', authenticateToken, authController.getCurrentUser);

@@ -68,7 +68,7 @@ export interface Arrangement {
   scheduledDate?: Date;
   workflowSteps: WorkflowStep[];
   currentStepIndex: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface WorkflowStep {
@@ -95,7 +95,7 @@ export interface Message {
   readAt?: Date;
   attachments?: Attachment[];
   formId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Attachment {
@@ -149,7 +149,7 @@ export interface FormField {
     min?: number;
     max?: number;
   };
-  defaultValue?: any;
+  defaultValue?: string | number | boolean | string[];
   helpText?: string;
   order: number;
 }
@@ -160,7 +160,7 @@ export interface FormSubmission {
   arrangementId: string;
   submittedBy: string;
   submittedAt: Date;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   attachments?: Attachment[];
   signature?: string;
   status: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -212,7 +212,7 @@ export interface Notification {
     | 'workflow_update'
     | 'appointment_reminder'
     | 'system';
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   read: boolean;
   createdAt: Date;
   readAt?: Date;

@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
-const { body, validationResult } = require('express-validator');
+const { validateRequest } = require('../middleware/validate');
+const { schemas, validators } = require('../validators');
 
 // Get user notifications
 router.get('/', authenticateToken, async (req, res, next) => {
@@ -66,7 +67,7 @@ router.get('/unread-count', authenticateToken, async (req, res, next) => {
 });
 
 // Mark notification as read
-router.put('/:id/read', authenticateToken, async (req, res, next) => {
+router.put('/:id/read', authenticateToken, validateRequest([validators.uuid('id')]), async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
