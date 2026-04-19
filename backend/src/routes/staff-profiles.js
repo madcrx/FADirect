@@ -43,7 +43,16 @@ router.get('/', authenticateToken, async (req, res, next) => {
         sp.*,
         u.name as full_name,
         u.phone_number,
-        u.role
+        u.role,
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM staff_leave sl
+            WHERE sl.user_id = u.id
+            AND sl.status = 'approved'
+            AND CURRENT_DATE BETWEEN sl.start_date AND sl.end_date
+          ) THEN false
+          ELSE sp.is_available
+        END as is_available_now
       FROM staff_profiles sp
       JOIN users u ON sp.user_id = u.id
       WHERE NOT (u.role @> ARRAY['mourner']::TEXT[])
@@ -65,7 +74,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         qualifications: row.qualifications,
         emergencyContactName: row.emergency_contact_name,
         emergencyContactPhone: row.emergency_contact_phone,
-        isAvailable: row.is_available,
+        isAvailable: row.is_available_now,
         userIsActive: true,
       }))
     });
@@ -162,6 +171,87 @@ router.post('/', authenticateToken, async (req, res, next) => {
       message: 'Staff profile saved successfully',
       profile: result.rows[0]
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get leave periods for a staff member
+router.get('/:id/leave', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Get user_id from staff profile
+    const staffProfile = await db.query('SELECT user_id FROM staff_profiles WHERE id = $1', [id]);
+    if (staffProfile.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Staff profile not found' } });
+    }
+
+    const userId = staffProfile.rows[0].user_id;
+    const result = await db.query(
+      `SELECT * FROM staff_leave WHERE user_id = $1 ORDER BY start_date DESC`,
+      [userId]
+    );
+
+    res.json({
+      leave: result.rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        leaveType: row.leave_type,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.created_at,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add leave period for a staff member
+router.post('/:id/leave', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, leaveType, reason, status } = req.body;
+
+    // Get user_id from staff profile
+    const staffProfile = await db.query('SELECT user_id FROM staff_profiles WHERE id = $1', [id]);
+    if (staffProfile.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Staff profile not found' } });
+    }
+
+    const userId = staffProfile.rows[0].user_id;
+    const result = await db.query(
+      `INSERT INTO staff_leave (user_id, start_date, end_date, leave_type, reason, status)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [userId, startDate, endDate, leaveType || 'annual', reason, status || 'approved']
+    );
+
+    res.status(201).json({
+      message: 'Leave period created',
+      leave: {
+        id: result.rows[0].id,
+        userId: result.rows[0].user_id,
+        startDate: result.rows[0].start_date,
+        endDate: result.rows[0].end_date,
+        leaveType: result.rows[0].leave_type,
+        reason: result.rows[0].reason,
+        status: result.rows[0].status,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete leave period
+router.delete('/:id/leave/:leaveId', authenticateToken, async (req, res, next) => {
+  try {
+    const { leaveId } = req.params;
+    await db.query('DELETE FROM staff_leave WHERE id = $1', [leaveId]);
+    res.json({ message: 'Leave period deleted' });
   } catch (error) {
     next(error);
   }

@@ -41,7 +41,16 @@ router.get('/', authenticateToken, async (req, res, next) => {
     const { status, type } = req.query;
 
     let query = `
-      SELECT e.*, v.registration as vehicle_registration
+      SELECT e.*, v.registration as vehicle_registration,
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM equipment_maintenance em
+            WHERE em.equipment_id = e.id
+            AND em.status IN ('scheduled', 'in_progress')
+            AND CURRENT_DATE BETWEEN em.start_date AND em.end_date
+          ) THEN 'maintenance'
+          ELSE e.status
+        END as current_status
       FROM equipment e
       LEFT JOIN vehicles v ON e.vehicle_id = v.id
       WHERE e.deleted_at IS NULL
@@ -74,7 +83,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         description: row.description,
         serialNumber: row.serial_number,
         photoUrl: row.photo_url,
-        status: row.status,
+        status: row.current_status,
         purchaseDate: row.purchase_date,
         lastMaintenanceDate: row.last_maintenance_date,
         nextMaintenanceDate: row.next_maintenance_date,
@@ -332,6 +341,69 @@ router.post('/check-availability', authenticateToken, async (req, res, next) => 
       startTime,
       endTime,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get maintenance schedules for equipment
+router.get('/:id/maintenance', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query(
+      `SELECT * FROM equipment_maintenance WHERE equipment_id = $1 ORDER BY start_date DESC`,
+      [id]
+    );
+    res.json({
+      maintenance: result.rows.map(row => ({
+        id: row.id,
+        equipmentId: row.equipment_id,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.created_at,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add maintenance schedule for equipment
+router.post('/:id/maintenance', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, reason, status } = req.body;
+
+    const result = await db.query(
+      `INSERT INTO equipment_maintenance (equipment_id, start_date, end_date, reason, status)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [id, startDate, endDate, reason, status || 'scheduled']
+    );
+
+    res.status(201).json({
+      message: 'Maintenance schedule created',
+      maintenance: {
+        id: result.rows[0].id,
+        equipmentId: result.rows[0].equipment_id,
+        startDate: result.rows[0].start_date,
+        endDate: result.rows[0].end_date,
+        reason: result.rows[0].reason,
+        status: result.rows[0].status,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete maintenance schedule
+router.delete('/:id/maintenance/:maintenanceId', authenticateToken, async (req, res, next) => {
+  try {
+    const { maintenanceId } = req.params;
+    await db.query('DELETE FROM equipment_maintenance WHERE id = $1', [maintenanceId]);
+    res.json({ message: 'Maintenance schedule deleted' });
   } catch (error) {
     next(error);
   }

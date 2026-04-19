@@ -39,7 +39,16 @@ const upload = multer({
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const result = await db.query(`
-      SELECT v.*, u.name as allocated_to_staff_name
+      SELECT v.*, u.name as allocated_to_staff_name,
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM vehicle_maintenance vm
+            WHERE vm.vehicle_id = v.id
+            AND vm.status IN ('scheduled', 'in_progress')
+            AND CURRENT_DATE BETWEEN vm.start_date AND vm.end_date
+          ) THEN 'maintenance'
+          ELSE v.status
+        END as current_status
       FROM vehicles v
       LEFT JOIN users u ON v.allocated_to_staff_id = u.id
       WHERE v.deleted_at IS NULL
@@ -63,7 +72,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         vinNumber: row.vin_number,
         allocatedToStaffId: row.allocated_to_staff_id,
         allocatedToStaffName: row.allocated_to_staff_name,
-        status: row.status,
+        status: row.current_status,
         lastServiceDate: row.last_service_date,
         nextServiceDate: row.next_service_date,
       }))
@@ -190,6 +199,69 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
     ]);
 
     res.json({ message: 'Vehicle updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get maintenance schedules for a vehicle
+router.get('/:id/maintenance', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await db.query(
+      `SELECT * FROM vehicle_maintenance WHERE vehicle_id = $1 ORDER BY start_date DESC`,
+      [id]
+    );
+    res.json({
+      maintenance: result.rows.map(row => ({
+        id: row.id,
+        vehicleId: row.vehicle_id,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.created_at,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add maintenance schedule for a vehicle
+router.post('/:id/maintenance', authenticateToken, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, reason, status } = req.body;
+
+    const result = await db.query(
+      `INSERT INTO vehicle_maintenance (vehicle_id, start_date, end_date, reason, status)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [id, startDate, endDate, reason, status || 'scheduled']
+    );
+
+    res.status(201).json({
+      message: 'Maintenance schedule created',
+      maintenance: {
+        id: result.rows[0].id,
+        vehicleId: result.rows[0].vehicle_id,
+        startDate: result.rows[0].start_date,
+        endDate: result.rows[0].end_date,
+        reason: result.rows[0].reason,
+        status: result.rows[0].status,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete maintenance schedule
+router.delete('/:id/maintenance/:maintenanceId', authenticateToken, async (req, res, next) => {
+  try {
+    const { maintenanceId } = req.params;
+    await db.query('DELETE FROM vehicle_maintenance WHERE id = $1', [maintenanceId]);
+    res.json({ message: 'Maintenance schedule deleted' });
   } catch (error) {
     next(error);
   }

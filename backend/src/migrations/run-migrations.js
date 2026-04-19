@@ -37,6 +37,7 @@ async function runMigrations() {
     '029_add_users_soft_delete.sql',
     '030_fix_staff_assignments_constraint.sql',
     '031_add_vehicle_details.sql',
+    '032_add_maintenance_and_leave.sql',
   ];
 
   try {
