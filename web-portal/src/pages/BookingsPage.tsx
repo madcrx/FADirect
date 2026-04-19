@@ -60,6 +60,16 @@ interface Job {
   staff: Array<{ fullName: string; role: string }>;
   vehicles: Array<{ registration: string; type: string }>;
   equipment: Array<{ name: string; equipmentType: string }>;
+  requirements?: {
+    arranger?: number;
+    conductor?: number;
+    funeral_director_assistant?: number;
+    embalmer?: number;
+    hearse_driver?: number;
+    coach_driver?: number;
+    hearse?: number;
+    limousine?: number;
+  };
 }
 
 interface JobType {
@@ -376,6 +386,61 @@ export default function BookingsPage() {
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to assign equipment');
     }
+  };
+
+  // Get vacant/unassigned staff roles
+  const getVacantStaffRoles = () => {
+    if (!selectedJob?.requirements) return [];
+
+    const vacant: Array<{ role: string; count: number }> = [];
+    const roleMap: { [key: string]: string } = {
+      arranger: 'Arranger',
+      conductor: 'Conductor',
+      funeral_director_assistant: 'Funeral Director Assistant',
+      embalmer: 'Embalmer',
+      hearse_driver: 'Hearse Driver',
+      coach_driver: 'Coach Driver',
+    };
+
+    Object.entries(selectedJob.requirements).forEach(([roleKey, required]) => {
+      if (typeof required === 'number' && required > 0) {
+        const assigned = selectedJob.staff.filter(s =>
+          s.role?.toLowerCase().replace(/ /g, '_') === roleKey
+        ).length;
+        const vacantCount = required - assigned;
+        if (vacantCount > 0) {
+          vacant.push({ role: roleMap[roleKey] || roleKey, count: vacantCount });
+        }
+      }
+    });
+
+    return vacant;
+  };
+
+  // Get vacant vehicle types
+  const getVacantVehicles = () => {
+    if (!selectedJob?.requirements) return [];
+
+    const vacant: Array<{ type: string; count: number }> = [];
+    const vehicleTypes = ['hearse', 'limousine'];
+
+    vehicleTypes.forEach(type => {
+      const required = (selectedJob.requirements as any)?.[type] || 0;
+      if (required > 0) {
+        const assigned = selectedJob.vehicles.filter(v =>
+          v.type?.toLowerCase() === type
+        ).length;
+        const vacantCount = required - assigned;
+        if (vacantCount > 0) {
+          vacant.push({
+            type: type.charAt(0).toUpperCase() + type.slice(1),
+            count: vacantCount
+          });
+        }
+      }
+    });
+
+    return vacant;
   };
 
   // Load resources when job is selected
@@ -909,34 +974,94 @@ export default function BookingsPage() {
                 Currently Assigned
               </Typography>
               <List dense>
-                {resourceTab === 'staff' && selectedJob.staff.length > 0 ? (
-                  selectedJob.staff.map((staff: any, index: number) => (
-                    <ListItem key={index}>
-                      <ListItemIcon>
-                        <CheckCircleIcon color="success" fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={staff.fullName}
-                        secondary={staff.role}
-                      />
-                    </ListItem>
-                  ))
-                ) : resourceTab === 'vehicles' && selectedJob.vehicles.length > 0 ? (
-                  selectedJob.vehicles.map((vehicle: any, index: number) => (
-                    <ListItem key={index}>
-                      <ListItemIcon>
-                        <CheckCircleIcon color="success" fontSize="small" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={vehicle.registration}
-                        secondary={vehicle.type}
-                      />
-                    </ListItem>
-                  ))
-                ) : (
-                  <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
-                    No {resourceTab} assigned yet
-                  </Typography>
+                {/* Staff Tab */}
+                {resourceTab === 'staff' && (
+                  <>
+                    {selectedJob.staff.map((staff: any, index: number) => (
+                      <ListItem key={`assigned-${index}`}>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={staff.fullName}
+                          secondary={staff.role}
+                        />
+                      </ListItem>
+                    ))}
+                    {getVacantStaffRoles().map((vacant, index) => (
+                      <ListItem key={`vacant-${index}`}>
+                        <ListItemIcon>
+                          <PersonIcon color="disabled" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${vacant.count} ${vacant.role}${vacant.count > 1 ? 's' : ''} needed`}
+                          secondary="Unassigned"
+                          primaryTypographyProps={{ color: 'text.secondary', fontStyle: 'italic' }}
+                        />
+                      </ListItem>
+                    ))}
+                    {selectedJob.staff.length === 0 && getVacantStaffRoles().length === 0 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                        No staff assigned yet
+                      </Typography>
+                    )}
+                  </>
+                )}
+
+                {/* Vehicles Tab */}
+                {resourceTab === 'vehicles' && (
+                  <>
+                    {selectedJob.vehicles.map((vehicle: any, index: number) => (
+                      <ListItem key={`assigned-${index}`}>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={vehicle.registration}
+                          secondary={vehicle.type}
+                        />
+                      </ListItem>
+                    ))}
+                    {getVacantVehicles().map((vacant, index) => (
+                      <ListItem key={`vacant-${index}`}>
+                        <ListItemIcon>
+                          <VehicleIcon color="disabled" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`${vacant.count} ${vacant.type}${vacant.count > 1 ? 's' : ''} needed`}
+                          secondary="Unassigned"
+                          primaryTypographyProps={{ color: 'text.secondary', fontStyle: 'italic' }}
+                        />
+                      </ListItem>
+                    ))}
+                    {selectedJob.vehicles.length === 0 && getVacantVehicles().length === 0 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                        No vehicles assigned yet
+                      </Typography>
+                    )}
+                  </>
+                )}
+
+                {/* Equipment Tab */}
+                {resourceTab === 'equipment' && (
+                  <>
+                    {selectedJob.equipment && selectedJob.equipment.map((equip: any, index: number) => (
+                      <ListItem key={`assigned-${index}`}>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="success" fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={equip.name}
+                          secondary={equip.equipmentType}
+                        />
+                      </ListItem>
+                    ))}
+                    {(!selectedJob.equipment || selectedJob.equipment.length === 0) && (
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
+                        No equipment assigned yet
+                      </Typography>
+                    )}
+                  </>
                 )}
               </List>
             </Box>
