@@ -527,14 +527,14 @@ router.post('/jobs/:jobId/assign-staff', authenticateToken, async (req, res, nex
       return res.status(400).json({ error: { message: 'Staff ID is required' } });
     }
 
-    // Check if assignment already exists
+    // Check if assignment already exists for this specific role
     const existing = await db.query(
-      'SELECT id FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2',
-      [jobId, staffId]
+      'SELECT id FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2 AND role = $3',
+      [jobId, staffId, role || null]
     );
 
     if (existing.rows.length > 0) {
-      return res.status(400).json({ error: { message: 'Staff member already assigned to this job' } });
+      return res.status(400).json({ error: { message: 'Staff member already assigned to this job with this role' } });
     }
 
     // Create assignment

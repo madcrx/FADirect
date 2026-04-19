@@ -99,6 +99,9 @@ export default function BookingsPage() {
   const [availableStaff, setAvailableStaff] = useState<Array<any>>([]);
   const [availableVehicles, setAvailableVehicles] = useState<Array<any>>([]);
   const [availableEquipment, setAvailableEquipment] = useState<Array<any>>([]);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedStaffForAssignment, setSelectedStaffForAssignment] = useState<any>(null);
+  const [selectedRole, setSelectedRole] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     jobTypeId: '',
@@ -334,11 +337,11 @@ export default function BookingsPage() {
       ]);
 
       // Filter out already assigned resources
-      const assignedStaffIds = job.staff.map((s: any) => s.id);
+      // Note: Staff can be assigned multiple times with different roles, so don't filter them out
       const assignedVehicleIds = job.vehicles.map((v: any) => v.id);
       const assignedEquipmentIds = job.equipment?.map((e: any) => e.id) || [];
 
-      setAvailableStaff(staffRes.data.staff?.filter((s: any) => !assignedStaffIds.includes(s.id)) || []);
+      setAvailableStaff(staffRes.data.staff || []);
       setAvailableVehicles(vehiclesRes.data.vehicles?.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available') || []);
       setAvailableEquipment(equipmentRes.data.equipment?.filter((e: any) => !assignedEquipmentIds.includes(e.id) && e.status === 'available') || []);
     } catch (err: any) {
@@ -346,17 +349,44 @@ export default function BookingsPage() {
     }
   };
 
+  // Open role selection dialog for staff assignment
+  const handleStaffClick = (staff: any) => {
+    setSelectedStaffForAssignment(staff);
+
+    // If staff has multiple roles, show dialog to select which role
+    const roles = Array.isArray(staff.roles) ? staff.roles : [staff.roles];
+    if (roles.length > 1) {
+      setSelectedRole(roles[0]);
+      setRoleDialogOpen(true);
+    } else {
+      // If only one role, assign directly with that role
+      handleAssignStaff(staff.id, staff.userId, roles[0]);
+    }
+  };
+
   // Assign staff to job
-  const handleAssignStaff = async (staffId: string, userId: string) => {
+  const handleAssignStaff = async (staffId: string, userId: string, role: string) => {
     if (!selectedJob) return;
 
     try {
-      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId: userId });
-      setSuccess('Staff assigned successfully');
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId: userId, role });
+      setSuccess(`Staff assigned successfully as ${role}`);
+      setRoleDialogOpen(false);
+      setSelectedStaffForAssignment(null);
       await loadData();
       await loadAvailableResources(selectedJob);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to assign staff');
+    }
+  };
+
+  const handleRoleDialogConfirm = () => {
+    if (selectedStaffForAssignment && selectedRole) {
+      handleAssignStaff(
+        selectedStaffForAssignment.id,
+        selectedStaffForAssignment.userId,
+        selectedRole
+      );
     }
   };
 
@@ -1087,7 +1117,7 @@ export default function BookingsPage() {
                       borderRadius: 1,
                       mb: 0.5,
                     }}
-                    onDoubleClick={() => handleAssignStaff(staff.id, staff.userId)}
+                    onDoubleClick={() => handleStaffClick(staff)}
                   >
                     <ListItemIcon>
                       <Avatar
@@ -1166,6 +1196,37 @@ export default function BookingsPage() {
           </>
         )}
       </Drawer>
+
+      {/* Role Selection Dialog */}
+      <Dialog open={roleDialogOpen} onClose={() => setRoleDialogOpen(false)}>
+        <DialogTitle>Select Role for Assignment</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            {selectedStaffForAssignment?.fullName} has multiple roles. Select which role to assign:
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Role</InputLabel>
+            <Select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              label="Role"
+            >
+              {selectedStaffForAssignment && Array.isArray(selectedStaffForAssignment.roles) &&
+                selectedStaffForAssignment.roles.map((role: string) => (
+                  <MenuItem key={role} value={role}>
+                    {role}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRoleDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleRoleDialogConfirm} variant="contained">
+            Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
