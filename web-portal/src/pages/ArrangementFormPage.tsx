@@ -27,6 +27,7 @@ export default function ArrangementFormPage() {
   const [mournerSuggestions, setMournerSuggestions] = useState<Array<any>>([]);
   const [arrangers, setArrangers] = useState<Array<any>>([]);
   const [jobs, setJobs] = useState<Array<any>>([]);
+  const [locationOptions, setLocationOptions] = useState<Array<string>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [phoneError, setPhoneError] = useState('');
@@ -65,6 +66,7 @@ export default function ArrangementFormPage() {
     loadJobs();
     loadArrangers();
     loadMournerSuggestions();
+    loadLocationOptions();
     if (isEdit) {
       loadArrangement();
     }
@@ -236,6 +238,15 @@ export default function ArrangementFormPage() {
       setArrangers(response.data.arrangers || []);
     } catch (error) {
       console.error('Failed to load arrangers:', error);
+    }
+  };
+
+  const loadLocationOptions = async () => {
+    try {
+      const response = await api.get('/config/values/location_of_deceased');
+      setLocationOptions(response.data.values?.map((v: any) => v.label) || []);
+    } catch (error) {
+      console.error('Failed to load location options:', error);
     }
   };
 
@@ -475,12 +486,19 @@ export default function ArrangementFormPage() {
               </Grid>
 
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Location of Deceased"
+                <Autocomplete
+                  freeSolo
+                  options={locationOptions}
                   value={formData.locationOfDeceased}
-                  onChange={(e) => setFormData({ ...formData, locationOfDeceased: e.target.value })}
-                  helperText="Current location (e.g., hospital, morgue, funeral home)"
+                  onChange={(_, newValue) => setFormData({ ...formData, locationOfDeceased: newValue || '' })}
+                  onInputChange={(_, newValue) => setFormData({ ...formData, locationOfDeceased: newValue })}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Location of Deceased"
+                      helperText="Select or type current location (hospital, morgue, funeral home, etc.)"
+                    />
+                  )}
                 />
               </Grid>
 
