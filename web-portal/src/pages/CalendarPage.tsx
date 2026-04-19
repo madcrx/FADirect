@@ -314,7 +314,7 @@ export default function CalendarPage() {
                     </Typography>
                     <Typography variant="body1">
                       {selectedArrangement.nextOfKinName}
-                      {selectedArrangement.nextOfKinRelationship && \` (\${selectedArrangement.nextOfKinRelationship})\`}
+                      {selectedArrangement.nextOfKinRelationship && ` (${selectedArrangement.nextOfKinRelationship})`}
                     </Typography>
                     {selectedArrangement.nextOfKinPhone && (
                       <Typography variant="body2" color="text.secondary">
@@ -353,7 +353,7 @@ export default function CalendarPage() {
                 variant="contained"
                 onClick={() => {
                   handleCloseDialog();
-                  window.location.href = \`/arrangements/\${selectedArrangement.id}\`;
+                  window.location.href = `/arrangements/${selectedArrangement.id}`;
                 }}
               >
                 View Full Details
