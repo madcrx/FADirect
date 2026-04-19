@@ -38,7 +38,7 @@ interface StaffMember {
   fullName: string;
   email: string;
   phoneNumber: string;
-  role: string;
+  role: string | string[];
   photoUrl: string | null;
   position: string | null;
   licenseNumber: string | null;
@@ -258,9 +258,21 @@ export default function StaffPage() {
                   <Typography variant="h6" fontWeight="bold" textAlign="center">
                     {member.fullName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" textAlign="center">
-                    {member.position || member.role}
-                  </Typography>
+                  {member.position && (
+                    <Typography variant="body2" color="text.secondary" textAlign="center">
+                      {member.position}
+                    </Typography>
+                  )}
+                  <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
+                    {(Array.isArray(member.role) ? member.role : [member.role]).map((r) => (
+                      <Chip
+                        key={r}
+                        label={r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
                   <Box sx={{ mt: 1 }}>
                     <Chip
                       label={member.isAvailable ? 'Available' : 'Unavailable'}
