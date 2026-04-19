@@ -33,6 +33,7 @@ async function runMigrations() {
     '025_add_missing_notification_columns.sql',
     '026_add_arrangement_details.sql',
     '027_add_location_of_deceased_config.sql',
+    '028_add_is_primary_to_vehicle_assignments.sql',
   ];
 
   try {
