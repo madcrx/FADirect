@@ -281,14 +281,19 @@ export default function VehiclesPage() {
               {vehicle.photoUrl ? (
                 <CardMedia
                   component="img"
-                  height="200"
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '16 / 9',
+                    objectFit: 'cover',
+                  }}
                   image={vehicle.photoUrl}
                   alt={`${vehicle.make} ${vehicle.model}`}
                 />
               ) : (
                 <Box
                   sx={{
-                    height: 200,
+                    width: '100%',
+                    aspectRatio: '16 / 9',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

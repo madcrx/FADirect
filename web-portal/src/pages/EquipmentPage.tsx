@@ -286,14 +286,19 @@ export default function EquipmentPage() {
               {item.photoUrl ? (
                 <CardMedia
                   component="img"
-                  height="200"
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '4 / 3',
+                    objectFit: 'cover',
+                  }}
                   image={item.photoUrl}
                   alt={item.name}
                 />
               ) : (
                 <Box
                   sx={{
-                    height: 200,
+                    width: '100%',
+                    aspectRatio: '4 / 3',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
