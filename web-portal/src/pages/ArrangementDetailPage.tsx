@@ -21,6 +21,8 @@ import {
   IconButton,
   Alert,
   Snackbar,
+  TextField,
+  Paper,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -73,6 +75,7 @@ export default function ArrangementDetailPage() {
     message: '',
     severity: 'success'
   });
+  const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
     if (id) {
@@ -198,6 +201,32 @@ export default function ArrangementDetailPage() {
     } finally {
       setUploading(false);
       event.target.value = '';
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !id || !arrangement) return;
+
+    try {
+      // Get mourner user ID from arrangement
+      const recipientId = arrangement.userId; // Assuming the mourner is the user who created/owns the arrangement
+
+      await messagesApi.sendMessage({
+        recipientId: recipientId,
+        arrangementId: id,
+        encryptedContent: newMessage, // In production, this should be encrypted
+        messageType: 'text',
+      });
+
+      setNewMessage('');
+      setSnackbar({ open: true, message: 'Message sent successfully', severity: 'success' });
+      await loadData(); // Reload messages
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to send message',
+        severity: 'error'
+      });
     }
   };
 
@@ -384,23 +413,70 @@ export default function ArrangementDetailPage() {
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
-          {messages.length === 0 ? (
-            <Typography color="text.secondary">No messages yet</Typography>
-          ) : (
-            <List>
-              {messages.map((message, index) => (
-                <div key={message.id}>
-                  {index > 0 && <Divider />}
-                  <ListItem>
-                    <ListItemText
-                      primary={message.content}
-                      secondary={`${message.senderName} • ${format(new Date(message.timestamp), 'dd/MM/yyyy HH:mm')}`}
-                    />
-                  </ListItem>
-                </div>
-              ))}
-            </List>
-          )}
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: '500px' }}>
+            {/* Messages List */}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2 }}>
+              {messages.length === 0 ? (
+                <Typography color="text.secondary">No messages yet. Start a conversation with the mourner.</Typography>
+              ) : (
+                <List>
+                  {messages.map((message, index) => (
+                    <div key={message.id}>
+                      {index > 0 && <Divider />}
+                      <ListItem
+                        sx={{
+                          flexDirection: 'column',
+                          alignItems: 'flex-start',
+                        }}
+                      >
+                        <Paper
+                          elevation={1}
+                          sx={{
+                            p: 2,
+                            bgcolor: message.senderId === arrangement.userId ? 'grey.100' : 'primary.light',
+                            maxWidth: '70%',
+                            alignSelf: message.senderId === arrangement.userId ? 'flex-start' : 'flex-end',
+                          }}
+                        >
+                          <Typography variant="body1" sx={{ mb: 0.5 }}>
+                            {message.content}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {message.senderName} • {format(new Date(message.timestamp), 'dd/MM/yyyy HH:mm')}
+                          </Typography>
+                        </Paper>
+                      </ListItem>
+                    </div>
+                  ))}
+                </List>
+              )}
+            </Box>
+
+            {/* Message Input */}
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                fullWidth
+                placeholder="Type a message to the mourner..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                multiline
+                maxRows={3}
+              />
+              <Button
+                variant="contained"
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim()}
+              >
+                Send
+              </Button>
+            </Box>
+          </Box>
         </TabPanel>
 
         <TabPanel value={tabValue} index={3}>

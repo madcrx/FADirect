@@ -14,7 +14,19 @@ router.get('/arrangement/:arrangementId', authenticateToken, async (req, res, ne
        ORDER BY m.created_at ASC`,
       [req.params.arrangementId]
     );
-    res.json({ messages: result.rows });
+    res.json({
+      messages: result.rows.map(row => ({
+        id: row.id,
+        arrangementId: row.arrangement_id,
+        senderId: row.sender_id,
+        senderName: row.sender_name,
+        recipientId: row.recipient_id,
+        content: row.encrypted_content, // Map encrypted_content to content for frontend
+        timestamp: row.created_at,
+        readAt: row.read_at,
+        messageType: row.message_type,
+      }))
+    });
   } catch (error) {
     next(error);
   }

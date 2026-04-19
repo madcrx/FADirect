@@ -120,6 +120,18 @@ export const messagesApi = {
     const response = await api.get(`/messages/arrangement/${arrangementId}`);
     return response.data.messages;
   },
+  sendMessage: async (data: {
+    recipientId: string;
+    arrangementId: string;
+    encryptedContent: string;
+    messageType?: string;
+  }): Promise<Message> => {
+    const response = await api.post('/messages', data);
+    return response.data.message;
+  },
+  markAsRead: async (messageId: string): Promise<void> => {
+    await api.put(`/messages/${messageId}/read`);
+  },
 };
 
 // Documents API
