@@ -380,6 +380,22 @@ export default function BookingsPage() {
     }
   };
 
+  // Unassign staff from job
+  const handleUnassignStaff = async (staffId: string, role: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.delete(`/roster/jobs/${selectedJob.id}/unassign-staff`, {
+        data: { staffId, role }
+      });
+      setSuccess(`Staff removed from ${role} role`);
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to unassign staff');
+    }
+  };
+
   const handleRoleDialogConfirm = () => {
     if (selectedStaffForAssignment && selectedRole) {
       handleAssignStaff(
@@ -1008,13 +1024,20 @@ export default function BookingsPage() {
                 {resourceTab === 'staff' && (
                   <>
                     {selectedJob.staff.map((staff: any, index: number) => (
-                      <ListItem key={`assigned-${index}`}>
+                      <ListItem
+                        key={`assigned-${index}`}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
+                        }}
+                        onClick={() => handleUnassignStaff(staff.userId, staff.role)}
+                      >
                         <ListItemIcon>
                           <CheckCircleIcon color="success" fontSize="small" />
                         </ListItemIcon>
                         <ListItemText
                           primary={staff.fullName}
-                          secondary={staff.role}
+                          secondary={`${staff.role} (click to remove)`}
                         />
                       </ListItem>
                     ))}

@@ -582,6 +582,32 @@ router.post('/jobs/:jobId/assign-staff', authenticateToken, async (req, res, nex
   }
 });
 
+// Unassign staff from job
+router.delete('/jobs/:jobId/unassign-staff', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { staffId, role } = req.body;
+
+    if (!staffId) {
+      return res.status(400).json({ error: { message: 'Staff ID is required' } });
+    }
+
+    // Delete the specific staff assignment for this role
+    const result = await db.query(
+      'DELETE FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2 AND role = $3 RETURNING *',
+      [jobId, staffId, role || null]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Staff assignment not found' } });
+    }
+
+    res.json({ message: 'Staff unassigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Assign vehicle to job
 router.post('/jobs/:jobId/assign-vehicle', authenticateToken, async (req, res, next) => {
   try {
