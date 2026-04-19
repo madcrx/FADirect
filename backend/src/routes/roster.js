@@ -640,6 +640,32 @@ router.post('/jobs/:jobId/assign-vehicle', authenticateToken, async (req, res, n
   }
 });
 
+// Unassign vehicle from job
+router.delete('/jobs/:jobId/unassign-vehicle', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { vehicleId } = req.body;
+
+    if (!vehicleId) {
+      return res.status(400).json({ error: { message: 'Vehicle ID is required' } });
+    }
+
+    // Delete the vehicle assignment
+    const result = await db.query(
+      'DELETE FROM job_vehicle_assignments WHERE job_id = $1 AND vehicle_id = $2 RETURNING *',
+      [jobId, vehicleId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Vehicle assignment not found' } });
+    }
+
+    res.json({ message: 'Vehicle unassigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Assign equipment to job
 router.post('/jobs/:jobId/assign-equipment', authenticateToken, async (req, res, next) => {
   try {
@@ -667,6 +693,32 @@ router.post('/jobs/:jobId/assign-equipment', authenticateToken, async (req, res,
     );
 
     res.json({ message: 'Equipment assigned successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Unassign equipment from job
+router.delete('/jobs/:jobId/unassign-equipment', authenticateToken, async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { equipmentId } = req.body;
+
+    if (!equipmentId) {
+      return res.status(400).json({ error: { message: 'Equipment ID is required' } });
+    }
+
+    // Delete the equipment assignment
+    const result = await db.query(
+      'DELETE FROM job_equipment_assignments WHERE job_id = $1 AND equipment_id = $2 RETURNING *',
+      [jobId, equipmentId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Equipment assignment not found' } });
+    }
+
+    res.json({ message: 'Equipment unassigned successfully' });
   } catch (error) {
     next(error);
   }

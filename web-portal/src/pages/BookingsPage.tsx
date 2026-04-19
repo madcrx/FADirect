@@ -396,6 +396,38 @@ export default function BookingsPage() {
     }
   };
 
+  // Unassign vehicle from job
+  const handleUnassignVehicle = async (vehicleId: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.delete(`/roster/jobs/${selectedJob.id}/unassign-vehicle`, {
+        data: { vehicleId }
+      });
+      setSuccess('Vehicle removed from job');
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to unassign vehicle');
+    }
+  };
+
+  // Unassign equipment from job
+  const handleUnassignEquipment = async (equipmentId: string) => {
+    if (!selectedJob) return;
+
+    try {
+      await api.delete(`/roster/jobs/${selectedJob.id}/unassign-equipment`, {
+        data: { equipmentId }
+      });
+      setSuccess('Equipment removed from job');
+      await loadData();
+      await loadAvailableResources(selectedJob);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to unassign equipment');
+    }
+  };
+
   const handleRoleDialogConfirm = () => {
     if (selectedStaffForAssignment && selectedRole) {
       handleAssignStaff(
@@ -1065,13 +1097,20 @@ export default function BookingsPage() {
                 {resourceTab === 'vehicles' && (
                   <>
                     {selectedJob.vehicles.map((vehicle: any, index: number) => (
-                      <ListItem key={`assigned-${index}`}>
+                      <ListItem
+                        key={`assigned-${index}`}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
+                        }}
+                        onClick={() => handleUnassignVehicle(vehicle.id)}
+                      >
                         <ListItemIcon>
                           <CheckCircleIcon color="success" fontSize="small" />
                         </ListItemIcon>
                         <ListItemText
                           primary={vehicle.registration}
-                          secondary={vehicle.type}
+                          secondary={`${vehicle.type} (click to remove)`}
                         />
                       </ListItem>
                     ))}
@@ -1099,13 +1138,20 @@ export default function BookingsPage() {
                 {resourceTab === 'equipment' && (
                   <>
                     {selectedJob.equipment && selectedJob.equipment.map((equip: any, index: number) => (
-                      <ListItem key={`assigned-${index}`}>
+                      <ListItem
+                        key={`assigned-${index}`}
+                        sx={{
+                          cursor: 'pointer',
+                          '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
+                        }}
+                        onClick={() => handleUnassignEquipment(equip.id)}
+                      >
                         <ListItemIcon>
                           <CheckCircleIcon color="success" fontSize="small" />
                         </ListItemIcon>
                         <ListItemText
                           primary={equip.name}
-                          secondary={equip.equipmentType}
+                          secondary={`${equip.equipmentType} (click to remove)`}
                         />
                       </ListItem>
                     ))}
