@@ -31,6 +31,7 @@ async function runMigrations() {
     '023_add_job_to_arrangements.sql',
     '024_add_mourner_fields.sql',
     '025_add_missing_notification_columns.sql',
+    '026_add_arrangement_details.sql',
   ];
 
   try {

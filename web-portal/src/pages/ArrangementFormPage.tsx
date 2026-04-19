@@ -10,6 +10,7 @@ import {
   Typography,
   MenuItem,
   Alert,
+  Autocomplete,
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { arrangementsApi, usersApi } from '@/services/api';
@@ -23,13 +24,27 @@ export default function ArrangementFormPage() {
   const isEdit = id && id !== 'new';
 
   const [mourners, setMourners] = useState<User[]>([]);
+  const [mournerSuggestions, setMournerSuggestions] = useState<Array<any>>([]);
+  const [arrangers, setArrangers] = useState<Array<any>>([]);
   const [jobs, setJobs] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
+    arrangerId: '',
     deceasedName: '',
     deceasedDateOfBirth: '',
     deceasedDateOfDeath: '',
+    deceasedAddressLine1: '',
+    deceasedAddressLine2: '',
+    deceasedCity: '',
+    deceasedState: '',
+    deceasedPostcode: '',
+    deceasedCountry: 'Australia',
+    nextOfKinName: '',
+    nextOfKinRelationship: '',
+    nextOfKinPhone: '',
+    nextOfKinEmail: '',
+    locationOfDeceased: '',
     funeralType: 'burial' as const,
     status: 'draft' as const,
     jobId: '',
@@ -39,11 +54,15 @@ export default function ArrangementFormPage() {
     mournerId: '',
     mournerPhone: '',
     mournerName: '',
+    mournerEmail: '',
+    mournerRelationship: '',
   });
 
   useEffect(() => {
     loadMourners();
     loadJobs();
+    loadArrangers();
+    loadMournerSuggestions();
     if (isEdit) {
       loadArrangement();
     }
@@ -77,6 +96,18 @@ export default function ArrangementFormPage() {
     }
   };
 
+  const handleMournerSelect = (mourner: any) => {
+    if (mourner) {
+      setFormData({
+        ...formData,
+        mournerPhone: mourner.phone || '',
+        mournerName: mourner.name || '',
+        mournerEmail: mourner.email || '',
+        mournerRelationship: mourner.relationship || '',
+      });
+    }
+  };
+
   const loadMourners = async () => {
     try {
       const users = await usersApi.getAll();
@@ -89,14 +120,46 @@ export default function ArrangementFormPage() {
     }
   };
 
+  const loadMournerSuggestions = async (search = '') => {
+    try {
+      const response = await api.get('/arrangements/lookup/mourners', {
+        params: { search },
+      });
+      setMournerSuggestions(response.data.mourners || []);
+    } catch (error) {
+      console.error('Failed to load mourner suggestions:', error);
+    }
+  };
+
+  const loadArrangers = async () => {
+    try {
+      const response = await api.get('/arrangements/lookup/arrangers');
+      setArrangers(response.data.arrangers || []);
+    } catch (error) {
+      console.error('Failed to load arrangers:', error);
+    }
+  };
+
   const loadArrangement = async () => {
     if (!id) return;
     try {
       const arrangement = await arrangementsApi.getById(id);
       setFormData({
+        arrangerId: arrangement.arrangerId || '',
         deceasedName: arrangement.deceasedName || '',
         deceasedDateOfBirth: arrangement.deceasedDateOfBirth || '',
         deceasedDateOfDeath: arrangement.deceasedDateOfDeath || '',
+        deceasedAddressLine1: arrangement.deceasedAddressLine1 || '',
+        deceasedAddressLine2: arrangement.deceasedAddressLine2 || '',
+        deceasedCity: arrangement.deceasedCity || '',
+        deceasedState: arrangement.deceasedState || '',
+        deceasedPostcode: arrangement.deceasedPostcode || '',
+        deceasedCountry: arrangement.deceasedCountry || 'Australia',
+        nextOfKinName: arrangement.nextOfKinName || '',
+        nextOfKinRelationship: arrangement.nextOfKinRelationship || '',
+        nextOfKinPhone: arrangement.nextOfKinPhone || '',
+        nextOfKinEmail: arrangement.nextOfKinEmail || '',
+        locationOfDeceased: arrangement.locationOfDeceased || '',
         funeralType: arrangement.funeralType || 'burial',
         status: arrangement.status || 'draft',
         jobId: arrangement.jobId || '',
@@ -106,6 +169,8 @@ export default function ArrangementFormPage() {
         mournerId: arrangement.mournerId || '',
         mournerPhone: arrangement.mournerPhone || '',
         mournerName: arrangement.mournerName || '',
+        mournerEmail: arrangement.mournerEmail || '',
+        mournerRelationship: arrangement.mournerRelationship || '',
       });
     } catch (error) {
       console.error('Failed to load arrangement:', error);
@@ -120,9 +185,21 @@ export default function ArrangementFormPage() {
 
     try {
       const data = {
+        arrangerId: formData.arrangerId || null,
         deceasedName: formData.deceasedName,
         deceasedDateOfBirth: formData.deceasedDateOfBirth || null,
         deceasedDateOfDeath: formData.deceasedDateOfDeath || null,
+        deceasedAddressLine1: formData.deceasedAddressLine1 || null,
+        deceasedAddressLine2: formData.deceasedAddressLine2 || null,
+        deceasedCity: formData.deceasedCity || null,
+        deceasedState: formData.deceasedState || null,
+        deceasedPostcode: formData.deceasedPostcode || null,
+        deceasedCountry: formData.deceasedCountry || null,
+        nextOfKinName: formData.nextOfKinName || null,
+        nextOfKinRelationship: formData.nextOfKinRelationship || null,
+        nextOfKinPhone: formData.nextOfKinPhone || null,
+        nextOfKinEmail: formData.nextOfKinEmail || null,
+        locationOfDeceased: formData.locationOfDeceased || null,
         funeralType: formData.funeralType,
         status: formData.status,
         jobId: formData.jobId || null,
@@ -132,6 +209,8 @@ export default function ArrangementFormPage() {
         mournerId: formData.mournerId || null,
         mournerPhone: formData.mournerPhone || null,
         mournerName: formData.mournerName || null,
+        mournerEmail: formData.mournerEmail || null,
+        mournerRelationship: formData.mournerRelationship || null,
       };
 
       if (isEdit) {
@@ -174,6 +253,28 @@ export default function ArrangementFormPage() {
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Typography variant="h6" gutterBottom>
+                  Arranger
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Autocomplete
+                  options={arrangers}
+                  getOptionLabel={(option) => option.name || ''}
+                  value={arrangers.find(a => a.id === formData.arrangerId) || null}
+                  onChange={(_, newValue) => setFormData({ ...formData, arrangerId: newValue?.id || '' })}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Arranger"
+                      placeholder="Search staff with arranger role..."
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                   Deceased Information
                 </Typography>
               </Grid>
@@ -207,6 +308,67 @@ export default function ArrangementFormPage() {
                   value={formData.deceasedDateOfDeath}
                   onChange={(e) => setFormData({ ...formData, deceasedDateOfDeath: e.target.value })}
                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Deceased Address
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address Line 1"
+                  value={formData.deceasedAddressLine1}
+                  onChange={(e) => setFormData({ ...formData, deceasedAddressLine1: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Address Line 2"
+                  value={formData.deceasedAddressLine2}
+                  onChange={(e) => setFormData({ ...formData, deceasedAddressLine2: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="City/Suburb"
+                  value={formData.deceasedCity}
+                  onChange={(e) => setFormData({ ...formData, deceasedCity: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="State/Territory"
+                  value={formData.deceasedState}
+                  onChange={(e) => setFormData({ ...formData, deceasedState: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Postcode"
+                  value={formData.deceasedPostcode}
+                  onChange={(e) => setFormData({ ...formData, deceasedPostcode: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Location of Deceased"
+                  value={formData.locationOfDeceased}
+                  onChange={(e) => setFormData({ ...formData, locationOfDeceased: e.target.value })}
+                  helperText="Current location (e.g., hospital, morgue, funeral home)"
                 />
               </Grid>
 
@@ -292,18 +454,88 @@ export default function ArrangementFormPage() {
 
               <Grid item xs={12}>
                 <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                  Family Contact
+                  Next of Kin
                 </Typography>
               </Grid>
 
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Mourner Phone Number"
-                  value={formData.mournerPhone}
-                  onChange={(e) => setFormData({ ...formData, mournerPhone: e.target.value })}
+                  label="Next of Kin Name"
+                  value={formData.nextOfKinName}
+                  onChange={(e) => setFormData({ ...formData, nextOfKinName: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Relationship to Deceased"
+                  value={formData.nextOfKinRelationship}
+                  onChange={(e) => setFormData({ ...formData, nextOfKinRelationship: e.target.value })}
+                  placeholder="e.g., Spouse, Child, Parent"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Next of Kin Phone"
+                  value={formData.nextOfKinPhone}
+                  onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })}
                   placeholder="+61 4XX XXX XXX"
-                  helperText="Enter phone to create/find mourner"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Next of Kin Email"
+                  type="email"
+                  value={formData.nextOfKinEmail}
+                  onChange={(e) => setFormData({ ...formData, nextOfKinEmail: e.target.value })}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                  Family Contact
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Autocomplete
+                  freeSolo
+                  options={mournerSuggestions}
+                  getOptionLabel={(option) => typeof option === 'string' ? option : (option.phone || '')}
+                  inputValue={formData.mournerPhone}
+                  onInputChange={(_, newValue) => {
+                    setFormData({ ...formData, mournerPhone: newValue });
+                    if (newValue.length >= 3) {
+                      loadMournerSuggestions(newValue);
+                    }
+                  }}
+                  onChange={(_, newValue) => {
+                    if (typeof newValue === 'object' && newValue) {
+                      handleMournerSelect(newValue);
+                    }
+                  }}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      <Box>
+                        <Typography variant="body1">{option.phone}</Typography>
+                        {option.name && <Typography variant="body2" color="text.secondary">{option.name}</Typography>}
+                      </Box>
+                    </li>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Mourner Phone Number"
+                      placeholder="+61 4XX XXX XXX"
+                      helperText="Start typing to search existing mourners or enter new number"
+                    />
+                  )}
                 />
               </Grid>
 
@@ -313,7 +545,26 @@ export default function ArrangementFormPage() {
                   label="Mourner Name"
                   value={formData.mournerName}
                   onChange={(e) => setFormData({ ...formData, mournerName: e.target.value })}
-                  helperText="Optional - for new mourners"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Mourner Relationship"
+                  value={formData.mournerRelationship}
+                  onChange={(e) => setFormData({ ...formData, mournerRelationship: e.target.value })}
+                  placeholder="e.g., Spouse, Child, Parent"
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Mourner Email"
+                  type="email"
+                  value={formData.mournerEmail}
+                  onChange={(e) => setFormData({ ...formData, mournerEmail: e.target.value })}
                 />
               </Grid>
 

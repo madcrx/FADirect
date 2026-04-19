@@ -22,6 +22,17 @@ export interface Arrangement {
   deceasedName: string;
   deceasedDateOfBirth: string | null;
   deceasedDateOfDeath: string | null;
+  deceasedAddressLine1?: string;
+  deceasedAddressLine2?: string;
+  deceasedCity?: string;
+  deceasedState?: string;
+  deceasedPostcode?: string;
+  deceasedCountry?: string;
+  nextOfKinName?: string;
+  nextOfKinRelationship?: string;
+  nextOfKinPhone?: string;
+  nextOfKinEmail?: string;
+  locationOfDeceased?: string;
   funeralType: 'traditional' | 'cremation' | 'repatriation' | 'burial' | 'memorial' | 'direct_cremation';
   status: 'draft' | 'active' | 'completed' | 'cancelled';
   jobId?: string | null;

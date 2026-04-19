@@ -46,6 +46,17 @@ router.get('/', authenticateToken, async (req, res, next) => {
           mournerName: arrangement.mourner_name,
           mournerEmail: arrangement.mourner_email,
           mournerRelationship: arrangement.mourner_relationship,
+          deceasedAddressLine1: arrangement.deceased_address_line1,
+          deceasedAddressLine2: arrangement.deceased_address_line2,
+          deceasedCity: arrangement.deceased_city,
+          deceasedState: arrangement.deceased_state,
+          deceasedPostcode: arrangement.deceased_postcode,
+          deceasedCountry: arrangement.deceased_country,
+          nextOfKinName: arrangement.next_of_kin_name,
+          nextOfKinRelationship: arrangement.next_of_kin_relationship,
+          nextOfKinPhone: arrangement.next_of_kin_phone,
+          nextOfKinEmail: arrangement.next_of_kin_email,
+          locationOfDeceased: arrangement.location_of_deceased,
           createdAt: arrangement.created_at,
           updatedAt: arrangement.updated_at,
           scheduledDate: arrangement.service_date,
@@ -98,6 +109,17 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
         mournerName: arrangement.mourner_name,
         mournerEmail: arrangement.mourner_email,
         mournerRelationship: arrangement.mourner_relationship,
+        deceasedAddressLine1: arrangement.deceased_address_line1,
+        deceasedAddressLine2: arrangement.deceased_address_line2,
+        deceasedCity: arrangement.deceased_city,
+        deceasedState: arrangement.deceased_state,
+        deceasedPostcode: arrangement.deceased_postcode,
+        deceasedCountry: arrangement.deceased_country,
+        nextOfKinName: arrangement.next_of_kin_name,
+        nextOfKinRelationship: arrangement.next_of_kin_relationship,
+        nextOfKinPhone: arrangement.next_of_kin_phone,
+        nextOfKinEmail: arrangement.next_of_kin_email,
+        locationOfDeceased: arrangement.location_of_deceased,
         createdAt: arrangement.created_at,
         updatedAt: arrangement.updated_at,
         scheduledDate: arrangement.service_date,
@@ -113,12 +135,31 @@ router.get('/:id', authenticateToken, async (req, res, next) => {
 // Create arrangement
 router.post('/', authenticateToken, async (req, res, next) => {
   try {
-    const { deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, funeralType, mournerId, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship } = req.body;
+    const {
+      deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, funeralType,
+      mournerId, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship,
+      deceasedAddressLine1, deceasedAddressLine2, deceasedCity, deceasedState, deceasedPostcode, deceasedCountry,
+      nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinEmail,
+      locationOfDeceased, arrangerId
+    } = req.body;
 
     const result = await db.query(
-      `INSERT INTO arrangements (deceased_name, deceased_date_of_birth, deceased_date_of_death, arranger_id, mourner_id, funeral_type, job_id, service_date, service_location, notes, mourner_phone, mourner_name, mourner_email, mourner_relationship, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'draft') RETURNING *`,
-      [deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, req.user.id, mournerId, funeralType || 'burial', jobId, serviceDate, serviceLocation, notes, mournerPhone, mournerName, mournerEmail, mournerRelationship]
+      `INSERT INTO arrangements (
+        deceased_name, deceased_date_of_birth, deceased_date_of_death, arranger_id, mourner_id, funeral_type, job_id,
+        service_date, service_location, notes, mourner_phone, mourner_name, mourner_email, mourner_relationship,
+        deceased_address_line1, deceased_address_line2, deceased_city, deceased_state, deceased_postcode, deceased_country,
+        next_of_kin_name, next_of_kin_relationship, next_of_kin_phone, next_of_kin_email,
+        location_of_deceased, status
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 'draft') RETURNING *`,
+      [
+        deceasedName, deceasedDateOfBirth, deceasedDateOfDeath,
+        arrangerId || req.user.id, mournerId, funeralType || 'burial', jobId,
+        serviceDate, serviceLocation, notes, mournerPhone, mournerName, mournerEmail, mournerRelationship,
+        deceasedAddressLine1, deceasedAddressLine2, deceasedCity, deceasedState, deceasedPostcode, deceasedCountry || 'Australia',
+        nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinEmail,
+        locationOfDeceased
+      ]
     );
 
     const arrangement = result.rows[0];
@@ -168,6 +209,17 @@ router.post('/', authenticateToken, async (req, res, next) => {
         mournerName: arrangement.mourner_name,
         mournerEmail: arrangement.mourner_email,
         mournerRelationship: arrangement.mourner_relationship,
+        deceasedAddressLine1: arrangement.deceased_address_line1,
+        deceasedAddressLine2: arrangement.deceased_address_line2,
+        deceasedCity: arrangement.deceased_city,
+        deceasedState: arrangement.deceased_state,
+        deceasedPostcode: arrangement.deceased_postcode,
+        deceasedCountry: arrangement.deceased_country,
+        nextOfKinName: arrangement.next_of_kin_name,
+        nextOfKinRelationship: arrangement.next_of_kin_relationship,
+        nextOfKinPhone: arrangement.next_of_kin_phone,
+        nextOfKinEmail: arrangement.next_of_kin_email,
+        locationOfDeceased: arrangement.location_of_deceased,
         createdAt: arrangement.created_at,
         updatedAt: arrangement.updated_at,
         scheduledDate: arrangement.service_date,
@@ -183,24 +235,52 @@ router.post('/', authenticateToken, async (req, res, next) => {
 // Update arrangement
 router.put('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const { deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship } = req.body;
+    const {
+      deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId,
+      mournerPhone, mournerName, mournerEmail, mournerRelationship,
+      deceasedAddressLine1, deceasedAddressLine2, deceasedCity, deceasedState, deceasedPostcode, deceasedCountry,
+      nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinEmail,
+      locationOfDeceased, arrangerId, deceasedDateOfBirth, deceasedDateOfDeath
+    } = req.body;
+
     const result = await db.query(
       `UPDATE arrangements
        SET deceased_name = COALESCE($1, deceased_name),
-           service_date = COALESCE($2, service_date),
-           service_location = COALESCE($3, service_location),
-           notes = COALESCE($4, notes),
-           status = COALESCE($5, status),
-           funeral_type = COALESCE($6, funeral_type),
-           current_step_index = COALESCE($7, current_step_index),
-           job_id = $8,
-           mourner_phone = COALESCE($9, mourner_phone),
-           mourner_name = COALESCE($10, mourner_name),
-           mourner_email = COALESCE($11, mourner_email),
-           mourner_relationship = COALESCE($12, mourner_relationship)
-       WHERE id = $13 AND arranger_id = $14
+           deceased_date_of_birth = COALESCE($2, deceased_date_of_birth),
+           deceased_date_of_death = COALESCE($3, deceased_date_of_death),
+           service_date = COALESCE($4, service_date),
+           service_location = COALESCE($5, service_location),
+           notes = COALESCE($6, notes),
+           status = COALESCE($7, status),
+           funeral_type = COALESCE($8, funeral_type),
+           current_step_index = COALESCE($9, current_step_index),
+           job_id = $10,
+           mourner_phone = COALESCE($11, mourner_phone),
+           mourner_name = COALESCE($12, mourner_name),
+           mourner_email = COALESCE($13, mourner_email),
+           mourner_relationship = COALESCE($14, mourner_relationship),
+           deceased_address_line1 = COALESCE($15, deceased_address_line1),
+           deceased_address_line2 = COALESCE($16, deceased_address_line2),
+           deceased_city = COALESCE($17, deceased_city),
+           deceased_state = COALESCE($18, deceased_state),
+           deceased_postcode = COALESCE($19, deceased_postcode),
+           deceased_country = COALESCE($20, deceased_country),
+           next_of_kin_name = COALESCE($21, next_of_kin_name),
+           next_of_kin_relationship = COALESCE($22, next_of_kin_relationship),
+           next_of_kin_phone = COALESCE($23, next_of_kin_phone),
+           next_of_kin_email = COALESCE($24, next_of_kin_email),
+           location_of_deceased = COALESCE($25, location_of_deceased),
+           arranger_id = COALESCE($26, arranger_id)
+       WHERE id = $27 AND arranger_id = $28
        RETURNING *`,
-      [deceasedName, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId, mournerPhone, mournerName, mournerEmail, mournerRelationship, req.params.id, req.user.id]
+      [
+        deceasedName, deceasedDateOfBirth, deceasedDateOfDeath, serviceDate, serviceLocation, notes, status, funeralType, currentStepIndex, jobId,
+        mournerPhone, mournerName, mournerEmail, mournerRelationship,
+        deceasedAddressLine1, deceasedAddressLine2, deceasedCity, deceasedState, deceasedPostcode, deceasedCountry,
+        nextOfKinName, nextOfKinRelationship, nextOfKinPhone, nextOfKinEmail,
+        locationOfDeceased, arrangerId,
+        req.params.id, req.user.id
+      ]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Arrangement not found or unauthorized' } });
@@ -235,6 +315,17 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         mournerName: arrangement.mourner_name,
         mournerEmail: arrangement.mourner_email,
         mournerRelationship: arrangement.mourner_relationship,
+        deceasedAddressLine1: arrangement.deceased_address_line1,
+        deceasedAddressLine2: arrangement.deceased_address_line2,
+        deceasedCity: arrangement.deceased_city,
+        deceasedState: arrangement.deceased_state,
+        deceasedPostcode: arrangement.deceased_postcode,
+        deceasedCountry: arrangement.deceased_country,
+        nextOfKinName: arrangement.next_of_kin_name,
+        nextOfKinRelationship: arrangement.next_of_kin_relationship,
+        nextOfKinPhone: arrangement.next_of_kin_phone,
+        nextOfKinEmail: arrangement.next_of_kin_email,
+        locationOfDeceased: arrangement.location_of_deceased,
         createdAt: arrangement.created_at,
         updatedAt: arrangement.updated_at,
         scheduledDate: arrangement.service_date,
@@ -351,6 +442,70 @@ router.post('/:id/workflow', authenticateToken, async (req, res, next) => {
         order: result.rows[0].step_order,
         status: result.rows[0].status,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get mourners with contact details for autocomplete
+router.get('/lookup/mourners', authenticateToken, async (req, res, next) => {
+  try {
+    const { search } = req.query;
+
+    let query = `
+      SELECT DISTINCT
+        mourner_phone as phone,
+        mourner_name as name,
+        mourner_email as email,
+        mourner_relationship as relationship
+      FROM arrangements
+      WHERE mourner_phone IS NOT NULL
+        AND deleted_at IS NULL
+    `;
+
+    const params = [];
+    if (search) {
+      query += ` AND (mourner_phone ILIKE $1 OR mourner_name ILIKE $1)`;
+      params.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY mourner_name ASC LIMIT 50`;
+
+    const result = await db.query(query, params);
+
+    res.json({
+      mourners: result.rows.map(row => ({
+        phone: row.phone,
+        name: row.name,
+        email: row.email,
+        relationship: row.relationship,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get staff members with arranger role
+router.get('/lookup/arrangers', authenticateToken, async (req, res, next) => {
+  try {
+    const result = await db.query(`
+      SELECT DISTINCT u.id, u.name, u.phone_number as phone, sp.photo_url
+      FROM users u
+      LEFT JOIN staff_profiles sp ON u.id = sp.user_id
+      WHERE 'arranger' = ANY(u.role)
+        AND u.deleted_at IS NULL
+      ORDER BY u.name ASC
+    `);
+
+    res.json({
+      arrangers: result.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+        phone: row.phone,
+        photoUrl: row.photo_url,
+      }))
     });
   } catch (error) {
     next(error);
