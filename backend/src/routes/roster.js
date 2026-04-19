@@ -27,7 +27,13 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
           'type', v.vehicle_type,
           'make', v.make,
           'model', v.model
-        )) FILTER (WHERE v.id IS NOT NULL) as vehicles
+        )) FILTER (WHERE v.id IS NOT NULL) as vehicles,
+        json_agg(DISTINCT jsonb_build_object(
+          'id', e.id,
+          'name', e.name,
+          'equipmentType', e.equipment_type,
+          'serialNumber', e.serial_number
+        )) FILTER (WHERE e.id IS NOT NULL) as equipment
       FROM jobs j
       LEFT JOIN job_types jt ON j.job_type_id = jt.id
       LEFT JOIN arrangements a ON j.arrangement_id = a.id
@@ -35,6 +41,8 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
       LEFT JOIN users u ON jsa.staff_id = u.id
       LEFT JOIN job_vehicle_assignments jva ON j.id = jva.job_id
       LEFT JOIN vehicles v ON jva.vehicle_id = v.id
+      LEFT JOIN job_equipment_assignments jea ON j.id = jea.job_id
+      LEFT JOIN equipment e ON jea.equipment_id = e.id
       WHERE 1=1
     `;
 
@@ -91,6 +99,7 @@ router.get('/jobs', authenticateToken, async (req, res, next) => {
         requirements: row.requirements,
         staff: row.staff || [],
         vehicles: row.vehicles || [],
+        equipment: row.equipment || [],
         createdAt: row.created_at,
       }))
     });

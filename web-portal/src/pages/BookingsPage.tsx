@@ -59,6 +59,7 @@ interface Job {
   status: string;
   staff: Array<{ fullName: string; role: string }>;
   vehicles: Array<{ registration: string; type: string }>;
+  equipment: Array<{ name: string; equipmentType: string }>;
 }
 
 interface JobType {
@@ -325,7 +326,7 @@ export default function BookingsPage() {
       // Filter out already assigned resources
       const assignedStaffIds = job.staff.map((s: any) => s.id);
       const assignedVehicleIds = job.vehicles.map((v: any) => v.id);
-      const assignedEquipmentIds: string[] = []; // TODO: Get from job
+      const assignedEquipmentIds = job.equipment?.map((e: any) => e.id) || [];
 
       setAvailableStaff(staffRes.data.staff?.filter((s: any) => !assignedStaffIds.includes(s.id)) || []);
       setAvailableVehicles(vehiclesRes.data.vehicles?.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available') || []);
@@ -597,6 +598,11 @@ export default function BookingsPage() {
                             {job.vehicles.length > 0 && (
                               <Typography variant="caption" color="text.secondary" display="block">
                                 🚗 {job.vehicles.map((v) => v.registration).join(', ')}
+                              </Typography>
+                            )}
+                            {job.equipment && job.equipment.length > 0 && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                📦 {job.equipment.map((e) => e.name).join(', ')}
                               </Typography>
                             )}
                           </Box>
