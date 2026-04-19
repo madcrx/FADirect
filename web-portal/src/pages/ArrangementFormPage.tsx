@@ -29,6 +29,8 @@ export default function ArrangementFormPage() {
   const [jobs, setJobs] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [nextOfKinPhoneError, setNextOfKinPhoneError] = useState('');
   const [formData, setFormData] = useState({
     arrangerId: '',
     deceasedName: '',
@@ -105,7 +107,104 @@ export default function ArrangementFormPage() {
         mournerEmail: mourner.email || '',
         mournerRelationship: mourner.relationship || '',
       });
+      setPhoneError('');
     }
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digit characters except +
+    let cleaned = value.replace(/[^\d+]/g, '');
+
+    // If it doesn't start with +61, add it
+    if (!cleaned.startsWith('+61')) {
+      // If starts with 04, replace with +61 4
+      if (cleaned.startsWith('04')) {
+        cleaned = '+61 ' + cleaned.substring(1);
+      }
+      // If starts with 4, add +61
+      else if (cleaned.startsWith('4')) {
+        cleaned = '+61 ' + cleaned;
+      }
+      // Otherwise just prepend +61
+      else if (cleaned.length > 0 && !cleaned.startsWith('+')) {
+        cleaned = '+61 ' + cleaned;
+      }
+    }
+
+    // Format as +61 4XX XXX XXX
+    if (cleaned.startsWith('+61')) {
+      const digits = cleaned.substring(3).replace(/\s/g, '');
+      if (digits.length === 0) {
+        return '+61 ';
+      } else if (digits.length <= 3) {
+        return `+61 ${digits}`;
+      } else if (digits.length <= 6) {
+        return `+61 ${digits.substring(0, 3)} ${digits.substring(3)}`;
+      } else {
+        return `+61 ${digits.substring(0, 3)} ${digits.substring(3, 6)} ${digits.substring(6, 9)}`;
+      }
+    }
+
+    return cleaned;
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone || phone.trim() === '' || phone === '+61 ') {
+      setPhoneError('');
+      return true;
+    }
+
+    // Australian mobile format: +61 4XX XXX XXX
+    const phoneRegex = /^\+61 4\d{2} \d{3} \d{3}$/;
+
+    if (!phoneRegex.test(phone)) {
+      setPhoneError('Phone must be in format: +61 4XX XXX XXX');
+      return false;
+    }
+
+    setPhoneError('');
+    return true;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData({ ...formData, mournerPhone: formatted });
+
+    // Only validate if user has entered a complete number
+    if (formatted.replace(/\s/g, '').length >= 12) {
+      validatePhoneNumber(formatted);
+    } else {
+      setPhoneError('');
+    }
+  };
+
+  const handleNextOfKinPhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData({ ...formData, nextOfKinPhone: formatted });
+
+    // Only validate if user has entered a complete number
+    if (formatted.replace(/\s/g, '').length >= 12) {
+      validateNextOfKinPhone(formatted);
+    } else {
+      setNextOfKinPhoneError('');
+    }
+  };
+
+  const validateNextOfKinPhone = (phone: string) => {
+    if (!phone || phone.trim() === '' || phone === '+61 ') {
+      setNextOfKinPhoneError('');
+      return true;
+    }
+
+    const phoneRegex = /^\+61 4\d{2} \d{3} \d{3}$/;
+
+    if (!phoneRegex.test(phone)) {
+      setNextOfKinPhoneError('Phone must be in format: +61 4XX XXX XXX');
+      return false;
+    }
+
+    setNextOfKinPhoneError('');
+    return true;
   };
 
   const loadMourners = async () => {
@@ -182,6 +281,19 @@ export default function ArrangementFormPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validate phone numbers before submitting
+    if (formData.mournerPhone && !validatePhoneNumber(formData.mournerPhone)) {
+      setLoading(false);
+      setError('Please fix the mourner phone number format before submitting');
+      return;
+    }
+
+    if (formData.nextOfKinPhone && !validateNextOfKinPhone(formData.nextOfKinPhone)) {
+      setLoading(false);
+      setError('Please fix the next of kin phone number format before submitting');
+      return;
+    }
 
     try {
       const data = {
@@ -482,8 +594,10 @@ export default function ArrangementFormPage() {
                   fullWidth
                   label="Next of Kin Phone"
                   value={formData.nextOfKinPhone}
-                  onChange={(e) => setFormData({ ...formData, nextOfKinPhone: e.target.value })}
+                  onChange={(e) => handleNextOfKinPhoneChange(e.target.value)}
                   placeholder="+61 4XX XXX XXX"
+                  error={!!nextOfKinPhoneError}
+                  helperText={nextOfKinPhoneError}
                 />
               </Grid>
 
@@ -510,7 +624,7 @@ export default function ArrangementFormPage() {
                   getOptionLabel={(option) => typeof option === 'string' ? option : (option.phone || '')}
                   inputValue={formData.mournerPhone}
                   onInputChange={(_, newValue) => {
-                    setFormData({ ...formData, mournerPhone: newValue });
+                    handlePhoneChange(newValue);
                     if (newValue.length >= 3) {
                       loadMournerSuggestions(newValue);
                     }
@@ -533,7 +647,8 @@ export default function ArrangementFormPage() {
                       {...params}
                       label="Mourner Phone Number"
                       placeholder="+61 4XX XXX XXX"
-                      helperText="Start typing to search existing mourners or enter new number"
+                      error={!!phoneError}
+                      helperText={phoneError || "Start typing to search existing mourners or enter new number"}
                     />
                   )}
                 />
