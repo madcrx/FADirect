@@ -390,9 +390,30 @@ export default function BookingsPage() {
       });
       setSuccess(`Staff removed from ${role} role`);
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to unassign staff');
+    }
+  };
+
+  // Refresh the selected job data
+  const refreshSelectedJob = async (jobId: string) => {
+    try {
+      const { start, end } = getDateRange();
+      const startDate = format(start, 'yyyy-MM-dd');
+      const endDate = format(end, 'yyyy-MM-dd');
+
+      const response = await api.get('/roster/jobs', {
+        params: { startDate, endDate }
+      });
+
+      const updatedJob = response.data.jobs?.find((j: any) => j.id === jobId);
+      if (updatedJob) {
+        setSelectedJob(updatedJob);
+        await loadAvailableResources(updatedJob);
+      }
+    } catch (err: any) {
+      console.error('Failed to refresh job:', err);
     }
   };
 
@@ -406,7 +427,7 @@ export default function BookingsPage() {
       });
       setSuccess('Vehicle removed from job');
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to unassign vehicle');
     }
@@ -422,7 +443,7 @@ export default function BookingsPage() {
       });
       setSuccess('Equipment removed from job');
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to unassign equipment');
     }
@@ -563,10 +584,10 @@ export default function BookingsPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Schedule
+            Daily Run Sheet
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage jobs, events, and resource allocation
+            Manage daily operations, jobs, and resource allocation
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -1062,7 +1083,7 @@ export default function BookingsPage() {
                           cursor: 'pointer',
                           '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
                         }}
-                        onClick={() => handleUnassignStaff(staff.userId, staff.role)}
+                        onClick={() => handleUnassignStaff(staff.id, staff.role)}
                       >
                         <ListItemIcon>
                           <CheckCircleIcon color="success" fontSize="small" />
@@ -1280,10 +1301,10 @@ export default function BookingsPage() {
               onChange={(e) => setSelectedRole(e.target.value)}
               label="Role"
             >
-              {selectedStaffForAssignment && Array.isArray(selectedStaffForAssignment.roles) &&
-                selectedStaffForAssignment.roles.map((role: string) => (
+              {selectedStaffForAssignment && Array.isArray(selectedStaffForAssignment.role) &&
+                selectedStaffForAssignment.role.map((role: string) => (
                   <MenuItem key={role} value={role}>
-                    {role}
+                    {role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </MenuItem>
                 ))}
             </Select>

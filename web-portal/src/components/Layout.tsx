@@ -87,7 +87,7 @@ const menuSections: MenuSection[] = [
   {
     heading: 'OPERATIONS',
     items: [
-      { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
+      { text: 'Daily Run Sheet', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
       { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management', requiresRoles: ['admin', 'management'] },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
