@@ -7,6 +7,7 @@ import ArrangementListScreen from '@screens/arrangements/ArrangementListScreen';
 import ArrangementDetailScreen from '@screens/arrangements/ArrangementDetailScreen';
 import CreateArrangementScreen from '@screens/arrangements/CreateArrangementScreen';
 import WorkflowProgressScreen from '@screens/arrangements/WorkflowProgressScreen';
+import PreArrangementFormScreen from '@screens/arrangements/PreArrangementFormScreen';
 
 const Stack = createStackNavigator<ArrangementStackParamList>();
 
@@ -41,6 +42,11 @@ const ArrangementNavigator = () => {
         name="WorkflowProgress"
         component={WorkflowProgressScreen}
         options={{ title: 'Progress' }}
+      />
+      <Stack.Screen
+        name="PreArrangementForm"
+        component={PreArrangementFormScreen}
+        options={{ title: 'Pre-Arrangement Form' }}
       />
     </Stack.Navigator>
   );

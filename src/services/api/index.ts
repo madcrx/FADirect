@@ -41,3 +41,48 @@ export type {
   DocumentsListResponse,
   UploadDocumentResponse,
 } from './documents';
+
+export { photosApi } from './photos';
+export type {
+  Photo,
+  PhotosListResponse,
+  UploadPhotoResponse,
+} from './photos';
+
+export { leaveApi } from './leave';
+export type {
+  Leave,
+  LeaveListResponse,
+  LeaveResponse,
+  CreateLeaveData,
+} from './leave';
+
+export { preArrangementFormsApi } from './preArrangementForms';
+export type {
+  PreArrangementForm,
+  PreArrangementFormResponse,
+  SendFormResponse,
+  UpdateFormResponse,
+} from './preArrangementForms';
+
+export { fileSendsApi } from './fileSends';
+export type {
+  FileSend,
+  FileSendsListResponse,
+  FileSendResponse,
+  SendFileData,
+} from './fileSends';
+
+export { notificationsApi } from './notifications';
+export type {
+  Notification,
+  NotificationsListResponse,
+  MarkReadResponse,
+} from './notifications';
+
+export { videosApi } from './videos';
+export type {
+  Video,
+  VideosListResponse,
+  UploadVideoResponse,
+} from './videos';

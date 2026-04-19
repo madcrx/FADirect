@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { MainTabParamList } from '@types/index';
+import { useSelector } from 'react-redux';
+import { MainTabParamList, RootState } from '@types/index';
 import { theme } from '@utils/theme';
 
 // Tab Screens
@@ -9,6 +10,9 @@ import ArrangementNavigator from './ArrangementNavigator';
 import MessageNavigator from './MessageNavigator';
 import DocumentsScreen from '@screens/documents/DocumentsScreen';
 import ProfileScreen from '@screens/profile/ProfileScreen';
+import NotificationsScreen from '@screens/notifications/NotificationsScreen';
+import FilesReceivedScreen from '@screens/documents/FilesReceivedScreen';
+import LeaveScreen from '@screens/leave/LeaveScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -38,6 +42,12 @@ const MainNavigator = () => {
             iconName = 'message';
           } else if (route.name === 'Documents') {
             iconName = 'file-document-multiple';
+          } else if (route.name === 'Notifications') {
+            iconName = 'bell';
+          } else if (route.name === 'FilesReceived') {
+            iconName = 'inbox-arrow-down';
+          } else if (route.name === 'Leave') {
+            iconName = 'calendar-check';
           } else if (route.name === 'Profile') {
             iconName = 'account';
           }
@@ -56,6 +66,21 @@ const MainNavigator = () => {
         options={{ headerShown: false }}
       />
       <Tab.Screen name="Documents" component={DocumentsScreen} />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Notifications' }}
+      />
+      <Tab.Screen
+        name="FilesReceived"
+        component={FilesReceivedScreen}
+        options={{ title: 'Files' }}
+      />
+      <Tab.Screen
+        name="Leave"
+        component={LeaveScreen}
+        options={{ title: 'Leave' }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
