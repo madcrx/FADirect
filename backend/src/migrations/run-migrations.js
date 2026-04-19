@@ -34,6 +34,7 @@ async function runMigrations() {
     '026_add_arrangement_details.sql',
     '027_add_location_of_deceased_config.sql',
     '028_add_is_primary_to_vehicle_assignments.sql',
+    '029_add_users_soft_delete.sql',
   ];
 
   try {
