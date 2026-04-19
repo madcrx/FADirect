@@ -36,8 +36,9 @@ import {
   CloudUpload as UploadIcon,
   Download as DownloadIcon,
   Delete as DeleteIcon,
+  Assignment as FormIcon,
 } from '@mui/icons-material';
-import { arrangementsApi, messagesApi, documentsApi, photosApi, videosApi } from '@/services/api';
+import { arrangementsApi, messagesApi, documentsApi, photosApi, videosApi, preArrangementFormsApi } from '@/services/api';
 import type { Arrangement, Message, Document, Photo } from '@/types';
 import { format } from 'date-fns';
 import WorkflowTracker from '@/components/WorkflowTracker';
@@ -76,6 +77,8 @@ export default function ArrangementDetailPage() {
     severity: 'success'
   });
   const [newMessage, setNewMessage] = useState('');
+  const [preArrangementForm, setPreArrangementForm] = useState<any>(null);
+  const [loadingForm, setLoadingForm] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -100,6 +103,15 @@ export default function ArrangementDetailPage() {
       setDocuments(docData);
       setPhotos(photoData);
       setVideos(videoData);
+
+      // Load pre-arrangement form if exists
+      try {
+        const formData = await preArrangementFormsApi.getByArrangement(id);
+        setPreArrangementForm(formData);
+      } catch (error) {
+        // Form doesn't exist yet, which is fine
+        setPreArrangementForm(null);
+      }
     } catch (error) {
       console.error('Failed to load arrangement:', error);
     } finally {
@@ -230,6 +242,29 @@ export default function ArrangementDetailPage() {
     }
   };
 
+  const handleSendPreArrangementForm = async () => {
+    if (!id) return;
+    setLoadingForm(true);
+
+    try {
+      await preArrangementFormsApi.send(id);
+      setSnackbar({
+        open: true,
+        message: 'Pre-Arrangement Form sent to mourner successfully',
+        severity: 'success'
+      });
+      await loadData(); // Reload to get the new form
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to send Pre-Arrangement Form',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingForm(false);
+    }
+  };
+
   if (loading || !arrangement) {
     return (
       <Box p={3}>
@@ -274,13 +309,41 @@ export default function ArrangementDetailPage() {
             sx={{ textTransform: 'capitalize' }}
           />
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          onClick={() => navigate(`/arrangements/${id}/edit`)}
-        >
-          Edit Arrangement
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {!preArrangementForm && (
+            <Button
+              variant="outlined"
+              startIcon={<FormIcon />}
+              onClick={handleSendPreArrangementForm}
+              disabled={loadingForm}
+            >
+              Send Pre-Arrangement Form
+            </Button>
+          )}
+          {preArrangementForm && (
+            <>
+              <Button
+                variant={preArrangementForm.status === 'completed' ? 'outlined' : 'contained'}
+                startIcon={<FormIcon />}
+                onClick={() => navigate(`/arrangements/${id}/pre-arrangement-form`)}
+              >
+                {preArrangementForm.status === 'completed' ? 'View Form' : 'Fill Out Form'}
+              </Button>
+              <Chip
+                label={preArrangementForm.status}
+                color={preArrangementForm.status === 'completed' ? 'success' : 'warning'}
+                sx={{ textTransform: 'capitalize', alignSelf: 'center' }}
+              />
+            </>
+          )}
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => navigate(`/arrangements/${id}/edit`)}
+          >
+            Edit Arrangement
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -361,6 +424,20 @@ export default function ArrangementDetailPage() {
                 Quick Stats
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {preArrangementForm && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FormIcon color="primary" />
+                      <Typography variant="body2">Pre-Arrangement Form</Typography>
+                    </Box>
+                    <Chip
+                      label={preArrangementForm.status}
+                      size="small"
+                      color={preArrangementForm.status === 'completed' ? 'success' : 'warning'}
+                      sx={{ textTransform: 'capitalize' }}
+                    />
+                  </Box>
+                )}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <MessageIcon color="primary" />

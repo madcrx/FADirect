@@ -198,4 +198,50 @@ export const leaveApi = {
   },
 };
 
+// File Sends API
+export const fileSendsApi = {
+  send: async (data: {
+    fileId: string;
+    fileType: string;
+    arrangementId: string;
+    sentToUserId: string;
+    notes?: string;
+  }): Promise<any> => {
+    const response = await api.post('/file-sends', data);
+    return response.data;
+  },
+  getByArrangement: async (arrangementId: string): Promise<any[]> => {
+    const response = await api.get(`/file-sends/arrangement/${arrangementId}`);
+    return response.data.fileSends;
+  },
+  updateStatus: async (id: string, status: string): Promise<void> => {
+    await api.put(`/file-sends/${id}/status`, { status });
+  },
+  markAsViewed: async (id: string): Promise<void> => {
+    await api.post(`/file-sends/${id}/viewed`);
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/file-sends/${id}`);
+  },
+};
+
+// Pre-Arrangement Forms API
+export const preArrangementFormsApi = {
+  send: async (arrangementId: string): Promise<any> => {
+    const response = await api.post('/pre-arrangement-forms/send', { arrangementId });
+    return response.data;
+  },
+  getByArrangement: async (arrangementId: string): Promise<any> => {
+    const response = await api.get(`/pre-arrangement-forms/arrangement/${arrangementId}`);
+    return response.data.form;
+  },
+  update: async (id: string, formData: any, status?: string): Promise<any> => {
+    const response = await api.put(`/pre-arrangement-forms/${id}`, { formData, status });
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/pre-arrangement-forms/${id}`);
+  },
+};
+
 export default api;

@@ -28,6 +28,7 @@ import EquipmentPage from './pages/EquipmentPage';
 import MournersPage from './pages/MournersPage';
 import RevenuePage from './pages/RevenuePage';
 import LeaveManagementPage from './pages/LeaveManagementPage';
+import PreArrangementFormPage from './pages/PreArrangementFormPage';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route path="arrangements/new" element={<ArrangementFormPage />} />
             <Route path="arrangements/:id" element={<ArrangementDetailPage />} />
             <Route path="arrangements/:id/edit" element={<ArrangementFormPage />} />
+            <Route path="arrangements/:id/pre-arrangement-form" element={<PreArrangementFormPage />} />
             <Route path="users" element={<Navigate to="/staff" replace />} />
             <Route path="price-lists" element={<PriceListsPage />} />
             <Route path="invoicing" element={<InvoicingPage />} />

@@ -56,6 +56,27 @@ router.post('/send', authenticateToken, async (req, res, next) => {
       formId = result.rows[0].id;
     }
 
+    // Create or update workflow step for Pre-Arrangement Form
+    const workflowStep = await db.query(
+      `SELECT id FROM workflow_steps WHERE arrangement_id = $1 AND title = 'Pre-Arrangement Form'`,
+      [arrangementId]
+    );
+
+    if (workflowStep.rows.length > 0) {
+      // Update existing workflow step
+      await db.query(
+        `UPDATE workflow_steps SET status = 'in_progress', updated_at = NOW() WHERE id = $1`,
+        [workflowStep.rows[0].id]
+      );
+    } else {
+      // Create new workflow step as the first step
+      await db.query(
+        `INSERT INTO workflow_steps (arrangement_id, title, description, step_order, status)
+         VALUES ($1, 'Pre-Arrangement Form', 'Collect initial information from the family', -1, 'in_progress')`,
+        [arrangementId]
+      );
+    }
+
     // Create notification for mourner
     await db.query(
       `INSERT INTO notifications (user_id, title, message, type, entity_type, entity_id)
@@ -163,6 +184,22 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
     // If form is completed, auto-populate arrangement data
     if (status === 'completed' && formData) {
       await autoPopulateArrangement(form.arrangement_id, formData);
+
+      // Mark workflow step as completed
+      await db.query(
+        `UPDATE workflow_steps
+         SET status = 'completed', completed_at = NOW(), updated_at = NOW()
+         WHERE arrangement_id = $1 AND title = 'Pre-Arrangement Form'`,
+        [form.arrangement_id]
+      );
+
+      // Move to next workflow step (Initial Contact)
+      await db.query(
+        `UPDATE workflow_steps
+         SET status = 'in_progress'
+         WHERE arrangement_id = $1 AND title = 'Initial Contact'`,
+        [form.arrangement_id]
+      );
 
       // Notify arranger
       if (form.sent_by_user_id) {
