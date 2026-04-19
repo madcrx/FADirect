@@ -66,9 +66,15 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    heading: 'OPERATIONS',
+    heading: 'PLANNING',
     items: [
       { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
+      { text: 'Calendar', icon: <EventNoteIcon />, path: '/calendar' },
+    ],
+  },
+  {
+    heading: 'OPERATIONS',
+    items: [
       { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Mourners', icon: <PeopleIcon />, path: '/mourners' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
@@ -77,7 +83,7 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    heading: 'PLANNING',
+    heading: 'FORMS',
     items: [
       { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
       { text: 'Files', icon: <FolderIcon />, path: '/files' },

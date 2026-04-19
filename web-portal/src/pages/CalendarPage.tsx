@@ -4,451 +4,363 @@ import {
   Card,
   CardContent,
   Typography,
-  Button,
+  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  MenuItem,
+  Button,
   Grid,
-  List,
-  ListItem,
-  ListItemText,
   Chip,
-  IconButton,
-  Divider,
 } from '@mui/material';
 import {
-  Add as AddIcon,
-  NavigateBefore as PrevIcon,
-  NavigateNext as NextIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Event as EventIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Today as TodayIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import api from '@/services/api';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths } from 'date-fns';
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description?: string;
-  eventType: string;
-  startTime: string;
-  endTime: string;
-  allDay: boolean;
-  location?: string;
-  arrangementId?: string;
-  deceasedName?: string;
-  status: string;
-  color?: string;
-}
-
-interface Arrangement {
-  id: string;
-  deceasedName: string;
-}
-
-const eventTypes = [
-  { value: 'service', label: 'Funeral Service', color: '#1976d2' },
-  { value: 'appointment', label: 'Appointment', color: '#9c27b0' },
-  { value: 'meeting', label: 'Meeting', color: '#f57c00' },
-  { value: 'reminder', label: 'Reminder', color: '#388e3c' },
-  { value: 'other', label: 'Other', color: '#757575' },
-];
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import { arrangementsApi } from '@/services/api';
+import type { Arrangement } from '@/types';
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [arrangements, setArrangements] = useState<Arrangement[]>([]);
+  const [selectedArrangement, setSelectedArrangement] = useState<Arrangement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    eventType: 'service',
-    startTime: '',
-    endTime: '',
-    allDay: false,
-    location: '',
-    arrangementId: '',
-    status: 'scheduled',
-  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadEvents();
     loadArrangements();
   }, [currentDate]);
 
-  const loadEvents = async () => {
-    try {
-      const start = startOfMonth(currentDate).toISOString();
-      const end = endOfMonth(currentDate).toISOString();
-      const response = await api.get(`/calendar?start=${start}&end=${end}`);
-      setEvents(response.data.events || []);
-    } catch (error) {
-      console.error('Failed to load events:', error);
-    }
-  };
-
   const loadArrangements = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/arrangements');
-      setArrangements(response.data.arrangements || []);
+      const allArrangements = await arrangementsApi.getAll();
+      setArrangements(allArrangements);
     } catch (error) {
       console.error('Failed to load arrangements:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOpenDialog = (event?: CalendarEvent, date?: Date) => {
-    if (event) {
-      setEditingEvent(event);
-      setFormData({
-        title: event.title,
-        description: event.description || '',
-        eventType: event.eventType,
-        startTime: event.startTime.slice(0, 16),
-        endTime: event.endTime.slice(0, 16),
-        allDay: event.allDay,
-        location: event.location || '',
-        arrangementId: event.arrangementId || '',
-        status: event.status,
-      });
-    } else {
-      setEditingEvent(null);
-      const defaultDate = date || new Date();
-      const defaultTime = format(defaultDate, "yyyy-MM-dd'T'HH:mm");
-      setFormData({
-        title: '',
-        description: '',
-        eventType: 'service',
-        startTime: defaultTime,
-        endTime: defaultTime,
-        allDay: false,
-        location: '',
-        arrangementId: '',
-        status: 'scheduled',
-      });
-    }
+  const handlePrevMonth = () => {
+    setCurrentDate(subMonths(currentDate, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(addMonths(currentDate, 1));
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  const handleArrangementClick = (arrangement: Arrangement) => {
+    setSelectedArrangement(arrangement);
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setEditingEvent(null);
+    setSelectedArrangement(null);
   };
 
-  const handleSaveEvent = async () => {
-    try {
-      const data = {
-        ...formData,
-        arrangementId: formData.arrangementId || null,
-      };
-
-      if (editingEvent) {
-        await api.put(`/calendar/${editingEvent.id}`, data);
-      } else {
-        await api.post('/calendar', data);
-      }
-
-      await loadEvents();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Failed to save event:', error);
-    }
-  };
-
-  const handleDeleteEvent = async (eventId: string) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        await api.delete(`/calendar/${eventId}`);
-        await loadEvents();
-      } catch (error) {
-        console.error('Failed to delete event:', error);
-      }
-    }
-  };
-
-  const getDaysInMonth = () => {
-    return eachDayOfInterval({
-      start: startOfMonth(currentDate),
-      end: endOfMonth(currentDate),
+  const getArrangementsForDay = (date: Date) => {
+    return arrangements.filter((arr) => {
+      if (!arr.serviceDate) return false;
+      const serviceDate = parseISO(arr.serviceDate);
+      return isSameDay(serviceDate, date);
     });
   };
 
-  const getEventsForDay = (day: Date) => {
-    return events.filter(event =>
-      isSameDay(parseISO(event.startTime), day)
-    );
+  const renderCalendar = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+
+    const rows = [];
+    let days = [];
+    let day = startDate;
+
+    while (day <= endDate) {
+      for (let i = 0; i < 7; i++) {
+        const currentDay = day;
+        const dayArrangements = getArrangementsForDay(currentDay);
+        const isCurrentMonth = isSameMonth(currentDay, monthStart);
+        const isToday = isSameDay(currentDay, new Date());
+
+        days.push(
+          <Box
+            key={day.toString()}
+            sx={{
+              minHeight: 120,
+              p: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              bgcolor: isCurrentMonth ? 'background.paper' : 'action.hover',
+              position: 'relative',
+              cursor: dayArrangements.length > 0 ? 'pointer' : 'default',
+              '&:hover': {
+                bgcolor: dayArrangements.length > 0 ? 'action.hover' : undefined,
+              },
+            }}
+          >
+            <Typography
+              variant="body2"
+              fontWeight={isToday ? 'bold' : 'normal'}
+              color={isToday ? 'primary' : isCurrentMonth ? 'text.primary' : 'text.disabled'}
+              sx={{ mb: 0.5 }}
+            >
+              {format(currentDay, 'd')}
+            </Typography>
+            {dayArrangements.map((arr) => (
+              <Box
+                key={arr.id}
+                onClick={() => handleArrangementClick(arr)}
+                sx={{
+                  mb: 0.5,
+                  p: 0.5,
+                  borderRadius: 1,
+                  bgcolor: 'primary.light',
+                  color: 'primary.contrastText',
+                  fontSize: '0.75rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    bgcolor: 'primary.main',
+                  },
+                }}
+              >
+                {arr.deceasedName}
+              </Box>
+            ))}
+          </Box>
+        );
+        day = addDays(day, 1);
+      }
+      rows.push(
+        <Box key={day.toString()} sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {days}
+        </Box>
+      );
+      days = [];
+    }
+
+    return rows;
   };
 
-  const getEventColor = (eventType: string) => {
-    return eventTypes.find(t => t.value === eventType)?.color || '#757575';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'success';
+      case 'completed': return 'default';
+      case 'cancelled': return 'error';
+      default: return 'warning';
+    }
   };
 
-  const goToPreviousMonth = () => {
-    setCurrentDate(subMonths(currentDate, 1));
-  };
-
-  const goToNextMonth = () => {
-    setCurrentDate(addMonths(currentDate, 1));
-  };
-
-  const goToToday = () => {
-    setCurrentDate(new Date());
+  const getFuneralTypeLabel = (type: string) => {
+    const labels: { [key: string]: string } = {
+      traditional: 'Traditional',
+      cremation: 'Cremation',
+      burial: 'Burial',
+      memorial: 'Memorial',
+      direct_cremation: 'Direct Cremation',
+      repatriation: 'Repatriation',
+    };
+    return labels[type] || type;
   };
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Calendar
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage services, appointments, and important dates
-          </Typography>
+        <Typography variant="h4" fontWeight="bold">
+          Arrangements Calendar
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <IconButton onClick={handlePrevMonth}>
+            <ChevronLeftIcon />
+          </IconButton>
+          <Button variant="outlined" startIcon={<TodayIcon />} onClick={handleToday}>
+            Today
+          </Button>
+          <IconButton onClick={handleNextMonth}>
+            <ChevronRightIcon />
+          </IconButton>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog()}
-          size="large"
-        >
-          New Event
-        </Button>
       </Box>
 
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton onClick={goToPreviousMonth}>
-                <PrevIcon />
-              </IconButton>
-              <Button onClick={goToToday}>Today</Button>
-              <IconButton onClick={goToNextMonth}>
-                <NextIcon />
-              </IconButton>
-            </Box>
-            <Typography variant="h5" fontWeight="bold">
-              {format(currentDate, 'MMMM yyyy')}
-            </Typography>
-            <Box width={120} /> {/* Spacer for alignment */}
-          </Box>
-
-          <Grid container spacing={1}>
-            {getDaysInMonth().map((day) => {
-              const dayEvents = getEventsForDay(day);
-              const isToday = isSameDay(day, new Date());
-
-              return (
-                <Grid item xs={12} sm={6} md={3} key={day.toString()}>
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      minHeight: 120,
-                      bgcolor: isToday ? 'primary.light' : 'background.paper',
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' },
-                    }}
-                    onClick={() => handleOpenDialog(undefined, day)}
-                  >
-                    <CardContent>
-                      <Typography
-                        variant="subtitle2"
-                        fontWeight="bold"
-                        color={isToday ? 'primary.contrastText' : 'text.primary'}
-                      >
-                        {format(day, 'd')}
-                      </Typography>
-                      {dayEvents.map(event => (
-                        <Chip
-                          key={event.id}
-                          label={event.title}
-                          size="small"
-                          sx={{
-                            mt: 0.5,
-                            width: '100%',
-                            bgcolor: getEventColor(event.eventType),
-                            color: 'white',
-                            '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog(event);
-                          }}
-                        />
-                      ))}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </CardContent>
-      </Card>
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        {format(currentDate, 'MMMM yyyy')}
+      </Typography>
 
       <Card>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Upcoming Events
-          </Typography>
-          <List>
-            {events
-              .filter(e => new Date(e.startTime) >= new Date())
-              .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-              .slice(0, 10)
-              .map((event, index) => (
-                <div key={event.id}>
-                  {index > 0 && <Divider />}
-                  <ListItem
-                    secondaryAction={
-                      <Box>
-                        <IconButton edge="end" onClick={() => handleOpenDialog(event)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton edge="end" onClick={() => handleDeleteEvent(event.id)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    }
-                  >
-                    <EventIcon sx={{ mr: 2, color: getEventColor(event.eventType) }} />
-                    <ListItemText
-                      primary={event.title}
-                      secondary={
-                        <>
-                          {format(parseISO(event.startTime), 'dd MMM yyyy, HH:mm')}
-                          {event.location && ` • ${event.location}`}
-                          {event.deceasedName && ` • ${event.deceasedName}`}
-                        </>
-                      }
-                    />
-                  </ListItem>
-                </div>
-              ))}
-          </List>
+        <CardContent sx={{ p: 0 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', bgcolor: 'action.hover' }}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <Typography
+                key={day}
+                variant="body2"
+                fontWeight="bold"
+                sx={{ p: 1, textAlign: 'center', borderRight: '1px solid', borderColor: 'divider' }}
+              >
+                {day}
+              </Typography>
+            ))}
+          </Box>
+          {renderCalendar()}
         </CardContent>
       </Card>
 
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editingEvent ? 'Edit Event' : 'New Event'}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </Grid>
+        {selectedArrangement && (
+          <>
+            <DialogTitle>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">Arrangement Details</Typography>
+                <IconButton onClick={handleCloseDialog} size="small">
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </DialogTitle>
+            <DialogContent dividers>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="h5" gutterBottom>
+                    {selectedArrangement.deceasedName}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                    <Chip
+                      label={selectedArrangement.status.toUpperCase()}
+                      color={getStatusColor(selectedArrangement.status) as any}
+                      size="small"
+                    />
+                    <Chip
+                      label={getFuneralTypeLabel(selectedArrangement.funeralType)}
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Box>
+                </Grid>
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Event Type"
-                  value={formData.eventType}
-                  onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                  required
-                >
-                  {eventTypes.map(type => (
-                    <MenuItem key={type.value} value={type.value}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+                {selectedArrangement.serviceDate && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Service Date
+                    </Typography>
+                    <Typography variant="body1">
+                      {format(parseISO(selectedArrangement.serviceDate), 'PPP')}
+                    </Typography>
+                  </Grid>
+                )}
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <MenuItem value="scheduled">Scheduled</MenuItem>
-                  <MenuItem value="confirmed">Confirmed</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                  <MenuItem value="cancelled">Cancelled</MenuItem>
-                </TextField>
-              </Grid>
+                {selectedArrangement.serviceLocation && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Service Location
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedArrangement.serviceLocation}
+                    </Typography>
+                  </Grid>
+                )}
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Start Time"
-                  type="datetime-local"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                />
-              </Grid>
+                {selectedArrangement.deceasedDateOfBirth && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Date of Birth
+                    </Typography>
+                    <Typography variant="body1">
+                      {format(parseISO(selectedArrangement.deceasedDateOfBirth), 'PP')}
+                    </Typography>
+                  </Grid>
+                )}
 
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="End Time"
-                  type="datetime-local"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  InputLabelProps={{ shrink: true }}
-                  required
-                />
-              </Grid>
+                {selectedArrangement.deceasedDateOfDeath && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Date of Death
+                    </Typography>
+                    <Typography variant="body1">
+                      {format(parseISO(selectedArrangement.deceasedDateOfDeath), 'PP')}
+                    </Typography>
+                  </Grid>
+                )}
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                />
-              </Grid>
+                {selectedArrangement.mournerName && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Family Contact
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedArrangement.mournerName}
+                    </Typography>
+                    {selectedArrangement.mournerPhone && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedArrangement.mournerPhone}
+                      </Typography>
+                    )}
+                  </Grid>
+                )}
 
-              <Grid item xs={12}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Link to Arrangement (Optional)"
-                  value={formData.arrangementId}
-                  onChange={(e) => setFormData({ ...formData, arrangementId: e.target.value })}
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {arrangements.map(arr => (
-                    <MenuItem key={arr.id} value={arr.id}>
-                      {arr.deceasedName}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+                {selectedArrangement.nextOfKinName && (
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" color="text.secondary">
+                      Next of Kin
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedArrangement.nextOfKinName}
+                      {selectedArrangement.nextOfKinRelationship && \` (\${selectedArrangement.nextOfKinRelationship})\`}
+                    </Typography>
+                    {selectedArrangement.nextOfKinPhone && (
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedArrangement.nextOfKinPhone}
+                      </Typography>
+                    )}
+                  </Grid>
+                )}
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={3}
-                  label="Description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
+                {selectedArrangement.locationOfDeceased && (
+                  <Grid item xs={12}>
+                    <Typography variant="caption" color="text.secondary">
+                      Location of Deceased
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedArrangement.locationOfDeceased}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {selectedArrangement.notes && (
+                  <Grid item xs={12}>
+                    <Typography variant="caption" color="text.secondary">
+                      Notes
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedArrangement.notes}
+                    </Typography>
+                  </Grid>
+                )}
               </Grid>
-            </Grid>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveEvent} variant="contained">
-            {editingEvent ? 'Update' : 'Create'}
-          </Button>
-        </DialogActions>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Close</Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  handleCloseDialog();
+                  window.location.href = \`/arrangements/\${selectedArrangement.id}\`;
+                }}
+              >
+                View Full Details
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );
