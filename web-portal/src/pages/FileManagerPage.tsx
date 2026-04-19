@@ -34,6 +34,7 @@ import {
   InsertDriveFile as FileIcon,
   Image as ImageIcon,
   Folder as FolderIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { format } from 'date-fns';
@@ -67,6 +68,11 @@ export default function FileManagerPage() {
     open: boolean;
     file?: FileItem;
   }>({ open: false });
+  const [sendDialog, setSendDialog] = useState<{
+    open: boolean;
+    file?: FileItem;
+  }>({ open: false });
+  const [sendNotes, setSendNotes] = useState('');
 
   useEffect(() => {
     loadFiles();
@@ -166,6 +172,44 @@ export default function FileManagerPage() {
       await loadFiles();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to delete file');
+    }
+  };
+
+  const handleOpenSendDialog = (file: FileItem) => {
+    if (!file.arrangementId) {
+      setError('Cannot send file without an associated arrangement');
+      return;
+    }
+    setSendDialog({ open: true, file });
+    setSendNotes('');
+  };
+
+  const handleSendToMourner = async () => {
+    if (!sendDialog.file) return;
+
+    try {
+      // Get arrangement details to find mourner user ID
+      const arrangementRes = await api.get(`/arrangements/${sendDialog.file.arrangementId}`);
+      const arrangement = arrangementRes.data.arrangement;
+
+      if (!arrangement.mournerId) {
+        setError('No mourner associated with this arrangement');
+        return;
+      }
+
+      await api.post('/file-sends', {
+        fileId: sendDialog.file.id,
+        fileType: sendDialog.file.type,
+        arrangementId: sendDialog.file.arrangementId,
+        sentToUserId: arrangement.mournerId,
+        notes: sendNotes,
+      });
+
+      setSuccess(`${sendDialog.file.type === 'document' ? 'Document' : 'Photo'} sent to mourner successfully`);
+      setSendDialog({ open: false });
+      setSendNotes('');
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to send file');
     }
   };
 
@@ -344,17 +388,33 @@ export default function FileManagerPage() {
                             <IconButton
                               size="small"
                               onClick={() => setPreviewDialog({ open: true, file })}
+                              title="Preview"
                             >
                               <ViewIcon />
                             </IconButton>
                           )}
-                          <IconButton size="small" onClick={() => handleDownload(file)}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDownload(file)}
+                            title="Download"
+                          >
                             <DownloadIcon />
                           </IconButton>
+                          {file.arrangementId && (
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleOpenSendDialog(file)}
+                              title="Send to Mourner"
+                            >
+                              <SendIcon />
+                            </IconButton>
+                          )}
                           <IconButton
                             size="small"
                             color="error"
                             onClick={() => handleDelete(file)}
+                            title="Delete"
                           >
                             <DeleteIcon />
                           </IconButton>
@@ -453,6 +513,54 @@ export default function FileManagerPage() {
               Download
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Send to Mourner Dialog */}
+      <Dialog
+        open={sendDialog.open}
+        onClose={() => setSendDialog({ open: false })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Send to Mourner</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            {sendDialog.file && (
+              <>
+                <Typography variant="body2" gutterBottom>
+                  <strong>File:</strong> {sendDialog.file.originalName}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  <strong>Arrangement:</strong> {sendDialog.file.deceasedName || 'Unknown'}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
+                  The mourner will receive a notification that this file has been sent to them.
+                  They can view it in the FA Direct app or via email.
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Notes (optional)"
+                  value={sendNotes}
+                  onChange={(e) => setSendNotes(e.target.value)}
+                  placeholder="Add any notes or instructions for the mourner..."
+                  sx={{ mt: 2 }}
+                />
+              </>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSendDialog({ open: false })}>Cancel</Button>
+          <Button
+            variant="contained"
+            startIcon={<SendIcon />}
+            onClick={handleSendToMourner}
+          >
+            Send to Mourner
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

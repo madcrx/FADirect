@@ -38,6 +38,7 @@ async function runMigrations() {
     '030_fix_staff_assignments_constraint.sql',
     '031_add_vehicle_details.sql',
     '032_add_maintenance_and_leave.sql',
+    '033_add_file_sending.sql',
   ];
 
   try {
