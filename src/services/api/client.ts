@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
+import logger from '../../utils/logger';
 
 // API Configuration - HTTPS URLs (self-signed certificate for development)
 // Backend must be running with HTTPS (see backend-setup/HTTPS-SETUP.md)
@@ -10,7 +11,7 @@ const API_BASE_URL = Platform.select({
   default: 'http://localhost:3000/api',
 });
 
-console.log(`📱 Platform: ${Platform.OS}, API URL: ${API_BASE_URL}`);
+logger.info(`Platform: ${Platform.OS}, API URL: ${API_BASE_URL}`);
 
 const TOKEN_KEY = '@fadirect_auth_token';
 
@@ -31,7 +32,7 @@ class ApiClient {
     try {
       this.authToken = await AsyncStorage.getItem(TOKEN_KEY);
     } catch (error) {
-      console.error('Failed to load auth token:', error);
+      logger.error('Failed to load auth token:', error);
     }
   }
 
@@ -44,7 +45,7 @@ class ApiClient {
         await AsyncStorage.removeItem(TOKEN_KEY);
       }
     } catch (error) {
-      console.error('Failed to save auth token:', error);
+      logger.error('Failed to save auth token:', error);
     }
   }
 
@@ -72,9 +73,7 @@ class ApiClient {
     }
 
     try {
-      console.log('🌐 Making request:', options.method || 'GET', url);
-      console.log('📝 Request headers:', JSON.stringify(headers));
-      console.log('📦 Request data:', options.data ? JSON.stringify(options.data) : 'none');
+      logger.api.request(options.method || 'GET', url, options.data);
 
       // Create a fresh axios instance for each request to avoid XHR reuse issues
       const response = await axios.create()({
@@ -85,33 +84,15 @@ class ApiClient {
         timeout: 10000,
       });
 
-      console.log('✅ Response received:', response.status);
+      logger.api.response(options.method || 'GET', url, response.status);
       return response.data as T;
     } catch (error: any) {
-      console.error('❌ Request failed:', error?.message);
-
-      // COMPREHENSIVE ERROR DEBUGGING
-      console.error('🔍 ERROR DEBUG INFO:');
-      console.error('  - Error name:', error?.name);
-      console.error('  - Error message:', error?.message);
-      console.error('  - Error code:', error?.code);
-      console.error('  - Error stack:', error?.stack?.substring(0, 200));
-
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
-        console.error('  - Is Axios Error: YES');
-        console.error('  - Response exists:', !!axiosError.response);
-        console.error('  - Request exists:', !!axiosError.request);
-        console.error('  - Config URL:', axiosError.config?.url);
-        console.error('  - Config method:', axiosError.config?.method);
-        console.error('  - Config timeout:', axiosError.config?.timeout);
+        logger.api.error(options.method || 'GET', url, error);
 
         if (axiosError.response) {
           // Server responded with error
-          console.error('  - Response status:', axiosError.response.status);
-          console.error('  - Response headers:', JSON.stringify(axiosError.response.headers));
-          console.error('  - Response data:', JSON.stringify(axiosError.response.data));
-
           const errorData = axiosError.response.data as any;
           throw {
             message: errorData?.error?.message || 'An error occurred',
@@ -120,23 +101,14 @@ class ApiClient {
           } as ApiError;
         } else if (axiosError.request) {
           // Request made but no response
-          console.error('  - Request object type:', typeof axiosError.request);
-          console.error('  - Request readyState:', (axiosError.request as any)?.readyState);
-          console.error('  - Request status:', (axiosError.request as any)?.status);
-          console.error('  - Request responseURL:', (axiosError.request as any)?.responseURL);
-          console.error('  - Request statusText:', (axiosError.request as any)?.statusText);
-
           throw {
             message: `Network Error: ${error?.code || 'UNKNOWN'} - ${error?.message}`,
             status: 0,
           } as ApiError;
         }
-      } else {
-        console.error('  - Is Axios Error: NO');
-        console.error('  - Raw error type:', typeof error);
-        console.error('  - Raw error:', JSON.stringify(error, null, 2));
       }
 
+      logger.error('Unexpected error:', error);
       throw {
         message: error?.message || 'An unexpected error occurred',
         status: 0,

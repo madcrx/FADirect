@@ -2,21 +2,45 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./config');
+const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
+const { HTTP_STATUS } = require('./constants');
 // const backupScheduler = require('./services/backup-scheduler');
 
 const app = express();
 
-// Middleware
+// Security middleware
 app.use(helmet());
-app.use(cors());
+
+// CORS configuration - restrict to allowed origins
+const allowedOrigins = config.ALLOWED_ORIGINS.split(',');
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || config.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Rate limiting - apply to all routes
+app.use(generalLimiter);
+
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files
-app.use('/uploads', express.static(config.UPLOAD_DIR || './uploads'));
+// Note: Static file serving removed for security
+// Files are now served through authenticated endpoints in their respective routes
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
+// Routes - Auth routes with stricter rate limiting
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/arrangements', require('./routes/arrangements'));
@@ -54,9 +78,16 @@ app.get('/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
+
+  // Sanitize error messages in production
+  const statusCode = err.status || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+  const message = config.NODE_ENV === 'production'
+    ? (statusCode < 500 ? err.message : 'An error occurred')
+    : err.message || 'Internal Server Error';
+
+  res.status(statusCode).json({
     error: {
-      message: err.message || 'Internal Server Error',
+      message,
       ...(config.NODE_ENV === 'development' && { stack: err.stack }),
     },
   });
@@ -64,7 +95,9 @@ app.use((err, req, res, next) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: { message: 'Route not found' } });
+  res.status(HTTP_STATUS.NOT_FOUND).json({
+    error: { message: 'Route not found' }
+  });
 });
 
 // Start server

@@ -75,12 +75,23 @@ router.get('/', authenticateToken, async (req, res, next) => {
 // Get single arrangement
 router.get('/:id', authenticateToken, async (req, res, next) => {
   try {
-    const result = await db.query('SELECT * FROM arrangements WHERE id = $1', [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: { message: 'Arrangement not found' } });
+    // Check if user has access to this arrangement
+    const accessCheck = await db.query(
+      `SELECT a.* FROM arrangements a
+       LEFT JOIN arrangement_participants ap ON a.id = ap.arrangement_id
+       WHERE a.id = $1
+         AND (a.arranger_id = $2 OR a.mourner_id = $2 OR ap.user_id = $2)
+         AND a.deleted_at IS NULL`,
+      [req.params.id, req.user.id]
+    );
+
+    if (accessCheck.rows.length === 0) {
+      return res.status(403).json({
+        error: { message: 'Access denied: You do not have permission to view this arrangement' }
+      });
     }
 
-    const arrangement = result.rows[0];
+    const arrangement = accessCheck.rows[0];
 
     // Get workflow steps
     const stepsResult = await db.query(
