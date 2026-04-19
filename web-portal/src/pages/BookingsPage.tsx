@@ -354,7 +354,7 @@ export default function BookingsPage() {
     setSelectedStaffForAssignment(staff);
 
     // If staff has multiple roles, show dialog to select which role
-    const roles = Array.isArray(staff.roles) ? staff.roles : [staff.roles];
+    const roles = Array.isArray(staff.role) ? staff.role : [staff.role];
     if (roles.length > 1) {
       setSelectedRole(roles[0]);
       setRoleDialogOpen(true);
@@ -1129,7 +1129,7 @@ export default function BookingsPage() {
                     </ListItemIcon>
                     <ListItemText
                       primary={staff.fullName}
-                      secondary={staff.role}
+                      secondary={staff.position || 'Staff Member'}
                     />
                   </ListItem>
                 ))}
