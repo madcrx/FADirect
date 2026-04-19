@@ -537,11 +537,44 @@ router.post('/jobs/:jobId/assign-staff', authenticateToken, async (req, res, nex
       return res.status(400).json({ error: { message: 'Staff member already assigned to this job with this role' } });
     }
 
-    // Create assignment
+    // Create staff assignment
     await db.query(
       'INSERT INTO job_staff_assignments (job_id, staff_id, role, is_primary) VALUES ($1, $2, $3, $4)',
       [jobId, staffId, role || null, isPrimary || false]
     );
+
+    // Check if this job is linked to an arrangement
+    const jobResult = await db.query(
+      'SELECT arrangement_id FROM jobs WHERE id = $1',
+      [jobId]
+    );
+
+    // If job is linked to arrangement, auto-assign staff's allocated vehicle
+    if (jobResult.rows.length > 0 && jobResult.rows[0].arrangement_id) {
+      // Check if staff has an allocated vehicle
+      const vehicleResult = await db.query(
+        'SELECT id FROM vehicles WHERE allocated_to_staff_id = $1 AND deleted_at IS NULL',
+        [staffId]
+      );
+
+      if (vehicleResult.rows.length > 0) {
+        const vehicleId = vehicleResult.rows[0].id;
+
+        // Check if vehicle not already assigned
+        const vehicleAssignmentExists = await db.query(
+          'SELECT id FROM job_vehicle_assignments WHERE job_id = $1 AND vehicle_id = $2',
+          [jobId, vehicleId]
+        );
+
+        if (vehicleAssignmentExists.rows.length === 0) {
+          // Auto-assign the vehicle
+          await db.query(
+            'INSERT INTO job_vehicle_assignments (job_id, vehicle_id, is_primary) VALUES ($1, $2, $3)',
+            [jobId, vehicleId, false]
+          );
+        }
+      }
+    }
 
     res.json({ message: 'Staff assigned successfully' });
   } catch (error) {

@@ -39,9 +39,11 @@ const upload = multer({
 router.get('/', authenticateToken, async (req, res, next) => {
   try {
     const result = await db.query(`
-      SELECT * FROM vehicles
-      WHERE deleted_at IS NULL
-      ORDER BY vehicle_type, make, model ASC
+      SELECT v.*, u.name as allocated_to_staff_name
+      FROM vehicles v
+      LEFT JOIN users u ON v.allocated_to_staff_id = u.id
+      WHERE v.deleted_at IS NULL
+      ORDER BY v.vehicle_type, v.make, v.model ASC
     `);
 
     res.json({
@@ -52,9 +54,15 @@ router.get('/', authenticateToken, async (req, res, next) => {
         model: row.model,
         year: row.year,
         registration: row.registration,
+        registrationExpiry: row.registration_expiry,
         color: row.color,
         photoUrl: row.photo_url,
         seatingCapacity: row.seating_capacity,
+        transmission: row.transmission,
+        engineNumber: row.engine_number,
+        vinNumber: row.vin_number,
+        allocatedToStaffId: row.allocated_to_staff_id,
+        allocatedToStaffName: row.allocated_to_staff_name,
         status: row.status,
         lastServiceDate: row.last_service_date,
         nextServiceDate: row.next_service_date,
@@ -102,18 +110,28 @@ router.post('/', authenticateToken, async (req, res, next) => {
       model,
       year,
       registration,
+      registrationExpiry,
       color,
       photoUrl,
       seatingCapacity,
+      transmission,
+      engineNumber,
+      vinNumber,
+      allocatedToStaffId,
     } = req.body;
 
     const result = await db.query(`
       INSERT INTO vehicles (
-        vehicle_type, make, model, year, registration, color,
-        photo_url, seating_capacity
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        vehicle_type, make, model, year, registration, registration_expiry,
+        color, photo_url, seating_capacity, transmission, engine_number,
+        vin_number, allocated_to_staff_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
-    `, [vehicleType, make, model, year, registration, color, photoUrl, seatingCapacity]);
+    `, [
+      vehicleType, make, model, year, registration, registrationExpiry,
+      color, photoUrl, seatingCapacity, transmission, engineNumber,
+      vinNumber, allocatedToStaffId
+    ]);
 
     res.status(201).json({
       message: 'Vehicle created successfully',
@@ -134,8 +152,13 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
       model,
       year,
       registration,
+      registrationExpiry,
       color,
       seatingCapacity,
+      transmission,
+      engineNumber,
+      vinNumber,
+      allocatedToStaffId,
       status,
       lastServiceDate,
       nextServiceDate
@@ -148,14 +171,23 @@ router.put('/:id', authenticateToken, async (req, res, next) => {
         model = COALESCE($3, model),
         year = COALESCE($4, year),
         registration = COALESCE($5, registration),
-        color = COALESCE($6, color),
-        seating_capacity = COALESCE($7, seating_capacity),
-        status = COALESCE($8, status),
-        last_service_date = COALESCE($9, last_service_date),
-        next_service_date = COALESCE($10, next_service_date),
+        registration_expiry = COALESCE($6, registration_expiry),
+        color = COALESCE($7, color),
+        seating_capacity = COALESCE($8, seating_capacity),
+        transmission = COALESCE($9, transmission),
+        engine_number = COALESCE($10, engine_number),
+        vin_number = COALESCE($11, vin_number),
+        allocated_to_staff_id = $12,
+        status = COALESCE($13, status),
+        last_service_date = COALESCE($14, last_service_date),
+        next_service_date = COALESCE($15, next_service_date),
         updated_at = NOW()
-      WHERE id = $11
-    `, [vehicleType, make, model, year, registration, color, seatingCapacity, status, lastServiceDate, nextServiceDate, id]);
+      WHERE id = $16
+    `, [
+      vehicleType, make, model, year, registration, registrationExpiry,
+      color, seatingCapacity, transmission, engineNumber, vinNumber,
+      allocatedToStaffId, status, lastServiceDate, nextServiceDate, id
+    ]);
 
     res.json({ message: 'Vehicle updated successfully' });
   } catch (error) {

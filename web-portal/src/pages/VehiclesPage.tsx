@@ -16,12 +16,14 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  Autocomplete,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   DriveEta as CarIcon,
   CloudUpload as UploadIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 
@@ -32,9 +34,15 @@ interface Vehicle {
   model: string;
   year: number;
   registration: string;
+  registrationExpiry: string | null;
   color: string;
   photoUrl: string | null;
   seatingCapacity: number | null;
+  transmission: string | null;
+  engineNumber: string | null;
+  vinNumber: string | null;
+  allocatedToStaffId: string | null;
+  allocatedToStaffName: string | null;
   status: string;
   lastServiceDate: string | null;
   nextServiceDate: string | null;
@@ -42,6 +50,7 @@ interface Vehicle {
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -55,12 +64,18 @@ export default function VehiclesPage() {
     model: '',
     year: new Date().getFullYear(),
     registration: '',
+    registrationExpiry: '',
     color: '',
     seatingCapacity: 2,
+    transmission: 'automatic',
+    engineNumber: '',
+    vinNumber: '',
+    allocatedToStaffId: null as string | null,
   });
 
   useEffect(() => {
     loadVehicles();
+    loadStaff();
   }, []);
 
   const loadVehicles = async () => {
@@ -75,6 +90,15 @@ export default function VehiclesPage() {
     }
   };
 
+  const loadStaff = async () => {
+    try {
+      const response = await api.get('/staff-profiles');
+      setStaff(response.data.staff);
+    } catch (err: any) {
+      console.error('Failed to load staff:', err);
+    }
+  };
+
   const handleOpenEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
@@ -83,8 +107,13 @@ export default function VehiclesPage() {
       model: vehicle.model,
       year: vehicle.year,
       registration: vehicle.registration,
+      registrationExpiry: vehicle.registrationExpiry || '',
       color: vehicle.color,
       seatingCapacity: vehicle.seatingCapacity || 2,
+      transmission: vehicle.transmission || 'automatic',
+      engineNumber: vehicle.engineNumber || '',
+      vinNumber: vehicle.vinNumber || '',
+      allocatedToStaffId: vehicle.allocatedToStaffId,
     });
     setPhotoPreview(vehicle.photoUrl);
     setSelectedPhoto(null);
@@ -114,8 +143,13 @@ export default function VehiclesPage() {
       model: '',
       year: new Date().getFullYear(),
       registration: '',
+      registrationExpiry: '',
       color: '',
       seatingCapacity: 2,
+      transmission: 'automatic',
+      engineNumber: '',
+      vinNumber: '',
+      allocatedToStaffId: null,
     });
   };
 
@@ -123,28 +157,27 @@ export default function VehiclesPage() {
     try {
       let vehicleId = editingVehicle?.id;
 
+      const vehicleData = {
+        vehicleType: formData.vehicleType,
+        make: formData.make,
+        model: formData.model,
+        year: formData.year,
+        registration: formData.registration,
+        registrationExpiry: formData.registrationExpiry || null,
+        color: formData.color,
+        seatingCapacity: formData.seatingCapacity,
+        transmission: formData.transmission,
+        engineNumber: formData.engineNumber || null,
+        vinNumber: formData.vinNumber || null,
+        allocatedToStaffId: formData.allocatedToStaffId,
+      };
+
       if (editingVehicle) {
         // Update existing vehicle
-        await api.put(`/vehicles/${editingVehicle.id}`, {
-          vehicleType: formData.vehicleType,
-          make: formData.make,
-          model: formData.model,
-          year: formData.year,
-          registration: formData.registration,
-          color: formData.color,
-          seatingCapacity: formData.seatingCapacity,
-        });
+        await api.put(`/vehicles/${editingVehicle.id}`, vehicleData);
       } else {
         // Add new vehicle
-        const response = await api.post('/vehicles', {
-          vehicleType: formData.vehicleType,
-          make: formData.make,
-          model: formData.model,
-          year: formData.year,
-          registration: formData.registration,
-          color: formData.color,
-          seatingCapacity: formData.seatingCapacity,
-        });
+        const response = await api.post('/vehicles', vehicleData);
         vehicleId = response.data.vehicle.id;
       }
 
@@ -272,6 +305,29 @@ export default function VehiclesPage() {
                   <Typography variant="body2">
                     <strong>Registration:</strong> {vehicle.registration}
                   </Typography>
+                  {vehicle.registrationExpiry && (
+                    <Typography variant="body2" color={new Date(vehicle.registrationExpiry) < new Date() ? 'error' : 'text.primary'}>
+                      <strong>Reg Expiry:</strong> {new Date(vehicle.registrationExpiry).toLocaleDateString()}
+                    </Typography>
+                  )}
+                  {vehicle.transmission && (
+                    <Typography variant="body2">
+                      <strong>Transmission:</strong> {vehicle.transmission.charAt(0).toUpperCase() + vehicle.transmission.slice(1)}
+                    </Typography>
+                  )}
+                  {vehicle.vinNumber && (
+                    <Typography variant="caption" color="text.secondary">
+                      VIN: {vehicle.vinNumber}
+                    </Typography>
+                  )}
+                  {vehicle.allocatedToStaffName && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1 }}>
+                      <PersonIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="primary">
+                        Allocated to: {vehicle.allocatedToStaffName}
+                      </Typography>
+                    </Box>
+                  )}
                   {vehicle.seatingCapacity && (
                     <Typography variant="body2">
                       <strong>Capacity:</strong> {vehicle.seatingCapacity} seats
@@ -401,6 +457,14 @@ export default function VehiclesPage() {
             />
             <TextField
               fullWidth
+              label="Registration Expiry"
+              type="date"
+              value={formData.registrationExpiry}
+              onChange={(e) => setFormData({ ...formData, registrationExpiry: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              fullWidth
               label="Color"
               value={formData.color}
               onChange={(e) => setFormData({ ...formData, color: e.target.value })}
@@ -412,6 +476,43 @@ export default function VehiclesPage() {
               type="number"
               value={formData.seatingCapacity}
               onChange={(e) => setFormData({ ...formData, seatingCapacity: parseInt(e.target.value) })}
+            />
+            <TextField
+              fullWidth
+              select
+              label="Transmission"
+              value={formData.transmission}
+              onChange={(e) => setFormData({ ...formData, transmission: e.target.value })}
+            >
+              <MenuItem value="automatic">Automatic</MenuItem>
+              <MenuItem value="manual">Manual</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              label="Engine Number"
+              value={formData.engineNumber}
+              onChange={(e) => setFormData({ ...formData, engineNumber: e.target.value })}
+            />
+            <TextField
+              fullWidth
+              label="VIN Number"
+              value={formData.vinNumber}
+              onChange={(e) => setFormData({ ...formData, vinNumber: e.target.value })}
+            />
+            <Autocomplete
+              options={staff}
+              getOptionLabel={(option) => option.fullName}
+              value={staff.find((s) => s.userId === formData.allocatedToStaffId) || null}
+              onChange={(_, newValue) => {
+                setFormData({ ...formData, allocatedToStaffId: newValue?.userId || null });
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Allocated to Staff Member"
+                  placeholder="Select staff member"
+                />
+              )}
             />
           </Box>
         </DialogContent>

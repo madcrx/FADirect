@@ -36,6 +36,7 @@ async function runMigrations() {
     '028_add_is_primary_to_vehicle_assignments.sql',
     '029_add_users_soft_delete.sql',
     '030_fix_staff_assignments_constraint.sql',
+    '031_add_vehicle_details.sql',
   ];
 
   try {
