@@ -26,6 +26,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
+import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface Vehicle {
   id: string;
@@ -58,6 +59,8 @@ export default function VehiclesPage() {
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     vehicleType: 'hearse',
     make: '',
@@ -123,13 +126,29 @@ export default function VehiclesPage() {
   const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedPhoto(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        setImageToCrop(reader.result as string);
+        setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'cropped-vehicle.jpg', { type: 'image/jpeg' });
+    setSelectedPhoto(croppedFile);
+
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setPhotoPreview(previewUrl);
+
+    setCropDialogOpen(false);
+    setImageToCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropDialogOpen(false);
+    setImageToCrop(null);
   };
 
   const handleCloseDialog = () => {
@@ -527,6 +546,17 @@ export default function VehiclesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Image Crop Dialog */}
+      {imageToCrop && (
+        <ImageCropDialog
+          open={cropDialogOpen}
+          image={imageToCrop}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          aspect={16 / 9}
+        />
+      )}
     </Box>
   );
 }

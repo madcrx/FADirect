@@ -31,6 +31,7 @@ import {
   CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
+import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface StaffMember {
   id: string;
@@ -54,6 +55,8 @@ export default function StaffPage() {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     phoneNumber: '',
     fullName: '',
@@ -99,13 +102,31 @@ export default function StaffPage() {
   const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedPhoto(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        setImageToCrop(reader.result as string);
+        setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedBlob], 'cropped-photo.jpg', { type: 'image/jpeg' });
+    setSelectedPhoto(croppedFile);
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setPhotoPreview(previewUrl);
+
+    setCropDialogOpen(false);
+    setImageToCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropDialogOpen(false);
+    setImageToCrop(null);
   };
 
   const handleCloseDialog = () => {
@@ -451,6 +472,17 @@ export default function StaffPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Image Crop Dialog */}
+      {imageToCrop && (
+        <ImageCropDialog
+          open={cropDialogOpen}
+          image={imageToCrop}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          aspect={1}
+        />
+      )}
     </Box>
   );
 }

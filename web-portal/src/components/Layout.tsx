@@ -79,13 +79,13 @@ const menuSections: MenuSection[] = [
     items: [
       { text: 'Arrangements', icon: <AssignmentIcon />, path: '/arrangements' },
       { text: 'Calendar', icon: <EventNoteIcon />, path: '/calendar' },
+      { text: 'Mourners', icon: <PeopleIcon />, path: '/mourners' },
     ],
   },
   {
     heading: 'OPERATIONS',
     items: [
       { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
-      { text: 'Mourners', icon: <PeopleIcon />, path: '/mourners' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
       { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },

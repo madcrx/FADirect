@@ -29,6 +29,7 @@ import {
   CloudUpload as UploadIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
+import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface Equipment {
   id: string;
@@ -58,6 +59,8 @@ export default function EquipmentPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [locationType, setLocationType] = useState<'vehicle' | 'custom'>('custom');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     equipmentType: 'trolley',
@@ -125,13 +128,29 @@ export default function EquipmentPage() {
   const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setSelectedPhoto(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        setImageToCrop(reader.result as string);
+        setCropDialogOpen(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], 'cropped-equipment.jpg', { type: 'image/jpeg' });
+    setSelectedPhoto(croppedFile);
+
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setPhotoPreview(previewUrl);
+
+    setCropDialogOpen(false);
+    setImageToCrop(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropDialogOpen(false);
+    setImageToCrop(null);
   };
 
   const handleCloseDialog = () => {
@@ -507,6 +526,17 @@ export default function EquipmentPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Image Crop Dialog */}
+      {imageToCrop && (
+        <ImageCropDialog
+          open={cropDialogOpen}
+          image={imageToCrop}
+          onClose={handleCropCancel}
+          onCropComplete={handleCropComplete}
+          aspect={4 / 3}
+        />
+      )}
     </Box>
   );
 }
