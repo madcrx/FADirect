@@ -374,7 +374,7 @@ export default function BookingsPage() {
       setRoleDialogOpen(false);
       setSelectedStaffForAssignment(null);
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to assign staff');
     }
@@ -467,7 +467,7 @@ export default function BookingsPage() {
       await api.post(`/roster/jobs/${selectedJob.id}/assign-vehicle`, { vehicleId });
       setSuccess('Vehicle assigned successfully');
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to assign vehicle');
     }
@@ -481,7 +481,7 @@ export default function BookingsPage() {
       await api.post(`/roster/jobs/${selectedJob.id}/assign-equipment`, { equipmentId });
       setSuccess('Equipment assigned successfully');
       await loadData();
-      await loadAvailableResources(selectedJob);
+      await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to assign equipment');
     }

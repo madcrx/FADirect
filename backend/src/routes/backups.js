@@ -9,8 +9,8 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 
-// AWS S3
-const AWS = require('aws-sdk');
+// AWS S3 v3
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 // Get all backup schedules
 router.get('/schedules', authenticateToken, requireAdmin, async (req, res, next) => {
@@ -231,22 +231,24 @@ async function createDatabaseBackup() {
 
 // Upload to S3
 async function uploadToS3(filePath, config) {
-  const s3 = new AWS.S3({
-    accessKeyId: config.accessKeyId,
-    secretAccessKey: config.secretAccessKey,
+  const s3Client = new S3Client({
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
     region: config.region || 'us-east-1',
   });
 
   const fileContent = fs.readFileSync(filePath);
   const filename = path.basename(filePath);
 
-  const params = {
+  const command = new PutObjectCommand({
     Bucket: config.bucket,
     Key: `fadirect-backups/${filename}`,
     Body: fileContent,
-  };
+  });
 
-  await s3.upload(params).promise();
+  await s3Client.send(command);
 }
 
 // Manual backup trigger
