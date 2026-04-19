@@ -17,11 +17,14 @@ export interface Arrangement {
   mournerId: string | null;
   mournerName?: string;
   mournerPhone?: string;
+  mournerEmail?: string;
+  mournerRelationship?: string;
   deceasedName: string;
   deceasedDateOfBirth: string | null;
   deceasedDateOfDeath: string | null;
   funeralType: 'traditional' | 'cremation' | 'repatriation' | 'burial' | 'memorial' | 'direct_cremation';
   status: 'draft' | 'active' | 'completed' | 'cancelled';
+  jobId?: string | null;
   serviceDate: string | null;
   serviceLocation: string | null;
   notes: string | null;
