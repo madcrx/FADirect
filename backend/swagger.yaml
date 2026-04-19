@@ -1,0 +1,1038 @@
+openapi: 3.0.3
+info:
+  title: FA Direct API
+  description: |
+    Comprehensive API for the FA Direct Funeral Arrangement Platform.
+
+    This API provides endpoints for:
+    - Authentication and user management
+    - Funeral arrangement management
+    - Messaging and communication
+    - Document and photo management
+    - Workflow and task tracking
+    - Leave management for staff
+    - Notifications
+    - File sharing between funeral home and families
+
+    ## Authentication
+    Most endpoints require authentication using JWT tokens. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+    ## Pagination
+    List endpoints support pagination with query parameters:
+    - `limit`: Number of items per page (default: 50, max: 100)
+    - `offset`: Number of items to skip (default: 0)
+
+    Paginated responses include metadata:
+    ```json
+    {
+      "data": [...],
+      "pagination": {
+        "total": 150,
+        "limit": 50,
+        "offset": 0,
+        "hasMore": true
+      }
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: FA Direct Support
+    email: support@fadirect.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+  - url: https://api.fadirect.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and registration
+  - name: Arrangements
+    description: Funeral arrangement management
+  - name: Messages
+    description: Encrypted messaging between arrangers and mourners
+  - name: Documents
+    description: Document upload and management
+  - name: Photos
+    description: Photo upload and gallery management
+  - name: Videos
+    description: Video upload and management
+  - name: Workflow
+    description: Workflow step tracking
+  - name: Leave
+    description: Staff leave request management
+  - name: Notifications
+    description: User notifications
+  - name: File Sends
+    description: File sharing with mourners
+  - name: Pre-Arrangement Forms
+    description: Pre-arrangement form management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  value:
+                    type: string
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of items
+        limit:
+          type: integer
+          description: Number of items per page
+        offset:
+          type: integer
+          description: Number of items skipped
+        hasMore:
+          type: boolean
+          description: Whether there are more items
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+        name:
+          type: string
+        role:
+          type: array
+          items:
+            type: string
+            enum: [admin, management, arranger, conductor, funeral_director_assistant, embalmer, hearse_driver, coach_driver, mourner]
+        organizationId:
+          type: string
+          format: uuid
+        profilePhotoUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastSeen:
+          type: string
+          format: date-time
+
+    Arrangement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        arrangerId:
+          type: string
+          format: uuid
+        mournerId:
+          type: string
+          format: uuid
+        deceasedName:
+          type: string
+        deceasedDateOfBirth:
+          type: string
+          format: date
+        deceasedDateOfDeath:
+          type: string
+          format: date
+        funeralType:
+          type: string
+          enum: [burial, cremation, memorial, celebration_of_life]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        serviceDate:
+          type: string
+          format: date-time
+        serviceLocation:
+          type: string
+        notes:
+          type: string
+        mournerPhone:
+          type: string
+        mournerName:
+          type: string
+        mournerEmail:
+          type: string
+        mournerRelationship:
+          type: string
+        locationOfDeceased:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        workflowSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+
+    WorkflowStep:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        order:
+          type: integer
+        status:
+          type: string
+          enum: [pending, in_progress, completed, skipped]
+        assignedTo:
+          type: string
+          format: uuid
+        dueDate:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        arrangementId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        senderName:
+          type: string
+        recipientId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          description: Encrypted message content
+        messageType:
+          type: string
+          enum: [text, file, voice]
+        timestamp:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        fileSize:
+          type: integer
+        mimeType:
+          type: string
+        arrangementId:
+          type: string
+          format: uuid
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+        url:
+          type: string
+
+    Photo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fileName:
+          type: string
+        arrangementId:
+          type: string
+          format: uuid
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+        url:
+          type: string
+
+    Leave:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+        staffName:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        leaveType:
+          type: string
+          enum: [annual, sick, personal, unpaid, bereavement]
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+        approvedBy:
+          type: string
+          format: uuid
+        approvedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+        category:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        isRead:
+          type: boolean
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  /auth/send-code:
+    post:
+      tags:
+        - Authentication
+      summary: Send verification code
+      description: Sends a verification code to the provided phone number via SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  pattern: '^\+?[\d\s\-\(\)]+$'
+                  example: '+61412345678'
+      responses:
+        '200':
+          description: Verification code sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-code:
+    post:
+      tags:
+        - Authentication
+      summary: Verify code and login
+      description: Verifies the SMS code and creates or logs in the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - code
+              properties:
+                phoneNumber:
+                  type: string
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+                name:
+                  type: string
+                role:
+                  type: string
+                  enum: [mourner, arranger]
+      responses:
+        '200':
+          description: Successfully verified and logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid verification code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Returns the currently authenticated user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /arrangements:
+    get:
+      tags:
+        - Arrangements
+      summary: List all arrangements
+      description: Returns a paginated list of arrangements accessible to the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of arrangements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  arrangements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Arrangement'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags:
+        - Arrangements
+      summary: Create new arrangement
+      description: Creates a new funeral arrangement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - deceasedName
+              properties:
+                deceasedName:
+                  type: string
+                  maxLength: 100
+                deceasedDateOfBirth:
+                  type: string
+                  format: date
+                deceasedDateOfDeath:
+                  type: string
+                  format: date
+                serviceDate:
+                  type: string
+                  format: date-time
+                serviceLocation:
+                  type: string
+                notes:
+                  type: string
+                funeralType:
+                  type: string
+                  enum: [burial, cremation, memorial, celebration_of_life]
+                mournerId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Arrangement created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  arrangement:
+                    $ref: '#/components/schemas/Arrangement'
+
+  /arrangements/{id}:
+    get:
+      tags:
+        - Arrangements
+      summary: Get arrangement by ID
+      description: Returns a single arrangement by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Arrangement found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  arrangement:
+                    $ref: '#/components/schemas/Arrangement'
+        '403':
+          description: Access denied
+        '404':
+          description: Arrangement not found
+
+    put:
+      tags:
+        - Arrangements
+      summary: Update arrangement
+      description: Updates an existing arrangement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deceasedName:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft, active, completed, cancelled]
+                serviceDate:
+                  type: string
+                  format: date-time
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Arrangement updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  arrangement:
+                    $ref: '#/components/schemas/Arrangement'
+
+    delete:
+      tags:
+        - Arrangements
+      summary: Delete arrangement
+      description: Soft deletes an arrangement (arranger or admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Arrangement deleted successfully
+        '403':
+          description: Only arrangers or admins can delete
+        '404':
+          description: Arrangement not found
+
+  /messages/arrangement/{arrangementId}:
+    get:
+      tags:
+        - Messages
+      summary: Get messages for arrangement
+      description: Returns all messages for a specific arrangement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: arrangementId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+
+  /messages:
+    post:
+      tags:
+        - Messages
+      summary: Send a message
+      description: Sends an encrypted message
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientId
+                - arrangementId
+                - encryptedContent
+              properties:
+                recipientId:
+                  type: string
+                  format: uuid
+                arrangementId:
+                  type: string
+                  format: uuid
+                encryptedContent:
+                  type: string
+                messageType:
+                  type: string
+                  enum: [text, file, voice]
+                  default: text
+      responses:
+        '201':
+          description: Message sent successfully
+
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: List documents
+      description: Returns a paginated list of documents
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: arrangementId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /documents/upload:
+    post:
+      tags:
+        - Documents
+      summary: Upload a document
+      description: Uploads a new document file
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - arrangementId
+              properties:
+                file:
+                  type: string
+                  format: binary
+                arrangementId:
+                  type: string
+                  format: uuid
+                caption:
+                  type: string
+                  maxLength: 255
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+
+  /photos:
+    get:
+      tags:
+        - Photos
+      summary: List photos
+      description: Returns a paginated list of photos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: arrangementId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Photos retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Photo'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /leave:
+    get:
+      tags:
+        - Leave
+      summary: List leave requests
+      description: Returns leave requests (all for managers, own for staff)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, cancelled]
+        - name: staffId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Leave requests retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leaveRequests:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Leave'
+
+    post:
+      tags:
+        - Leave
+      summary: Create leave request
+      description: Creates a new leave request
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - startDate
+                - endDate
+                - leaveType
+                - reason
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                leaveType:
+                  type: string
+                  enum: [annual, sick, personal, unpaid, bereavement]
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        '201':
+          description: Leave request created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  leaveRequest:
+                    $ref: '#/components/schemas/Leave'
+
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Returns notifications for the current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+
+  /notifications/{id}/read:
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Marks a notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+        '404':
+          description: Notification not found
+
+  /notifications/unread-count:
+    get:
+      tags:
+        - Notifications
+      summary: Get unread count
+      description: Returns the count of unread notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Unread count retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /file-sends:
+    post:
+      tags:
+        - File Sends
+      summary: Send file to mourner
+      description: Sends a file to a mourner for viewing/signing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileId
+                - fileType
+                - arrangementId
+                - sentToUserId
+              properties:
+                fileId:
+                  type: string
+                fileType:
+                  type: string
+                  enum: [document, photo, video, form]
+                arrangementId:
+                  type: string
+                  format: uuid
+                sentToUserId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+                  maxLength: 500
+      responses:
+        '201':
+          description: File sent successfully
+
+  /pre-arrangement-forms/send:
+    post:
+      tags:
+        - Pre-Arrangement Forms
+      summary: Send pre-arrangement form
+      description: Sends a pre-arrangement form to a mourner
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - arrangementId
+              properties:
+                arrangementId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Form sent successfully
