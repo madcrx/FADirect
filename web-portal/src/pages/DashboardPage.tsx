@@ -20,8 +20,8 @@ import {
   CheckCircle as CheckCircleIcon,
   AttachMoney as AttachMoneyIcon,
 } from '@mui/icons-material';
-import { dashboardApi, arrangementsApi } from '@/services/api';
-import type { DashboardStats, Arrangement } from '@/types';
+import { dashboardApi, arrangementsApi, authApi } from '@/services/api';
+import type { DashboardStats, Arrangement, User } from '@/types';
 import { format } from 'date-fns';
 
 const StatCard = ({ title, value, icon, color }: any) => (
@@ -56,10 +56,27 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentArrangements, setRecentArrangements] = useState<Arrangement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     loadData();
+    loadCurrentUser();
   }, []);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = await authApi.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
+
+  const hasRole = (roles: string[]) => {
+    if (!currentUser?.role) return false;
+    const userRoles = Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role];
+    return roles.some(role => userRoles.includes(role));
+  };
 
   const loadData = async () => {
     try {
@@ -117,7 +134,7 @@ export default function DashboardPage() {
       </Typography>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
           <StatCard
             title="Total Arrangements"
             value={stats.totalArrangements}
@@ -125,7 +142,7 @@ export default function DashboardPage() {
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
           <StatCard
             title="Active"
             value={stats.activeArrangements}
@@ -133,7 +150,7 @@ export default function DashboardPage() {
             color="success"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
           <StatCard
             title="Completed This Month"
             value={stats.completedThisMonth}
@@ -141,14 +158,16 @@ export default function DashboardPage() {
             color="info"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Revenue (Coming Soon)"
-            value="$0"
-            icon={<AttachMoneyIcon sx={{ color: 'secondary.main', fontSize: 32 }} />}
-            color="secondary"
-          />
-        </Grid>
+        {hasRole(['admin', 'management']) && (
+          <Grid item xs={12} sm={6} md={3}>
+            <StatCard
+              title="Revenue (Coming Soon)"
+              value="$0"
+              icon={<AttachMoneyIcon sx={{ color: 'secondary.main', fontSize: 32 }} />}
+              color="secondary"
+            />
+          </Grid>
+        )}
       </Grid>
 
       <Card>

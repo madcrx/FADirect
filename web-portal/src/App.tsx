@@ -26,6 +26,7 @@ import StaffPage from './pages/StaffPage';
 import VehiclesPage from './pages/VehiclesPage';
 import EquipmentPage from './pages/EquipmentPage';
 import MournersPage from './pages/MournersPage';
+import RevenuePage from './pages/RevenuePage';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="mourners" element={<MournersPage />} />

@@ -145,4 +145,12 @@ export const videosApi = {
   },
 };
 
+// Invoice API
+export const invoiceApi = {
+  getStats: async (): Promise<any> => {
+    const response = await api.get('/invoices/stats');
+    return response.data;
+  },
+};
+
 export default api;

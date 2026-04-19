@@ -3,6 +3,49 @@ const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
+// Get invoice statistics
+router.get('/stats', authenticateToken, async (req, res, next) => {
+  try {
+    // Get quotations (draft invoices)
+    const quotationsResult = await db.query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
+       FROM invoices
+       WHERE status = 'draft' AND deleted_at IS NULL`
+    );
+
+    // Get all invoices (sent or paid)
+    const invoicesResult = await db.query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
+       FROM invoices
+       WHERE status IN ('sent', 'paid') AND deleted_at IS NULL`
+    );
+
+    // Get outstanding invoices (sent or overdue, not fully paid)
+    const outstandingResult = await db.query(
+      `SELECT COUNT(*) as count, COALESCE(SUM(total_amount - paid_amount), 0) as total
+       FROM invoices
+       WHERE status IN ('sent', 'overdue') AND deleted_at IS NULL AND total_amount > paid_amount`
+    );
+
+    res.json({
+      quotations: {
+        count: parseInt(quotationsResult.rows[0].count),
+        total: parseFloat(quotationsResult.rows[0].total),
+      },
+      invoices: {
+        count: parseInt(invoicesResult.rows[0].count),
+        total: parseFloat(invoicesResult.rows[0].total),
+      },
+      outstanding: {
+        count: parseInt(outstandingResult.rows[0].count),
+        total: parseFloat(outstandingResult.rows[0].total),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get all invoices (with optional arrangement filter)
 router.get('/', authenticateToken, async (req, res, next) => {
   try {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -42,6 +42,7 @@ import {
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
+import type { User } from '@/types';
 
 const drawerWidth = 260;
 
@@ -55,6 +56,7 @@ interface MenuItem {
 interface MenuSection {
   heading?: string;
   items: MenuItem[];
+  requiresRoles?: string[];
 }
 
 const menuSections: MenuSection[] = [
@@ -64,6 +66,13 @@ const menuSections: MenuSection[] = [
       { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
       { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
     ],
+  },
+  {
+    heading: 'REVENUE',
+    items: [
+      { text: 'Revenue', icon: <AttachMoneyIcon />, path: '/revenue' },
+    ],
+    requiresRoles: ['admin', 'management'],
   },
   {
     heading: 'PLANNING',
@@ -115,6 +124,25 @@ export default function Layout() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const user = await authApi.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Failed to load current user:', error);
+      }
+    };
+    loadCurrentUser();
+  }, []);
+
+  const hasRole = (roles: string[]) => {
+    if (!currentUser?.role) return false;
+    const userRoles = Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role];
+    return roles.some(role => userRoles.includes(role));
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -151,7 +179,9 @@ export default function Layout() {
       </Toolbar>
       <Divider />
       <List sx={{ py: 0 }}>
-        {menuSections.map((section, sectionIndex) => (
+        {menuSections
+          .filter(section => !section.requiresRoles || hasRole(section.requiresRoles))
+          .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
               <ListItem sx={{ py: 1.5, px: 2 }}>
@@ -194,7 +224,7 @@ export default function Layout() {
                 </ListItemButton>
               </ListItem>
             ))}
-            {sectionIndex < menuSections.length - 1 && <Divider sx={{ my: 0.5 }} />}
+            {sectionIndex < menuSections.filter(s => !s.requiresRoles || hasRole(s.requiresRoles)).length - 1 && <Divider sx={{ my: 0.5 }} />}
           </Box>
         ))}
       </List>
