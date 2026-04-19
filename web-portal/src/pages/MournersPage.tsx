@@ -16,12 +16,20 @@ import {
   InputAdornment,
   IconButton,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Stack,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
   Person as PersonIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { format } from 'date-fns';
@@ -43,6 +51,15 @@ export default function MournersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedMourner, setSelectedMourner] = useState<Mourner | null>(null);
+  const [editForm, setEditForm] = useState({
+    mournerName: '',
+    mournerRelationship: '',
+    mournerPhone: '',
+    mournerEmail: '',
+  });
 
   useEffect(() => {
     loadMourners();
@@ -77,6 +94,70 @@ export default function MournersPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditClick = (mourner: Mourner) => {
+    setSelectedMourner(mourner);
+    setEditForm({
+      mournerName: mourner.mournerName,
+      mournerRelationship: mourner.relationship,
+      mournerPhone: mourner.phoneNumber,
+      mournerEmail: mourner.email || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setEditDialogOpen(false);
+    setSelectedMourner(null);
+    setEditForm({
+      mournerName: '',
+      mournerRelationship: '',
+      mournerPhone: '',
+      mournerEmail: '',
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!selectedMourner) return;
+
+    try {
+      await api.put(`/arrangements/${selectedMourner.arrangementId}`, {
+        mournerName: editForm.mournerName,
+        mournerRelationship: editForm.mournerRelationship,
+        mournerPhone: editForm.mournerPhone,
+        mournerEmail: editForm.mournerEmail || null,
+      });
+
+      await loadMourners();
+      handleEditClose();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to update mourner');
+    }
+  };
+
+  const handleDeleteClick = (mourner: Mourner) => {
+    setSelectedMourner(mourner);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedMourner) return;
+
+    try {
+      await api.delete(`/arrangements/${selectedMourner.arrangementId}`);
+      await loadMourners();
+      setDeleteDialogOpen(false);
+      setSelectedMourner(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to delete mourner');
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setSelectedMourner(null);
   };
 
   const filteredMourners = mourners.filter((mourner) => {
@@ -159,12 +240,13 @@ export default function MournersPage() {
                 <TableCell>Contact</TableCell>
                 <TableCell>Service Date</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredMourners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
+                  <TableCell colSpan={7} align="center">
                     <Box sx={{ py: 8 }}>
                       <PersonIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                       <Typography variant="h6" color="text.secondary">
@@ -213,6 +295,22 @@ export default function MournersPage() {
                         color={getStatusColor(mourner.status) as any}
                       />
                     </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditClick(mourner)}
+                        sx={{ mr: 1 }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteClick(mourner)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -220,6 +318,66 @@ export default function MournersPage() {
           </Table>
         </TableContainer>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Mourner</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            <TextField
+              label="Mourner Name"
+              fullWidth
+              value={editForm.mournerName}
+              onChange={(e) => setEditForm({ ...editForm, mournerName: e.target.value })}
+            />
+            <TextField
+              label="Relationship"
+              fullWidth
+              value={editForm.mournerRelationship}
+              onChange={(e) => setEditForm({ ...editForm, mournerRelationship: e.target.value })}
+            />
+            <TextField
+              label="Phone Number"
+              fullWidth
+              value={editForm.mournerPhone}
+              onChange={(e) => setEditForm({ ...editForm, mournerPhone: e.target.value })}
+            />
+            <TextField
+              label="Email"
+              fullWidth
+              type="email"
+              value={editForm.mournerEmail}
+              onChange={(e) => setEditForm({ ...editForm, mournerEmail: e.target.value })}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditClose}>Cancel</Button>
+          <Button onClick={handleEditSave} variant="contained">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={handleDeleteCancel} maxWidth="sm">
+        <DialogTitle>Delete Mourner</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this mourner? This will soft delete the entire arrangement for{' '}
+            <strong>{selectedMourner?.deceasedName}</strong>.
+          </Typography>
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            This action can be reversed from the Trash page.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
