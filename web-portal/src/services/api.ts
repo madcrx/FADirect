@@ -163,6 +163,10 @@ export const invoiceApi = {
     const response = await api.get('/invoices/stats');
     return response.data;
   },
+  getAnalytics: async (): Promise<any> => {
+    const response = await api.get('/invoices/analytics');
+    return response.data;
+  },
 };
 
 // Leave API

@@ -40,21 +40,36 @@ const arrayToCSV = (data, headers) => {
 
 // Export arrangements
 router.get('/arrangements', authenticateToken, requireAdmin, async (req, res, next) => {
+  const { format = 'csv' } = req.query;
+
   try {
     const result = await db.query(
       `SELECT
-        id, deceased_name, deceased_date_of_birth, deceased_date_of_death,
-        funeral_type, status, service_date, service_location, notes,
-        created_at, updated_at
-       FROM arrangements
-       WHERE deleted_at IS NULL
-       ORDER BY created_at DESC`
+        a.id, a.deceased_name, a.deceased_date_of_birth, a.deceased_date_of_death,
+        a.funeral_type, a.status, a.service_date, a.service_location,
+        a.mourner_name, a.mourner_relationship, a.mourner_phone, a.mourner_email,
+        u.name as arranger_name, a.notes,
+        a.created_at, a.updated_at
+       FROM arrangements a
+       LEFT JOIN users u ON a.arranger_id = u.id
+       WHERE a.deleted_at IS NULL
+       ORDER BY a.created_at DESC`
     );
+
+    if (format === 'json') {
+      res.json({
+        data: result.rows,
+        count: result.rows.length,
+        exportedAt: new Date().toISOString(),
+      });
+      return;
+    }
 
     const headers = [
       'id', 'deceased_name', 'deceased_date_of_birth', 'deceased_date_of_death',
-      'funeral_type', 'status', 'service_date', 'service_location', 'notes',
-      'created_at', 'updated_at'
+      'funeral_type', 'status', 'service_date', 'service_location',
+      'mourner_name', 'mourner_relationship', 'mourner_phone', 'mourner_email',
+      'arranger_name', 'notes', 'created_at', 'updated_at'
     ];
 
     const csv = arrayToCSV(result.rows, headers);
@@ -69,11 +84,15 @@ router.get('/arrangements', authenticateToken, requireAdmin, async (req, res, ne
 
 // Export invoices
 router.get('/invoices', authenticateToken, requireAdmin, async (req, res, next) => {
+  const { format = 'csv' } = req.query;
+
   try {
     const result = await db.query(
       `SELECT
         i.id, i.invoice_number, i.arrangement_id, a.deceased_name,
-        i.total_amount, i.paid_amount, i.status, i.due_date,
+        i.total_amount, i.paid_amount,
+        (i.total_amount - i.paid_amount) as balance,
+        i.status, i.due_date,
         i.notes, i.created_at, i.updated_at
        FROM invoices i
        LEFT JOIN arrangements a ON i.arrangement_id = a.id
@@ -81,9 +100,18 @@ router.get('/invoices', authenticateToken, requireAdmin, async (req, res, next) 
        ORDER BY i.created_at DESC`
     );
 
+    if (format === 'json') {
+      res.json({
+        data: result.rows,
+        count: result.rows.length,
+        exportedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     const headers = [
       'id', 'invoice_number', 'arrangement_id', 'deceased_name',
-      'total_amount', 'paid_amount', 'status', 'due_date',
+      'total_amount', 'paid_amount', 'balance', 'status', 'due_date',
       'notes', 'created_at', 'updated_at'
     ];
 
@@ -150,6 +178,99 @@ router.get('/government-forms', authenticateToken, requireAdmin, async (req, res
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="government_forms.csv"');
+    res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Export staff
+router.get('/staff', authenticateToken, requireAdmin, async (req, res, next) => {
+  const { format = 'csv' } = req.query;
+
+  try {
+    const result = await db.query(
+      `SELECT
+        u.id, u.name, u.email, u.phone_number, u.role,
+        sp.position, sp.license_number, sp.license_expiry,
+        sp.is_available, sp.emergency_contact_name, sp.emergency_contact_phone,
+        u.created_at, u.last_seen
+       FROM users u
+       LEFT JOIN staff_profiles sp ON u.id = sp.user_id
+       WHERE NOT (u.role @> ARRAY['mourner']::TEXT[])
+         AND u.deleted_at IS NULL
+       ORDER BY u.name ASC`
+    );
+
+    const formattedRows = result.rows.map(row => ({
+      ...row,
+      role: Array.isArray(row.role) ? row.role.join(', ') : row.role,
+    }));
+
+    if (format === 'json') {
+      res.json({
+        data: formattedRows,
+        count: formattedRows.length,
+        exportedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const headers = [
+      'id', 'name', 'email', 'phone_number', 'role',
+      'position', 'license_number', 'license_expiry',
+      'is_available', 'emergency_contact_name', 'emergency_contact_phone',
+      'created_at', 'last_seen'
+    ];
+
+    const csv = arrayToCSV(formattedRows, headers);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="staff.csv"');
+    res.send(csv);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Export audit logs
+router.get('/audit-logs', authenticateToken, requireAdmin, async (req, res, next) => {
+  const { format = 'csv' } = req.query;
+
+  try {
+    const result = await db.query(
+      `SELECT
+        al.id, al.entity_type, al.entity_id, al.action,
+        al.changes, u.name as user_name, al.ip_address, al.created_at
+       FROM audit_logs al
+       LEFT JOIN users u ON al.user_id = u.id
+       ORDER BY al.created_at DESC
+       LIMIT 10000`
+    );
+
+    const formattedRows = result.rows.map(row => ({
+      ...row,
+      changes: typeof row.changes === 'object' ? JSON.stringify(row.changes) : row.changes,
+    }));
+
+    if (format === 'json') {
+      res.json({
+        data: formattedRows,
+        count: formattedRows.length,
+        exportedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const headers = [
+      'id', 'entity_type', 'entity_id', 'action',
+      'changes', 'user_name', 'ip_address', 'created_at'
+    ];
+
+    const csv = arrayToCSV(formattedRows, headers);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
     res.send(csv);
   } catch (error) {
     next(error);

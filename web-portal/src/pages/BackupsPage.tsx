@@ -345,8 +345,9 @@ export default function BackupsPage() {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedTab} onChange={(_, val) => setSelectedTab(val)}>
-          <Tab label="Schedules" />
+          <Tab label="Backup Schedules" />
           <Tab label="Backup History" />
+          <Tab label="Data Export" />
         </Tabs>
       </Box>
 
@@ -493,6 +494,7 @@ export default function BackupsPage() {
                                 size="small"
                                 color="primary"
                                 onClick={() => handleDownloadBackup(backup.id)}
+                                title="Download Backup"
                               >
                                 <DownloadIcon />
                               </IconButton>
@@ -500,6 +502,7 @@ export default function BackupsPage() {
                                 size="small"
                                 color="warning"
                                 onClick={() => setRestoreDialog({ open: true, backup })}
+                                title="Restore from Backup"
                               >
                                 <RestoreIcon />
                               </IconButton>
@@ -512,6 +515,141 @@ export default function BackupsPage() {
                 </Table>
               </TableContainer>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedTab === 2 && (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Export Data
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Export specific data sets to CSV or JSON format for reporting and analysis
+            </Typography>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Arrangements Data
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Export all arrangements with deceased information, dates, and status
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/arrangements?format=csv', '_blank')}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/arrangements?format=json', '_blank')}
+                    >
+                      Export JSON
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Invoices & Revenue
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Export invoice data including line items, payments, and balances
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/invoices?format=csv', '_blank')}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/invoices?format=json', '_blank')}
+                    >
+                      Export JSON
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Staff & Rostering
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Export staff profiles, roles, and assignment history
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/staff?format=csv', '_blank')}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/staff?format=json', '_blank')}
+                    >
+                      Export JSON
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Paper sx={{ p: 3, border: 1, borderColor: 'divider' }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Audit Logs
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Export system audit logs for compliance and security review
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/audit-logs?format=csv', '_blank')}
+                    >
+                      Export CSV
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open('/api/export/audit-logs?format=json', '_blank')}
+                    >
+                      Export JSON
+                    </Button>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+
+            <Alert severity="info" sx={{ mt: 3 }}>
+              <strong>Note:</strong> Exports include all data from the database. Use filters in your reporting tools to analyze specific date ranges or subsets of data.
+            </Alert>
           </CardContent>
         </Card>
       )}
@@ -771,33 +909,95 @@ export default function BackupsPage() {
       </Dialog>
 
       {/* Restore Confirmation Dialog */}
-      <Dialog open={restoreDialog.open} onClose={() => setRestoreDialog({ open: false })}>
-        <DialogTitle>Restore Database</DialogTitle>
+      <Dialog open={restoreDialog.open} onClose={() => setRestoreDialog({ open: false })} maxWidth="sm" fullWidth>
+        <DialogTitle>Restore Database from Backup</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            This will replace all current data with the backup. This action cannot be undone.
+            <strong>Warning:</strong> This will replace ALL current data with the backup data. This action CANNOT be undone.
           </Alert>
-          <Typography>
-            Are you sure you want to restore the database from this backup?
-          </Typography>
+
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <strong>Important:</strong> Before restoring:
+            <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+              <li>Ensure all users are logged out</li>
+              <li>Create a current backup first</li>
+              <li>Verify this is the correct backup to restore</li>
+            </ul>
+          </Alert>
+
           {restoreDialog.backup && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Backup from: {format(new Date(restoreDialog.backup.startedAt), 'dd MMM yyyy HH:mm')}
-            </Typography>
+            <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
+              <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                Backup Details:
+              </Typography>
+              <Grid container spacing={1}>
+                <Grid item xs={5}>
+                  <Typography variant="body2" color="text.secondary">
+                    Created:
+                  </Typography>
+                </Grid>
+                <Grid item xs={7}>
+                  <Typography variant="body2">
+                    {format(new Date(restoreDialog.backup.startedAt), 'dd MMM yyyy HH:mm:ss')}
+                  </Typography>
+                </Grid>
+                <Grid item xs={5}>
+                  <Typography variant="body2" color="text.secondary">
+                    File Size:
+                  </Typography>
+                </Grid>
+                <Grid item xs={7}>
+                  <Typography variant="body2">
+                    {formatFileSize(restoreDialog.backup.fileSize)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={5}>
+                  <Typography variant="body2" color="text.secondary">
+                    Schedule:
+                  </Typography>
+                </Grid>
+                <Grid item xs={7}>
+                  <Typography variant="body2">
+                    {restoreDialog.backup.scheduleName || 'Manual Backup'}
+                  </Typography>
+                </Grid>
+                {restoreDialog.backup.filePath && (
+                  <>
+                    <Grid item xs={5}>
+                      <Typography variant="body2" color="text.secondary">
+                        File Path:
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={7}>
+                      <Typography variant="caption" sx={{ wordBreak: 'break-all' }}>
+                        {restoreDialog.backup.filePath}
+                      </Typography>
+                    </Grid>
+                  </>
+                )}
+              </Grid>
+            </Paper>
           )}
+
+          <Typography variant="body2" sx={{ mt: 2, fontWeight: 'medium' }}>
+            Are you absolutely sure you want to proceed with the restore?
+          </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRestoreDialog({ open: false })}>Cancel</Button>
+          <Button onClick={() => setRestoreDialog({ open: false })}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             color="warning"
+            startIcon={<RestoreIcon />}
             onClick={() => {
               if (restoreDialog.backup) {
                 handleRestoreBackup(restoreDialog.backup.id);
               }
             }}
           >
-            Restore Database
+            Yes, Restore Database
           </Button>
         </DialogActions>
       </Dialog>

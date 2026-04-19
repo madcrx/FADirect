@@ -3,6 +3,115 @@ const router = express.Router();
 const db = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
+// Get detailed revenue analytics
+router.get('/analytics', authenticateToken, async (req, res, next) => {
+  try {
+    // Get monthly revenue for last 12 months
+    const monthlyRevenue = await db.query(`
+      SELECT
+        DATE_TRUNC('month', created_at) as month,
+        COUNT(*) as count,
+        COALESCE(SUM(total_amount), 0) as total_invoiced,
+        COALESCE(SUM(paid_amount), 0) as total_paid
+      FROM invoices
+      WHERE deleted_at IS NULL
+        AND status != 'draft'
+        AND created_at >= NOW() - INTERVAL '12 months'
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY month DESC
+    `);
+
+    // Get aging report (outstanding invoices by age)
+    const agingReport = await db.query(`
+      SELECT
+        CASE
+          WHEN CURRENT_DATE - due_date <= 30 THEN '0-30 days'
+          WHEN CURRENT_DATE - due_date <= 60 THEN '31-60 days'
+          WHEN CURRENT_DATE - due_date <= 90 THEN '61-90 days'
+          ELSE '90+ days'
+        END as age_bracket,
+        COUNT(*) as count,
+        COALESCE(SUM(total_amount - paid_amount), 0) as total
+      FROM invoices
+      WHERE deleted_at IS NULL
+        AND status IN ('sent', 'overdue')
+        AND total_amount > paid_amount
+      GROUP BY age_bracket
+      ORDER BY age_bracket
+    `);
+
+    // Get this month vs last month comparison
+    const thisMonth = await db.query(`
+      SELECT
+        COUNT(*) as count,
+        COALESCE(SUM(total_amount), 0) as total_invoiced,
+        COALESCE(SUM(paid_amount), 0) as total_paid
+      FROM invoices
+      WHERE deleted_at IS NULL
+        AND status != 'draft'
+        AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+    `);
+
+    const lastMonth = await db.query(`
+      SELECT
+        COUNT(*) as count,
+        COALESCE(SUM(total_amount), 0) as total_invoiced,
+        COALESCE(SUM(paid_amount), 0) as total_paid
+      FROM invoices
+      WHERE deleted_at IS NULL
+        AND status != 'draft'
+        AND created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+        AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+    `);
+
+    // Get recent invoices
+    const recentInvoices = await db.query(`
+      SELECT i.*, a.deceased_name
+      FROM invoices i
+      LEFT JOIN arrangements a ON i.arrangement_id = a.id
+      WHERE i.deleted_at IS NULL
+      ORDER BY i.created_at DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      monthlyRevenue: monthlyRevenue.rows.map(row => ({
+        month: row.month,
+        count: parseInt(row.count),
+        totalInvoiced: parseFloat(row.total_invoiced),
+        totalPaid: parseFloat(row.total_paid),
+      })),
+      agingReport: agingReport.rows.map(row => ({
+        ageBracket: row.age_bracket,
+        count: parseInt(row.count),
+        total: parseFloat(row.total),
+      })),
+      thisMonth: {
+        count: parseInt(thisMonth.rows[0].count),
+        totalInvoiced: parseFloat(thisMonth.rows[0].total_invoiced),
+        totalPaid: parseFloat(thisMonth.rows[0].total_paid),
+      },
+      lastMonth: {
+        count: parseInt(lastMonth.rows[0].count),
+        totalInvoiced: parseFloat(lastMonth.rows[0].total_invoiced),
+        totalPaid: parseFloat(lastMonth.rows[0].total_paid),
+      },
+      recentInvoices: recentInvoices.rows.map(row => ({
+        id: row.id,
+        invoiceNumber: row.invoice_number,
+        deceasedName: row.deceased_name,
+        totalAmount: parseFloat(row.total_amount),
+        paidAmount: parseFloat(row.paid_amount),
+        status: row.status,
+        dueDate: row.due_date,
+        createdAt: row.created_at,
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get invoice statistics
 router.get('/stats', authenticateToken, async (req, res, next) => {
   try {

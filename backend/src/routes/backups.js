@@ -360,18 +360,47 @@ router.post('/restore/:id',
     const { id } = req.params;
 
     try {
+      console.log(`Starting restore process for backup ID: ${id}`);
+
       const result = await db.query(`
         SELECT * FROM backup_history WHERE id = $1
       `, [id]);
 
       if (result.rows.length === 0) {
+        console.error(`Backup not found: ${id}`);
         return res.status(404).json({ error: { message: 'Backup not found' } });
       }
 
       const backup = result.rows[0];
+      console.log(`Backup found: ${backup.file_path}`);
 
-      if (!backup.file_path || !fs.existsSync(backup.file_path)) {
-        return res.status(404).json({ error: { message: 'Backup file not found' } });
+      if (!backup.file_path) {
+        console.error('Backup file path is null');
+        return res.status(404).json({ error: { message: 'Backup file path not recorded' } });
+      }
+
+      if (!fs.existsSync(backup.file_path)) {
+        console.error(`Backup file does not exist at path: ${backup.file_path}`);
+        return res.status(404).json({
+          error: {
+            message: 'Backup file not found on disk',
+            details: `Expected location: ${backup.file_path}`
+          }
+        });
+      }
+
+      // Check if file is readable
+      try {
+        fs.accessSync(backup.file_path, fs.constants.R_OK);
+        console.log('Backup file is readable');
+      } catch (err) {
+        console.error('Backup file is not readable:', err);
+        return res.status(500).json({
+          error: {
+            message: 'Backup file is not readable',
+            details: err.message
+          }
+        });
       }
 
       const dbConfig = {
@@ -382,14 +411,55 @@ router.post('/restore/:id',
         password: process.env.DB_PASSWORD || 'postgres',
       };
 
-      // Use psql to restore backup
-      const command = `PGPASSWORD="${dbConfig.password}" psql -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} -f "${backup.file_path}"`;
+      console.log('Starting database restore...');
+      console.log(`Database: ${dbConfig.database}, Host: ${dbConfig.host}, Port: ${dbConfig.port}, User: ${dbConfig.user}`);
 
-      await execPromise(command);
+      // First check if psql is available
+      try {
+        await execPromise('psql --version');
+        console.log('psql is available');
+      } catch (err) {
+        console.error('psql not found in PATH:', err);
+        return res.status(500).json({
+          error: {
+            message: 'PostgreSQL client tools not found',
+            details: 'psql command is not available. Please ensure PostgreSQL client is installed.'
+          }
+        });
+      }
 
-      res.json({ message: 'Database restored successfully from backup' });
+      // Use psql to restore backup with error output
+      // --single-transaction ensures atomicity - either all or nothing
+      const command = `PGPASSWORD="${dbConfig.password}" psql -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} --single-transaction -f "${backup.file_path}" 2>&1`;
+
+      console.log('Executing restore command...');
+      const { stdout, stderr } = await execPromise(command);
+
+      if (stderr && !stderr.includes('NOTICE')) {
+        console.error('Restore stderr:', stderr);
+      }
+      if (stdout) {
+        console.log('Restore stdout:', stdout);
+      }
+
+      console.log('Database restore completed successfully');
+      res.json({
+        message: 'Database restored successfully from backup',
+        details: {
+          backupDate: backup.started_at,
+          fileSize: backup.file_size,
+          fileName: path.basename(backup.file_path),
+        }
+      });
     } catch (error) {
-      next(error);
+      console.error('Restore error:', error);
+      const errorMessage = error.stderr || error.message || 'Unknown error occurred';
+      res.status(500).json({
+        error: {
+          message: 'Failed to restore database',
+          details: errorMessage
+        }
+      });
     }
   }
 );
