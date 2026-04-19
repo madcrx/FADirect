@@ -27,6 +27,7 @@ import VehiclesPage from './pages/VehiclesPage';
 import EquipmentPage from './pages/EquipmentPage';
 import MournersPage from './pages/MournersPage';
 import RevenuePage from './pages/RevenuePage';
+import LeaveManagementPage from './pages/LeaveManagementPage';
 
 function App() {
   return (
@@ -53,6 +54,7 @@ function App() {
             <Route path="bookings" element={<BookingsPage />} />
             <Route path="mourners" element={<MournersPage />} />
             <Route path="staff" element={<StaffPage />} />
+            <Route path="leave-management" element={<LeaveManagementPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="equipment" element={<EquipmentPage />} />
             <Route path="search" element={<SearchPage />} />

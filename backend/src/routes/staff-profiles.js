@@ -176,6 +176,46 @@ router.post('/', authenticateToken, async (req, res, next) => {
   }
 });
 
+// Get all leave periods (for management)
+router.get('/leave/all', authenticateToken, async (req, res, next) => {
+  try {
+    const { status } = req.query;
+
+    let query = `
+      SELECT sl.*, u.name as staff_name
+      FROM staff_leave sl
+      JOIN users u ON sl.user_id = u.id
+      WHERE 1=1
+    `;
+
+    const params = [];
+    if (status) {
+      query += ` AND sl.status = $1`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY sl.created_at DESC`;
+
+    const result = await db.query(query, params);
+
+    res.json({
+      leave: result.rows.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        staffName: row.staff_name,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        leaveType: row.leave_type,
+        reason: row.reason,
+        status: row.status,
+        createdAt: row.created_at,
+      }))
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get leave periods for a staff member
 router.get('/:id/leave', authenticateToken, async (req, res, next) => {
   try {
@@ -231,6 +271,42 @@ router.post('/:id/leave', authenticateToken, async (req, res, next) => {
 
     res.status(201).json({
       message: 'Leave period created',
+      leave: {
+        id: result.rows[0].id,
+        userId: result.rows[0].user_id,
+        startDate: result.rows[0].start_date,
+        endDate: result.rows[0].end_date,
+        leaveType: result.rows[0].leave_type,
+        reason: result.rows[0].reason,
+        status: result.rows[0].status,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update leave status
+router.put('/:id/leave/:leaveId', authenticateToken, async (req, res, next) => {
+  try {
+    const { leaveId } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: { message: 'Invalid status' } });
+    }
+
+    const result = await db.query(
+      `UPDATE staff_leave SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [status, leaveId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Leave period not found' } });
+    }
+
+    res.json({
+      message: 'Leave status updated',
       leave: {
         id: result.rows[0].id,
         userId: result.rows[0].user_id,

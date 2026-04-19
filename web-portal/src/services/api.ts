@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { User, Arrangement, DashboardStats, Message, Document, Photo, PriceList, Invoice } from '@/types';
+import type { User, Arrangement, DashboardStats, Message, Document, Photo, PriceList, Invoice, StaffProfile, Leave } from '@/types';
 
 const API_BASE_URL = '/api';
 
@@ -162,6 +162,35 @@ export const invoiceApi = {
   getStats: async (): Promise<any> => {
     const response = await api.get('/invoices/stats');
     return response.data;
+  },
+};
+
+// Leave API
+export const leaveApi = {
+  getAllLeave: async (status?: string): Promise<Leave[]> => {
+    const params = status ? { status } : {};
+    const response = await api.get('/staff-profiles/leave/all', { params });
+    return response.data.leave;
+  },
+  getLeaveByStaff: async (staffId: string): Promise<Leave[]> => {
+    const response = await api.get(`/staff-profiles/${staffId}/leave`);
+    return response.data.leave;
+  },
+  createLeave: async (staffId: string, data: {
+    startDate: string;
+    endDate: string;
+    leaveType: string;
+    reason: string;
+    status?: string;
+  }): Promise<Leave> => {
+    const response = await api.post(`/staff-profiles/${staffId}/leave`, data);
+    return response.data.leave;
+  },
+  updateLeaveStatus: async (staffId: string, leaveId: string, status: string): Promise<void> => {
+    await api.put(`/staff-profiles/${staffId}/leave/${leaveId}`, { status });
+  },
+  deleteLeave: async (staffId: string, leaveId: string): Promise<void> => {
+    await api.delete(`/staff-profiles/${staffId}/leave/${leaveId}`);
   },
 };
 

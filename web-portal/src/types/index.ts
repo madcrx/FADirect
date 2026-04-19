@@ -132,3 +132,32 @@ export interface DashboardStats {
   pendingPayments: number;
   recentArrangements: Arrangement[];
 }
+
+export interface StaffProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string[];
+  photoUrl: string | null;
+  position: string | null;
+  licenseNumber: string | null;
+  licenseExpiry: string | null;
+  qualifications: string | null;
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  isAvailable: boolean;
+}
+
+export interface Leave {
+  id: string;
+  userId: string;
+  staffName?: string;
+  startDate: string;
+  endDate: string;
+  leaveType: 'annual' | 'sick' | 'personal' | 'unpaid' | 'other';
+  reason: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}

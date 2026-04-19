@@ -39,6 +39,7 @@ import {
   EventNote as EventNoteIcon,
   DriveEta as DriveEtaIcon,
   Inventory as InventoryIcon,
+  EventAvailable as EventAvailableIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -51,6 +52,7 @@ interface MenuItem {
   icon: React.ReactNode;
   path: string;
   badge?: string;
+  requiresRoles?: string[];
 }
 
 interface MenuSection {
@@ -87,6 +89,7 @@ const menuSections: MenuSection[] = [
     items: [
       { text: 'Schedule', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
+      { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management', requiresRoles: ['admin', 'management'] },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
       { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
     ],
@@ -198,7 +201,9 @@ export default function Layout() {
                 </Typography>
               </ListItem>
             )}
-            {section.items.map((item) => (
+            {section.items
+              .filter(item => !item.requiresRoles || hasRole(item.requiresRoles))
+              .map((item) => (
               <ListItem key={item.text} disablePadding>
                 <ListItemButton
                   selected={location.pathname === item.path}

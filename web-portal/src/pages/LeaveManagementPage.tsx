@@ -1,0 +1,307 @@
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Button,
+  Tabs,
+  Tab,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  Snackbar,
+} from '@mui/material';
+import { Check as CheckIcon, Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { leaveApi } from '@/services/api';
+import type { Leave } from '@/types';
+
+const LeaveManagementPage = () => {
+  const [leaves, setLeaves] = useState<Leave[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentTab, setCurrentTab] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [selectedLeave, setSelectedLeave] = useState<Leave | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  useEffect(() => {
+    fetchLeaves();
+  }, [currentTab]);
+
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+      const status = currentTab === 'all' ? undefined : currentTab;
+      const data = await leaveApi.getAllLeave(status);
+      setLeaves(data);
+    } catch (error) {
+      console.error('Error fetching leaves:', error);
+      showSnackbar('Failed to load leave requests', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: 'pending' | 'approved' | 'rejected' | 'all') => {
+    setCurrentTab(newValue);
+  };
+
+  const handleOpenConfirmDialog = (leave: Leave, action: 'approve' | 'reject' | 'delete') => {
+    setSelectedLeave(leave);
+    setConfirmAction(action);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setConfirmDialogOpen(false);
+    setSelectedLeave(null);
+    setConfirmAction(null);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!selectedLeave || !confirmAction) return;
+
+    try {
+      if (confirmAction === 'delete') {
+        await leaveApi.deleteLeave(selectedLeave.userId, selectedLeave.id);
+        showSnackbar('Leave request deleted successfully', 'success');
+      } else {
+        const newStatus = confirmAction === 'approve' ? 'approved' : 'rejected';
+        await leaveApi.updateLeaveStatus(selectedLeave.userId, selectedLeave.id, newStatus);
+        showSnackbar(`Leave request ${confirmAction}d successfully`, 'success');
+      }
+      fetchLeaves();
+    } catch (error) {
+      console.error(`Error ${confirmAction}ing leave:`, error);
+      showSnackbar(`Failed to ${confirmAction} leave request`, 'error');
+    } finally {
+      handleCloseConfirmDialog();
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'approved':
+        return 'success';
+      case 'rejected':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const getLeaveTypeLabel = (type: string) => {
+    switch (type) {
+      case 'annual':
+        return 'Annual Leave';
+      case 'sick':
+        return 'Sick Leave';
+      case 'personal':
+        return 'Personal Leave';
+      case 'unpaid':
+        return 'Unpaid Leave';
+      case 'other':
+        return 'Other';
+      default:
+        return type;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-AU', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const calculateDuration = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays === 1 ? '1 day' : `${diffDays} days`;
+  };
+
+  return (
+    <Container maxWidth="xl">
+      <Box sx={{ py: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Leave Management
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Review and approve staff leave requests
+        </Typography>
+
+        <Paper sx={{ mb: 3 }}>
+          <Tabs value={currentTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+            <Tab label="Pending" value="pending" />
+            <Tab label="Approved" value="approved" />
+            <Tab label="Rejected" value="rejected" />
+            <Tab label="All" value="all" />
+          </Tabs>
+        </Paper>
+
+        {loading ? (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Typography>Loading leave requests...</Typography>
+          </Paper>
+        ) : leaves.length === 0 ? (
+          <Paper sx={{ p: 3, textAlign: 'center' }}>
+            <Typography>No leave requests found</Typography>
+          </Paper>
+        ) : (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Staff Member</TableCell>
+                  <TableCell>Leave Type</TableCell>
+                  <TableCell>Start Date</TableCell>
+                  <TableCell>End Date</TableCell>
+                  <TableCell>Duration</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Requested</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {leaves.map((leave) => (
+                  <TableRow key={leave.id} hover>
+                    <TableCell>{leave.staffName || 'Unknown'}</TableCell>
+                    <TableCell>{getLeaveTypeLabel(leave.leaveType)}</TableCell>
+                    <TableCell>{formatDate(leave.startDate)}</TableCell>
+                    <TableCell>{formatDate(leave.endDate)}</TableCell>
+                    <TableCell>{calculateDuration(leave.startDate, leave.endDate)}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {leave.reason || '-'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
+                        color={getStatusColor(leave.status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(leave.createdAt)}</TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        {leave.status === 'pending' && (
+                          <>
+                            <IconButton
+                              size="small"
+                              color="success"
+                              onClick={() => handleOpenConfirmDialog(leave, 'approve')}
+                              title="Approve"
+                            >
+                              <CheckIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleOpenConfirmDialog(leave, 'reject')}
+                              title="Reject"
+                            >
+                              <CloseIcon />
+                            </IconButton>
+                          </>
+                        )}
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleOpenConfirmDialog(leave, 'delete')}
+                          title="Delete"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Box>
+
+      <Dialog open={confirmDialogOpen} onClose={handleCloseConfirmDialog}>
+        <DialogTitle>
+          {confirmAction === 'approve' && 'Approve Leave Request'}
+          {confirmAction === 'reject' && 'Reject Leave Request'}
+          {confirmAction === 'delete' && 'Delete Leave Request'}
+        </DialogTitle>
+        <DialogContent>
+          {selectedLeave && (
+            <Box>
+              <Typography>
+                {confirmAction === 'approve' && 'Are you sure you want to approve this leave request?'}
+                {confirmAction === 'reject' && 'Are you sure you want to reject this leave request?'}
+                {confirmAction === 'delete' && 'Are you sure you want to delete this leave request? This action cannot be undone.'}
+              </Typography>
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                <Typography variant="body2"><strong>Staff:</strong> {selectedLeave.staffName}</Typography>
+                <Typography variant="body2"><strong>Type:</strong> {getLeaveTypeLabel(selectedLeave.leaveType)}</Typography>
+                <Typography variant="body2"><strong>Dates:</strong> {formatDate(selectedLeave.startDate)} - {formatDate(selectedLeave.endDate)}</Typography>
+                <Typography variant="body2"><strong>Duration:</strong> {calculateDuration(selectedLeave.startDate, selectedLeave.endDate)}</Typography>
+                {selectedLeave.reason && <Typography variant="body2"><strong>Reason:</strong> {selectedLeave.reason}</Typography>}
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmDialog}>Cancel</Button>
+          <Button
+            onClick={handleConfirmAction}
+            color={confirmAction === 'approve' ? 'success' : 'error'}
+            variant="contained"
+          >
+            {confirmAction === 'approve' && 'Approve'}
+            {confirmAction === 'reject' && 'Reject'}
+            {confirmAction === 'delete' && 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Container>
+  );
+};
+
+export default LeaveManagementPage;
