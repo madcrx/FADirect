@@ -408,7 +408,7 @@ exports.assignVehicle = async (req, res, next) => {
       `INSERT INTO job_vehicle_assignments (job_id, vehicle_id, is_primary)
        VALUES ($1, $2, $3)
        ON CONFLICT (job_id, vehicle_id)
-       DO UPDATE SET is_primary = $3, updated_at = NOW()
+       DO UPDATE SET is_primary = $3
        RETURNING *`,
       [jobId, vehicleId, isPrimary || false]
     );
