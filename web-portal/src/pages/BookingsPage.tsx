@@ -756,7 +756,7 @@ export default function BookingsPage() {
                             )}
                             {job.staff.length > 0 && (
                               <Typography variant="caption" color="text.secondary" display="block">
-                                👤 {job.staff.map((s) => s.fullName).join(', ')}
+                                👤 {job.staff.map((s) => `${s.fullName} (${s.role})`).join(', ')}
                               </Typography>
                             )}
                             {job.vehicles.length > 0 && (
