@@ -133,7 +133,6 @@ exports.getAvailableStaff = async (req, res, next) => {
       FROM users u
       INNER JOIN staff_profiles sp ON u.id = sp.user_id
       WHERE u.deleted_at IS NULL
-        AND sp.deleted_at IS NULL
         AND sp.employment_status = 'active'
     `;
 
@@ -227,7 +226,6 @@ exports.assignStaff = async (req, res, next) => {
        INNER JOIN staff_profiles sp ON u.id = sp.user_id
        WHERE u.id = $1
          AND u.deleted_at IS NULL
-         AND sp.deleted_at IS NULL
          AND sp.employment_status = 'active'`,
       [staffId]
     );
