@@ -199,7 +199,7 @@ exports.getAvailableStaff = async (req, res, next) => {
 exports.assignStaff = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { staffId, role, isPrimary } = req.body;
+    const { staffId, role, isPrimary, force } = req.body;
 
     if (!staffId || !role) {
       return res.status(400).json({
@@ -245,7 +245,7 @@ exports.assignStaff = async (req, res, next) => {
       [staffId, job.start_time, job.end_time, jobId]
     );
 
-    if (conflictCheck.rows.length > 0) {
+    if (conflictCheck.rows.length > 0 && !force) {
       return res.status(409).json({
         error: {
           message: 'Staff member has a conflicting assignment',

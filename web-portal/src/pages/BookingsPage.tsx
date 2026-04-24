@@ -102,6 +102,9 @@ export default function BookingsPage() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedStaffForAssignment, setSelectedStaffForAssignment] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState('');
+  const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
+  const [conflictDetails, setConflictDetails] = useState<any>(null);
+  const [pendingAssignment, setPendingAssignment] = useState<{staffId: string; userId: string; role: string} | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     jobTypeId: '',
@@ -365,19 +368,40 @@ export default function BookingsPage() {
   };
 
   // Assign staff to job
-  const handleAssignStaff = async (staffId: string, userId: string, role: string) => {
+  const handleAssignStaff = async (staffId: string, userId: string, role: string, force: boolean = false) => {
     if (!selectedJob) return;
 
     try {
-      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId: userId, role });
+      await api.post(`/roster/jobs/${selectedJob.id}/assign-staff`, { staffId: userId, role, force });
       setSuccess(`Staff assigned successfully as ${role}`);
       setRoleDialogOpen(false);
       setSelectedStaffForAssignment(null);
+      setConflictDialogOpen(false);
+      setPendingAssignment(null);
       await loadData();
       await refreshSelectedJob(selectedJob.id);
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to assign staff');
+      // Check if this is a conflict error (409)
+      if (err.response?.status === 409 && !force) {
+        // Store the pending assignment and conflict details
+        setPendingAssignment({ staffId, userId, role });
+        setConflictDetails(err.response.data.error.conflict);
+        setConflictDialogOpen(true);
+      } else {
+        setError(err.response?.data?.error?.message || 'Failed to assign staff');
+      }
     }
+  };
+
+  // Confirm and proceed with conflicting assignment
+  const handleConfirmConflictAssignment = async () => {
+    if (!pendingAssignment) return;
+    await handleAssignStaff(
+      pendingAssignment.staffId,
+      pendingAssignment.userId,
+      pendingAssignment.role,
+      true
+    );
   };
 
   // Unassign staff from job
@@ -1314,6 +1338,35 @@ export default function BookingsPage() {
           <Button onClick={() => setRoleDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleRoleDialogConfirm} variant="contained">
             Assign
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Conflict Confirmation Dialog */}
+      <Dialog open={conflictDialogOpen} onClose={() => setConflictDialogOpen(false)}>
+        <DialogTitle>Conflicting Assignment</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This staff member has a conflicting assignment
+          </Alert>
+          {conflictDetails && (
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Conflicting Job:</strong> {conflictDetails.title}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                <strong>Time:</strong> {format(new Date(conflictDetails.start_time), 'PPp')} - {format(new Date(conflictDetails.end_time), 'p')}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                Do you want to proceed with this assignment anyway?
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConflictDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmConflictAssignment} variant="contained" color="warning">
+            Accept and Assign
           </Button>
         </DialogActions>
       </Dialog>
