@@ -308,10 +308,19 @@ exports.unassignStaff = async (req, res, next) => {
     const { jobId } = req.params;
     const { staffId, role } = req.body;
 
-    const result = await db.query(
-      'DELETE FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2 AND role = $3 RETURNING *',
-      [jobId, staffId, role]
-    );
+    // Handle null roles - use IS NULL check if role is null
+    let result;
+    if (role === null || role === undefined) {
+      result = await db.query(
+        'DELETE FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2 AND role IS NULL RETURNING *',
+        [jobId, staffId]
+      );
+    } else {
+      result = await db.query(
+        'DELETE FROM job_staff_assignments WHERE job_id = $1 AND staff_id = $2 AND role = $3 RETURNING *',
+        [jobId, staffId, role]
+      );
+    }
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Assignment not found' } });
