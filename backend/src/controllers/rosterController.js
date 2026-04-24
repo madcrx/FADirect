@@ -269,7 +269,7 @@ exports.assignStaff = async (req, res, next) => {
       `INSERT INTO job_staff_assignments (job_id, staff_id, role, is_primary)
        VALUES ($1, $2, $3, $4)
        ON CONFLICT (job_id, staff_id, role)
-       DO UPDATE SET is_primary = $4, updated_at = NOW()
+       DO UPDATE SET is_primary = $4
        RETURNING *`,
       [jobId, staffId, role, isPrimary || false]
     );
