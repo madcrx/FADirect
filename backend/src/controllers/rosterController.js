@@ -276,13 +276,14 @@ exports.assignStaff = async (req, res, next) => {
 
     // Create notification for staff member
     await db.query(
-      `INSERT INTO notifications (user_id, title, message, type, entity_type, entity_id)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO notifications (user_id, title, body, type, category, entity_type, entity_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         staffId,
         'New Job Assignment',
         `You have been assigned to a job as ${role}`,
-        'job_assignment',
+        'info',
+        'job',
         'job',
         jobId
       ]
