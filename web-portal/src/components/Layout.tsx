@@ -178,7 +178,7 @@ export default function Layout() {
       <Toolbar sx={{ backgroundColor: 'white', display: 'flex', justifyContent: 'center', py: 2 }}>
         <Box sx={{ textAlign: 'center' }}>
           <img
-            src="/images/careportal-logo.PNG"
+            src="/images/careportal-logo.png"
             alt="CarePortal"
             style={{ height: '105px', width: 'auto' }}
           />
