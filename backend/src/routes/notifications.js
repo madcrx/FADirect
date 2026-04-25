@@ -329,17 +329,7 @@ router.post('/alerts/:id/dismiss', authenticateToken, async (req, res, next) => 
 router.post('/alerts',
   authenticateToken,
   requireAdmin,
-  [
-    body('title').trim().notEmpty().withMessage('Title is required'),
-    body('message').trim().notEmpty().withMessage('Message is required'),
-    body('type').isIn(['info', 'success', 'warning', 'error']).withMessage('Invalid type'),
-  ],
   async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ error: { message: 'Validation failed', details: errors.array() } });
-    }
-
     const { title, message, type, targetRoles, startsAt, expiresAt } = req.body;
     const userId = req.user.id;
 
