@@ -99,7 +99,7 @@ export default function BackupsPage() {
   });
 
   const [manualBackupData, setManualBackupData] = useState({
-    destination: 'local' as 'local' | 's3' | 'google-drive' | 'dropbox',
+    destination: 'download' as 'download' | 'server' | 'local' | 's3' | 'google-drive' | 'dropbox',
     s3Config: {
       accessKeyId: '',
       secretAccessKey: '',
@@ -185,12 +185,34 @@ export default function BackupsPage() {
     try {
       const destinationConfig = manualBackupData.destination === 's3' ? manualBackupData.s3Config : {};
 
-      await api.post('/backups/manual', {
-        destination: manualBackupData.destination,
-        destinationConfig,
-      });
+      // If download option, get the file directly
+      if (manualBackupData.destination === 'download') {
+        const response = await api.post('/backups/manual', {
+          destination: 'download',
+          destinationConfig,
+        }, { responseType: 'blob' });
 
-      setSuccess('Manual backup created successfully');
+        // Create download link
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        link.setAttribute('download', `careportal-backup-${timestamp}.sql`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+
+        setSuccess('Backup downloaded successfully');
+      } else {
+        await api.post('/backups/manual', {
+          destination: manualBackupData.destination,
+          destinationConfig,
+        });
+
+        setSuccess('Manual backup created successfully');
+      }
+
       setManualBackupDialog(false);
       await loadData();
     } catch (err: any) {
@@ -830,7 +852,18 @@ export default function BackupsPage() {
                     })
                   }
                 >
-                  <MenuItem value="local">Local Storage</MenuItem>
+                  <MenuItem value="download">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <DownloadIcon fontSize="small" />
+                      Download to Computer
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="server">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CloudIcon fontSize="small" />
+                      Store on Server
+                    </Box>
+                  </MenuItem>
                   <MenuItem value="s3">Amazon S3</MenuItem>
                   <MenuItem value="google-drive">Google Drive</MenuItem>
                   <MenuItem value="dropbox">Dropbox</MenuItem>

@@ -256,7 +256,7 @@ router.post('/manual',
   authenticateToken,
   requireAdmin,
   [
-    body('destination').isIn(['local', 's3', 'google-drive', 'dropbox']).withMessage('Invalid destination'),
+    body('destination').isIn(['download', 'server', 'local', 's3', 'google-drive', 'dropbox']).withMessage('Invalid destination'),
     body('destinationConfig').optional().isObject().withMessage('Destination config must be an object'),
   ],
   async (req, res, next) => {
@@ -265,24 +265,46 @@ router.post('/manual',
       return res.status(400).json({ error: { message: 'Validation failed', details: errors.array() } });
     }
 
-    const { destination, destinationConfig } = req.body;
+    let { destination, destinationConfig } = req.body;
+
+    // Map 'server' to 'local' for backward compatibility
+    if (destination === 'server') {
+      destination = 'local';
+    }
+
+    let historyId;
 
     try {
       const startedAt = new Date();
 
-      // Create backup history record
+      // Create database backup
+      const backup = await createDatabaseBackup();
+
+      // If download destination, send file directly
+      if (destination === 'download') {
+        const filename = path.basename(backup.filePath);
+        res.download(backup.filePath, filename, (err) => {
+          // Clean up temporary file after download
+          if (fs.existsSync(backup.filePath)) {
+            fs.unlinkSync(backup.filePath);
+          }
+          if (err) {
+            console.error('Error sending file:', err);
+          }
+        });
+        return;
+      }
+
+      // Create backup history record for stored backups
       const historyResult = await db.query(`
         INSERT INTO backup_history (status, started_at)
         VALUES ('running', $1)
         RETURNING id
       `, [startedAt]);
 
-      const historyId = historyResult.rows[0].id;
+      historyId = historyResult.rows[0].id;
 
-      // Create database backup
-      const backup = await createDatabaseBackup();
-
-      // Upload to destination if not local
+      // Upload to destination if not local/server
       if (destination === 's3') {
         await uploadToS3(backup.filePath, destinationConfig);
       } else if (destination === 'google-drive') {
