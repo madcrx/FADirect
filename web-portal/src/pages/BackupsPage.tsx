@@ -313,6 +313,21 @@ export default function BackupsPage() {
     }
   };
 
+  const getDestinationLabel = (destination: string) => {
+    switch (destination) {
+      case 'local':
+        return 'Server';
+      case 's3':
+        return 'Amazon S3';
+      case 'google-drive':
+        return 'Google Drive';
+      case 'dropbox':
+        return 'Dropbox';
+      default:
+        return destination;
+    }
+  };
+
   if (loading) {
     return (
       <Box p={3}>
@@ -415,7 +430,7 @@ export default function BackupsPage() {
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             {getDestinationIcon(schedule.destination)}
-                            <Typography variant="body2">{schedule.destination}</Typography>
+                            <Typography variant="body2">{getDestinationLabel(schedule.destination)}</Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -730,7 +745,7 @@ export default function BackupsPage() {
                     })
                   }
                 >
-                  <MenuItem value="local">Local Storage</MenuItem>
+                  <MenuItem value="local">Server</MenuItem>
                   <MenuItem value="s3">Amazon S3</MenuItem>
                   <MenuItem value="google-drive">Google Drive</MenuItem>
                   <MenuItem value="dropbox">Dropbox</MenuItem>
@@ -861,7 +876,7 @@ export default function BackupsPage() {
                   </MenuItem>
                   <MenuItem value="server">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CloudIcon fontSize="small" />
+                      <LocalIcon fontSize="small" />
                       Store on Server
                     </Box>
                   </MenuItem>
