@@ -1,12 +1,15 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const config = require('./config');
 const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
 const { HTTP_STATUS } = require('./constants');
+const { initializeSocket } = require('./services/socketService');
 // const backupScheduler = require('./services/backup-scheduler');
 
 const app = express();
+const httpServer = http.createServer(app);
 
 // Security middleware
 app.use(helmet());
@@ -100,9 +103,12 @@ app.use((req, res) => {
   });
 });
 
+// Initialize WebSocket server
+initializeSocket(httpServer);
+
 // Start server
 const PORT = config.PORT;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 FA Direct API Server running on port ${PORT}`);
   console.log(`📊 Environment: ${config.NODE_ENV}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);

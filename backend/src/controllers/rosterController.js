@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { rosterEvents } = require('../services/socketService');
 
 /**
  * Roster Controller
@@ -289,6 +290,9 @@ exports.assignStaff = async (req, res, next) => {
       ]
     );
 
+    // Emit WebSocket event for real-time updates
+    rosterEvents.staffAssigned(jobId, result.rows[0]);
+
     res.json({
       success: true,
       message: 'Staff assigned successfully',
@@ -325,6 +329,9 @@ exports.unassignStaff = async (req, res, next) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Assignment not found' } });
     }
+
+    // Emit WebSocket event for real-time updates
+    rosterEvents.staffUnassigned(jobId, staffId, role);
 
     res.json({
       success: true,
@@ -413,6 +420,9 @@ exports.assignVehicle = async (req, res, next) => {
       [jobId, vehicleId, isPrimary || false]
     );
 
+    // Emit WebSocket event for real-time updates
+    rosterEvents.vehicleAssigned(jobId, result.rows[0]);
+
     res.json({
       success: true,
       message: 'Vehicle assigned successfully',
@@ -440,6 +450,9 @@ exports.unassignVehicle = async (req, res, next) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Assignment not found' } });
     }
+
+    // Emit WebSocket event for real-time updates
+    rosterEvents.vehicleUnassigned(jobId, vehicleId);
 
     res.json({
       success: true,
@@ -490,6 +503,11 @@ exports.assignEquipment = async (req, res, next) => {
       [jobId, equipmentId]
     );
 
+    // Emit WebSocket event for real-time updates
+    if (result.rows.length > 0) {
+      rosterEvents.equipmentAssigned(jobId, result.rows[0]);
+    }
+
     res.json({
       success: true,
       message: 'Equipment assigned successfully',
@@ -517,6 +535,9 @@ exports.unassignEquipment = async (req, res, next) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: { message: 'Assignment not found' } });
     }
+
+    // Emit WebSocket event for real-time updates
+    rosterEvents.equipmentUnassigned(jobId, equipmentId);
 
     res.json({
       success: true,
