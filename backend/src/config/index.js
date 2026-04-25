@@ -25,7 +25,7 @@ module.exports = {
   // Server
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
-  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:5173',
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:3001,http://localhost:5173',
 
   // Database
   DB_HOST: process.env.DB_HOST || 'localhost',
@@ -49,6 +49,6 @@ module.exports = {
 
   // Security
   RATE_LIMIT_WINDOW_MS: 15 * 60 * 1000, // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: 100, // Max requests per window
+  RATE_LIMIT_MAX_REQUESTS: process.env.NODE_ENV === 'production' ? 100 : 1000, // Max requests per window (higher in dev)
   AUTH_RATE_LIMIT_MAX: 5, // Max auth attempts per window
 };
