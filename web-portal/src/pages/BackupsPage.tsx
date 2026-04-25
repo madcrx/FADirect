@@ -29,6 +29,7 @@ import {
   FormControlLabel,
   Paper,
   Grid,
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -84,6 +85,9 @@ export default function BackupsPage() {
     open: false,
   });
   const [restoreConfirmText, setRestoreConfirmText] = useState('');
+  const [selectedBackups, setSelectedBackups] = useState<string[]>([]);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -244,6 +248,45 @@ export default function BackupsPage() {
       await loadData();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to restore backup');
+    }
+  };
+
+  const handleToggleBackupSelection = (id: string) => {
+    setSelectedBackups((prev) =>
+      prev.includes(id) ? prev.filter((backupId) => backupId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAllBackups = () => {
+    if (selectedBackups.length === history.filter(b => b.status === 'completed').length) {
+      setSelectedBackups([]);
+    } else {
+      setSelectedBackups(history.filter(b => b.status === 'completed').map(b => b.id));
+    }
+  };
+
+  const handleDeleteBackups = async () => {
+    try {
+      await api.delete('/backups/history', { data: { ids: selectedBackups } });
+      setSuccess(`Deleted ${selectedBackups.length} backup(s) successfully`);
+      setDeleteDialog(false);
+      setDeleteConfirmText('');
+      setSelectedBackups([]);
+      await loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to delete backups');
+    }
+  };
+
+  const handleToggleScheduleActive = async (schedule: BackupSchedule) => {
+    try {
+      await api.put(`/backups/schedules/${schedule.id}`, {
+        isActive: !schedule.isActive
+      });
+      setSuccess(`Schedule ${!schedule.isActive ? 'enabled' : 'disabled'} successfully`);
+      await loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to update schedule');
     }
   };
 
@@ -434,10 +477,15 @@ export default function BackupsPage() {
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Chip
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={schedule.isActive}
+                                onChange={() => handleToggleScheduleActive(schedule)}
+                                size="small"
+                              />
+                            }
                             label={schedule.isActive ? 'Active' : 'Inactive'}
-                            size="small"
-                            color={schedule.isActive ? 'success' : 'default'}
                           />
                         </TableCell>
                         <TableCell>
@@ -484,26 +532,56 @@ export default function BackupsPage() {
                 </Typography>
               </Box>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Schedule</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>File Size</TableCell>
-                      <TableCell>Started</TableCell>
-                      <TableCell>Completed</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {history.map((backup) => (
-                      <TableRow key={backup.id}>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {backup.scheduleName || 'Manual Backup'}
-                          </Typography>
+              <>
+                {selectedBackups.length > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, p: 2, bgcolor: 'action.selected', borderRadius: 1 }}>
+                    <Typography variant="body2">
+                      {selectedBackups.length} backup(s) selected
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => setDeleteDialog(true)}
+                    >
+                      Delete Selected
+                    </Button>
+                  </Box>
+                )}
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell padding="checkbox">
+                          <Checkbox
+                            checked={selectedBackups.length > 0 && selectedBackups.length === history.filter(b => b.status === 'completed').length}
+                            indeterminate={selectedBackups.length > 0 && selectedBackups.length < history.filter(b => b.status === 'completed').length}
+                            onChange={handleSelectAllBackups}
+                          />
                         </TableCell>
+                        <TableCell>Schedule</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>File Size</TableCell>
+                        <TableCell>Started</TableCell>
+                        <TableCell>Completed</TableCell>
+                        <TableCell align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {history.map((backup) => (
+                        <TableRow key={backup.id} selected={selectedBackups.includes(backup.id)}>
+                          <TableCell padding="checkbox">
+                            <Checkbox
+                              checked={selectedBackups.includes(backup.id)}
+                              onChange={() => handleToggleBackupSelection(backup.id)}
+                              disabled={backup.status !== 'completed'}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {backup.scheduleName || 'Manual Backup'}
+                            </Typography>
+                          </TableCell>
                         <TableCell>
                           <Chip
                             label={backup.status}
@@ -552,6 +630,7 @@ export default function BackupsPage() {
                   </TableBody>
                 </Table>
               </TableContainer>
+              </>
             )}
           </CardContent>
         </Card>
@@ -1069,6 +1148,56 @@ export default function BackupsPage() {
             }}
           >
             Restore Database
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Backups Confirmation Dialog */}
+      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Selected Backups</DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body2" fontWeight="bold" gutterBottom>
+              ⚠️ Warning: This action cannot be undone!
+            </Typography>
+            <Typography variant="body2">
+              You are about to permanently delete {selectedBackups.length} backup file(s) and their history records.
+              The backup files will be removed from the server.
+            </Typography>
+          </Alert>
+          <Typography variant="body2" gutterBottom sx={{ mt: 2 }}>
+            Type <strong>DELETE</strong> to confirm this action:
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Type DELETE to confirm"
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            autoFocus
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDeleteDialog(false);
+              setDeleteConfirmText('');
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            disabled={deleteConfirmText !== 'DELETE'}
+            onClick={() => {
+              if (deleteConfirmText === 'DELETE') {
+                handleDeleteBackups();
+              }
+            }}
+          >
+            Delete {selectedBackups.length} Backup(s)
           </Button>
         </DialogActions>
       </Dialog>

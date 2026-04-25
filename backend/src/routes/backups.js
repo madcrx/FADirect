@@ -194,6 +194,57 @@ router.get('/history', authenticateToken, requireAdmin, async (req, res, next) =
   }
 });
 
+// Delete backup history records (supports deleting multiple)
+router.delete('/history',
+  authenticateToken,
+  requireAdmin,
+  async (req, res, next) => {
+    const { ids } = req.body; // Array of backup history IDs
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: { message: 'No backup IDs provided' } });
+    }
+
+    try {
+      // Get file paths before deleting records
+      const result = await db.query(`
+        SELECT id, file_path FROM backup_history
+        WHERE id = ANY($1)
+      `, [ids]);
+
+      const backups = result.rows;
+
+      // Delete the backup files from filesystem
+      let deletedFiles = 0;
+      for (const backup of backups) {
+        if (backup.file_path && fs.existsSync(backup.file_path)) {
+          try {
+            fs.unlinkSync(backup.file_path);
+            deletedFiles++;
+          } catch (error) {
+            console.error(`Failed to delete file ${backup.file_path}:`, error);
+          }
+        }
+      }
+
+      // Delete the database records
+      const deleteResult = await db.query(`
+        DELETE FROM backup_history
+        WHERE id = ANY($1)
+        RETURNING id
+      `, [ids]);
+
+      res.json({
+        message: `Deleted ${deleteResult.rows.length} backup record(s) and ${deletedFiles} file(s)`,
+        deletedCount: deleteResult.rows.length,
+        deletedFiles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // Create database backup file
 async function createDatabaseBackup() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
