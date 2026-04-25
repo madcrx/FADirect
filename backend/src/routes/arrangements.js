@@ -8,8 +8,8 @@ const { schemas, validators } = require('../validators');
 // Get all arrangements for current user
 router.get('/', authenticateToken, validateRequest(validators.pagination()), async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
 
     // Get total count for pagination
     const countResult = await db.query(

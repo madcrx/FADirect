@@ -62,8 +62,8 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req, res
 router.get('/', authenticateToken, validateRequest(validators.pagination()), async (req, res, next) => {
   try {
     const { arrangementId } = req.query;
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
 
     let countQuery = `
       SELECT COUNT(*) as total
