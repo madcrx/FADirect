@@ -27,6 +27,20 @@ ALTER TABLE backup_schedules
   DROP COLUMN IF EXISTS schedule_day,
   DROP COLUMN IF EXISTS last_status;
 
+-- Drop old CHECK constraints
+ALTER TABLE backup_schedules
+  DROP CONSTRAINT IF EXISTS backup_schedules_schedule_type_check,
+  DROP CONSTRAINT IF EXISTS backup_schedules_backup_location_check;
+
+-- Add new CHECK constraints with updated values
+ALTER TABLE backup_schedules
+  ADD CONSTRAINT backup_schedules_frequency_check
+    CHECK (frequency IN ('15min', 'custom', 'hourly', 'daily', 'weekly', 'monthly'));
+
+ALTER TABLE backup_schedules
+  ADD CONSTRAINT backup_schedules_destination_check
+    CHECK (destination IN ('local', 's3', 'google-drive', 'dropbox'));
+
 -- Update indexes to use new column names
 DROP INDEX IF EXISTS idx_backup_schedules_enabled;
 DROP INDEX IF EXISTS idx_backup_schedules_last_run;
