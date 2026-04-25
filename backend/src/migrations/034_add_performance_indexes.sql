@@ -13,7 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_arrangements_created_at ON arrangements(created_a
 CREATE INDEX IF NOT EXISTS idx_messages_arrangement_id ON messages(arrangement_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_recipient_id ON messages(recipient_id);
-CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
+CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
 -- Documents table indexes
 CREATE INDEX IF NOT EXISTS idx_documents_arrangement_id ON documents(arrangement_id) WHERE deleted_at IS NULL;
@@ -96,7 +96,7 @@ END $$;
 
 -- Composite indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_arrangements_arranger_status ON arrangements(arranger_id, status) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_messages_arrangement_timestamp ON messages(arrangement_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_arrangement_created_at ON messages(arrangement_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, created_at DESC) WHERE read = false;
 
 -- Full-text search indexes for common search fields
