@@ -1,0 +1,14 @@
+<svg width="200" height="230" viewBox="0 0 200 230" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue left curve - flowing heart left side -->
+  <path d="M 45 25 C 25 25, 10 40, 10 60 C 10 90, 35 115, 75 150 C 80 145, 85 135, 90 125 C 70 105, 55 85, 55 65 C 55 55, 60 50, 65 50 C 70 50, 75 55, 75 60 C 75 70, 85 80, 95 90"
+        fill="#7FA8D1" opacity="0.9"/>
+
+  <!-- Green right curve - flowing heart right side -->
+  <path d="M 155 25 C 175 25, 190 40, 190 60 C 190 90, 165 115, 125 150 C 120 145, 115 135, 110 125 C 130 105, 145 85, 145 65 C 145 55, 140 50, 135 50 C 130 50, 125 55, 125 60 C 125 70, 115 80, 105 90"
+        fill="#93C895" opacity="0.9"/>
+
+  <!-- CarePortal text -->
+  <text x="100" y="200" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-size="38" font-weight="400" text-anchor="middle" fill="#1a1a1a" letter-spacing="-0.5">
+    CarePortal
+  </text>
+</svg>

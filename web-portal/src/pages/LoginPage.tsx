@@ -103,9 +103,13 @@ export default function LoginPage() {
         <Card>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="h4" gutterBottom sx={{ color: 'primary.main', fontWeight: 700 }}>
-                CarePortal
-              </Typography>
+              <Box sx={{ mb: 2 }}>
+                <img
+                  src="/images/careportal-logo.svg"
+                  alt="CarePortal"
+                  style={{ height: '120px', width: 'auto' }}
+                />
+              </Box>
               <Typography variant="body1" color="text.secondary">
                 Funeral Arrangement Management System
               </Typography>

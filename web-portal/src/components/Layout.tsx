@@ -175,10 +175,14 @@ export default function Layout() {
 
   const drawer = (
     <Box>
-      <Toolbar sx={{ backgroundColor: 'primary.main', color: 'white' }}>
-        <Typography variant="h6" noWrap component="div" fontWeight="bold">
-          CarePortal
-        </Typography>
+      <Toolbar sx={{ backgroundColor: 'primary.main', color: 'white', display: 'flex', justifyContent: 'center', py: 2 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <img
+            src="/images/careportal-logo.svg"
+            alt="CarePortal"
+            style={{ height: '60px', width: 'auto' }}
+          />
+        </Box>
       </Toolbar>
       <Divider />
       <List sx={{ py: 0 }}>
