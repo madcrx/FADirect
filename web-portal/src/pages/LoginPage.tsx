@@ -105,7 +105,7 @@ export default function LoginPage() {
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               <Box sx={{ mb: 2 }}>
                 <img
-                  src="/images/careportal-logo.png"
+                  src="/images/careportal-logo.PNG"
                   alt="CarePortal"
                   style={{ height: '120px', width: 'auto' }}
                 />
