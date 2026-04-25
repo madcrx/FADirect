@@ -60,14 +60,15 @@ async function runMigrations() {
       try {
         await db.query(sql);
       } catch (error) {
-        // Ignore "already exists" errors:
+        // Ignore "already exists" and "does not exist" errors for idempotent migrations:
         // 42P07 = relation already exists
         // 42710 = object already exists
         // 42P04 = database already exists
         // 42701 = duplicate column
-        const ignoredErrors = ['42P07', '42710', '42P04', '42701'];
+        // 42703 = column does not exist (can happen when later migrations rename columns)
+        const ignoredErrors = ['42P07', '42710', '42P04', '42701', '42703'];
         if (ignoredErrors.includes(error.code)) {
-          console.log(`   ℹ️  Some objects already exist (${error.code}), continuing...`);
+          console.log(`   ℹ️  Some objects already exist or were modified by later migrations (${error.code}), continuing...`);
         } else {
           throw error;
         }

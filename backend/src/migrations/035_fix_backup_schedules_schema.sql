@@ -1,21 +1,29 @@
 -- Migration 026: Fix backup_schedules schema to match application code
 -- The original migration used different column names than what the code expects
 
--- Rename and add columns to match application code
-ALTER TABLE backup_schedules
-  RENAME COLUMN schedule_type TO frequency;
+-- Rename columns only if they haven't been renamed yet
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'backup_schedules' AND column_name = 'schedule_type') THEN
+    ALTER TABLE backup_schedules RENAME COLUMN schedule_type TO frequency;
+  END IF;
 
-ALTER TABLE backup_schedules
-  RENAME COLUMN backup_location TO destination;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'backup_schedules' AND column_name = 'backup_location') THEN
+    ALTER TABLE backup_schedules RENAME COLUMN backup_location TO destination;
+  END IF;
 
-ALTER TABLE backup_schedules
-  RENAME COLUMN location_config TO destination_config;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'backup_schedules' AND column_name = 'location_config') THEN
+    ALTER TABLE backup_schedules RENAME COLUMN location_config TO destination_config;
+  END IF;
 
-ALTER TABLE backup_schedules
-  RENAME COLUMN enabled TO is_active;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'backup_schedules' AND column_name = 'enabled') THEN
+    ALTER TABLE backup_schedules RENAME COLUMN enabled TO is_active;
+  END IF;
 
-ALTER TABLE backup_schedules
-  RENAME COLUMN last_run TO last_run_at;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'backup_schedules' AND column_name = 'last_run') THEN
+    ALTER TABLE backup_schedules RENAME COLUMN last_run TO last_run_at;
+  END IF;
+END $$;
 
 -- Add next_run_at column which is required by the scheduler
 ALTER TABLE backup_schedules
