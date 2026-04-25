@@ -164,9 +164,15 @@ class BackupScheduler {
     };
 
     // Use pg_dump to create backup
-    const command = `PGPASSWORD="${dbConfig.password}" pg_dump -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} -F p -f "${filePath}"`;
+    const command = `pg_dump -h ${dbConfig.host} -p ${dbConfig.port} -U ${dbConfig.user} -d ${dbConfig.database} -F p -f "${filePath}"`;
 
-    await execPromise(command);
+    // Set PGPASSWORD via environment variable (works cross-platform)
+    await execPromise(command, {
+      env: {
+        ...process.env,
+        PGPASSWORD: dbConfig.password
+      }
+    });
 
     const stats = fs.statSync(filePath);
 
