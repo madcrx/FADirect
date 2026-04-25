@@ -1,6 +1,9 @@
 -- Add missing database indexes for performance optimization
 -- These indexes address N+1 query problems and improve search performance
 
+-- Enable required extensions first
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 -- Arrangements table indexes
 CREATE INDEX IF NOT EXISTS idx_arrangements_arranger_id ON arrangements(arranger_id) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_arrangements_mourner_id ON arrangements(mourner_id) WHERE deleted_at IS NULL;
@@ -101,6 +104,3 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_i
 -- Full-text search indexes for common search fields
 CREATE INDEX IF NOT EXISTS idx_arrangements_deceased_name_trgm ON arrangements USING gin(deceased_name gin_trgm_ops) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_users_name_trgm ON users USING gin(name gin_trgm_ops) WHERE deleted_at IS NULL;
-
--- Enable pg_trgm extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
