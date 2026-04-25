@@ -83,6 +83,7 @@ export default function BackupsPage() {
   const [restoreDialog, setRestoreDialog] = useState<{ open: boolean; backup?: BackupHistory }>({
     open: false,
   });
+  const [restoreConfirmText, setRestoreConfirmText] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -1012,25 +1013,47 @@ export default function BackupsPage() {
             </Paper>
           )}
 
-          <Typography variant="body2" sx={{ mt: 2, fontWeight: 'medium' }}>
-            Are you absolutely sure you want to proceed with the restore?
-          </Typography>
+          <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+            <Typography variant="body2" fontWeight="bold">
+              Double Confirmation Required
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              To confirm this destructive action, please type <strong>RESTORE</strong> in the field below:
+            </Typography>
+          </Alert>
+
+          <TextField
+            fullWidth
+            placeholder="Type RESTORE to confirm"
+            value={restoreConfirmText}
+            onChange={(e) => setRestoreConfirmText(e.target.value)}
+            autoFocus
+            sx={{ mt: 1 }}
+            helperText="This confirmation ensures you understand the consequences of restoring"
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setRestoreDialog({ open: false })}>
+          <Button
+            onClick={() => {
+              setRestoreDialog({ open: false });
+              setRestoreConfirmText('');
+            }}
+          >
             Cancel
           </Button>
           <Button
             variant="contained"
-            color="warning"
+            color="error"
             startIcon={<RestoreIcon />}
+            disabled={restoreConfirmText !== 'RESTORE'}
             onClick={() => {
-              if (restoreDialog.backup) {
+              if (restoreDialog.backup && restoreConfirmText === 'RESTORE') {
                 handleRestoreBackup(restoreDialog.backup.id);
+                setRestoreConfirmText('');
               }
             }}
           >
-            Yes, Restore Database
+            Restore Database
           </Button>
         </DialogActions>
       </Dialog>
