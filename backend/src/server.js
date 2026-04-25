@@ -6,10 +6,52 @@ const config = require('./config');
 const { generalLimiter, authLimiter } = require('./middleware/rateLimiter');
 const { HTTP_STATUS } = require('./constants');
 const { initializeSocket } = require('./services/socketService');
-// const backupScheduler = require('./services/backup-scheduler');
+const backupScheduler = require('./services/backup-scheduler');
+const db = require('./config/database');
 
 const app = express();
 const httpServer = http.createServer(app);
+
+// Ensure automatic backup schedule exists
+async function ensureAutoBackupSchedule() {
+  try {
+    // Check if auto-backup schedule exists
+    const result = await db.query(`
+      SELECT * FROM backup_schedules
+      WHERE name = 'Auto Backup (Every 15 minutes)'
+    `);
+
+    if (result.rows.length === 0) {
+      // Create auto-backup schedule
+      const nextRun = new Date();
+      nextRun.setMinutes(nextRun.getMinutes() + 15);
+
+      await db.query(`
+        INSERT INTO backup_schedules (
+          name,
+          frequency,
+          destination,
+          destination_config,
+          is_active,
+          next_run_at
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        'Auto Backup (Every 15 minutes)',
+        'custom',  // We'll handle this frequency manually
+        'local',
+        '{}',
+        true,
+        nextRun
+      ]);
+
+      console.log('✅ Created automatic backup schedule (every 15 minutes)');
+    } else {
+      console.log('✓ Automatic backup schedule already exists');
+    }
+  } catch (error) {
+    console.error('⚠️  Failed to create automatic backup schedule:', error.message);
+  }
+}
 
 // Security middleware
 app.use(helmet());
@@ -114,7 +156,10 @@ httpServer.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 
   // Start backup scheduler
-  // backupScheduler.start();
+  backupScheduler.start();
+
+  // Create default auto-backup schedule if it doesn't exist
+  ensureAutoBackupSchedule();
 });
 
 module.exports = app;

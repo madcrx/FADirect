@@ -107,7 +107,7 @@ class BackupScheduler {
       `, [backup.filePath, backup.fileSize, historyId]);
 
       // Update schedule's last run and calculate next run
-      const nextRunAt = this.calculateNextRun(schedule.frequency);
+      const nextRunAt = this.calculateNextRun(schedule.frequency, schedule.name);
       await db.query(`
         UPDATE backup_schedules
         SET last_run_at = $1,
@@ -134,7 +134,7 @@ class BackupScheduler {
       }
 
       // Still update next run time even if backup failed
-      const nextRunAt = this.calculateNextRun(schedule.frequency);
+      const nextRunAt = this.calculateNextRun(schedule.frequency, schedule.name);
       await db.query(`
         UPDATE backup_schedules
         SET next_run_at = $1
@@ -196,11 +196,20 @@ class BackupScheduler {
     await s3.upload(params).promise();
   }
 
-  calculateNextRun(frequency) {
+  calculateNextRun(frequency, scheduleName = '') {
     const now = new Date();
     const nextRun = new Date(now);
 
     switch (frequency) {
+      case 'custom':
+        // Check if it's the 15-minute auto-backup
+        if (scheduleName && scheduleName.includes('15 minutes')) {
+          nextRun.setMinutes(nextRun.getMinutes() + 15);
+        } else {
+          // Default custom frequency: 1 hour
+          nextRun.setHours(nextRun.getHours() + 1);
+        }
+        break;
       case 'hourly':
         nextRun.setHours(nextRun.getHours() + 1);
         break;
