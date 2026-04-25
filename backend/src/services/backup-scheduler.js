@@ -209,17 +209,9 @@ class BackupScheduler {
     const nextRun = new Date(now);
 
     switch (frequency) {
-      case '15min':
-        nextRun.setMinutes(nextRun.getMinutes() + 15);
-        break;
       case 'custom':
-        // Check if it's the 15-minute auto-backup
-        if (scheduleName && scheduleName.includes('15 minutes')) {
-          nextRun.setMinutes(nextRun.getMinutes() + 15);
-        } else {
-          // Default custom frequency: 1 hour
-          nextRun.setHours(nextRun.getHours() + 1);
-        }
+        // Default custom frequency: 1 hour
+        nextRun.setHours(nextRun.getHours() + 1);
         break;
       case 'hourly':
         nextRun.setHours(nextRun.getHours() + 1);
@@ -266,10 +258,10 @@ class BackupScheduler {
         let shouldDelete = false;
 
         // Determine retention policy based on schedule type
-        if (backup.schedule_name && backup.schedule_name.includes('15 Minutes')) {
-          // 15-minute backups: delete after 3 days
+        if (backup.schedule_name && backup.schedule_name.includes('Hourly')) {
+          // Hourly backups: delete after 3 days
           shouldDelete = daysOld > 3;
-        } else if (backup.frequency === '15min') {
+        } else if (backup.frequency === 'hourly') {
           // Also catch by frequency
           shouldDelete = daysOld > 3;
         } else if (backup.schedule_name && backup.schedule_name.includes('Daily')) {
@@ -296,7 +288,7 @@ class BackupScheduler {
               fs.unlinkSync(backup.file_path);
               deletedCount++;
 
-              const retentionType = backup.schedule_name?.includes('15 Minutes') ? '15-min' :
+              const retentionType = backup.schedule_name?.includes('Hourly') ? 'hourly' :
                                    backup.schedule_name?.includes('Daily') ? 'daily' : 'manual';
               console.log(`🗑️  Deleted ${retentionType} backup (${Math.floor(daysOld)} days old): ${path.basename(backup.file_path)}`);
             } catch (error) {

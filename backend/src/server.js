@@ -17,9 +17,9 @@ async function ensureAutoBackupSchedule() {
   try {
     const schedules = [
       {
-        name: 'Auto Backup - 15 Minutes (3 day retention)',
-        frequency: '15min',
-        nextRunMinutes: 15,
+        name: 'Auto Backup - Hourly (3 day retention)',
+        frequency: 'hourly',
+        nextRunHours: 1,
       },
       {
         name: 'Auto Backup - Daily (30 day retention)',
