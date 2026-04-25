@@ -4,7 +4,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-const AWS = require('aws-sdk');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 class BackupScheduler {
   constructor() {
@@ -178,22 +178,24 @@ class BackupScheduler {
   }
 
   async uploadToS3(filePath, config) {
-    const s3 = new AWS.S3({
-      accessKeyId: config.accessKeyId,
-      secretAccessKey: config.secretAccessKey,
+    const s3Client = new S3Client({
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
       region: config.region || 'us-east-1',
     });
 
     const fileContent = fs.readFileSync(filePath);
     const filename = path.basename(filePath);
 
-    const params = {
+    const command = new PutObjectCommand({
       Bucket: config.bucket,
       Key: `fadirect-backups/${filename}`,
       Body: fileContent,
-    };
+    });
 
-    await s3.upload(params).promise();
+    await s3Client.send(command);
   }
 
   calculateNextRun(frequency, scheduleName = '') {
