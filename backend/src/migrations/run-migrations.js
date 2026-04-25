@@ -40,6 +40,7 @@ async function runMigrations() {
     '032_add_maintenance_and_leave.sql',
     '033_add_file_sending.sql',
     '034_add_performance_indexes.sql',
+    '035_fix_backup_schedules_schema.sql',
   ];
 
   try {
