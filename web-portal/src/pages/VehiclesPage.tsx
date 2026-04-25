@@ -25,7 +25,7 @@ import {
   CloudUpload as UploadIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import api from '@/services/api';
+import api, { getAuthenticatedImageUrl } from '@/services/api';
 import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface Vehicle {
@@ -286,7 +286,7 @@ export default function VehiclesPage() {
                     aspectRatio: '16 / 9',
                     objectFit: 'cover',
                   }}
-                  image={vehicle.photoUrl}
+                  image={getAuthenticatedImageUrl(vehicle.photoUrl)}
                   alt={`${vehicle.make} ${vehicle.model}`}
                 />
               ) : (

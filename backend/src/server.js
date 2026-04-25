@@ -140,6 +140,48 @@ app.use('/api/leave', require('./routes/leave'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/settings', require('./routes/settings'));
 
+// Serve uploaded files with authentication
+const path = require('path');
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
+app.get('/uploads/:filename', (req, res) => {
+  // Check authentication - support both header and query parameter
+  let token = null;
+
+  // Try to get token from Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7);
+  }
+
+  // Fallback to query parameter for img tags
+  if (!token && req.query.token) {
+    token = req.query.token;
+  }
+
+  // Verify token
+  if (!token) {
+    return res.status(401).json({ error: { message: 'Authentication required' } });
+  }
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return res.status(401).json({ error: { message: 'Invalid token' } });
+  }
+
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads', filename);
+
+  // Check if file exists
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: { message: 'File not found' } });
+  }
+
+  // Send file
+  res.sendFile(filePath);
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

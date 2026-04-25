@@ -28,7 +28,7 @@ import {
   Inventory as EquipmentIcon,
   CloudUpload as UploadIcon,
 } from '@mui/icons-material';
-import api from '@/services/api';
+import api, { getAuthenticatedImageUrl } from '@/services/api';
 import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface Equipment {
@@ -291,7 +291,7 @@ export default function EquipmentPage() {
                     aspectRatio: '4 / 3',
                     objectFit: 'cover',
                   }}
-                  image={item.photoUrl}
+                  image={getAuthenticatedImageUrl(item.photoUrl)}
                   alt={item.name}
                 />
               ) : (

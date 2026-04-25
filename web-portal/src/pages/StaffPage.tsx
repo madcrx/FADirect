@@ -30,7 +30,7 @@ import {
   Email as EmailIcon,
   CloudUpload as UploadIcon,
 } from '@mui/icons-material';
-import api from '@/services/api';
+import api, { getAuthenticatedImageUrl } from '@/services/api';
 import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface StaffMember {
@@ -271,7 +271,7 @@ export default function StaffPage() {
               <CardContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
                   <Avatar
-                    src={member.photoUrl || undefined}
+                    src={getAuthenticatedImageUrl(member.photoUrl)}
                     sx={{ width: 80, height: 80, mb: 2 }}
                   >
                     <PersonIcon sx={{ fontSize: 40 }} />
@@ -383,7 +383,7 @@ export default function StaffPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {photoPreview && (
                   <Avatar
-                    src={photoPreview}
+                    src={photoPreview.startsWith('blob:') || photoPreview.startsWith('data:') ? photoPreview : getAuthenticatedImageUrl(photoPreview)}
                     sx={{ width: 80, height: 80 }}
                   >
                     <PersonIcon sx={{ fontSize: 40 }} />

@@ -225,6 +225,20 @@ export const fileSendsApi = {
   },
 };
 
+// Helper function to get authenticated image URL
+export const getAuthenticatedImageUrl = (photoUrl: string | null): string | undefined => {
+  if (!photoUrl) return undefined;
+
+  const token = localStorage.getItem('auth_token');
+  if (!token) return undefined;
+
+  // If it's already a full URL, return as is
+  if (photoUrl.startsWith('http')) return photoUrl;
+
+  // Add token query parameter for authentication
+  return `${photoUrl}?token=${encodeURIComponent(token)}`;
+};
+
 // Pre-Arrangement Forms API
 export const preArrangementFormsApi = {
   send: async (arrangementId: string): Promise<any> => {
