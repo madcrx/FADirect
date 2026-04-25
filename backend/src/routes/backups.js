@@ -304,7 +304,7 @@ router.post('/manual',
       // Create backup history record for stored backups
       const historyResult = await db.query(`
         INSERT INTO backup_history (status, started_at)
-        VALUES ('running', $1)
+        VALUES ('in_progress', $1)
         RETURNING id
       `, [startedAt]);
 

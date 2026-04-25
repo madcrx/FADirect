@@ -77,7 +77,7 @@ class BackupScheduler {
       // Create backup history record
       const historyResult = await db.query(`
         INSERT INTO backup_history (schedule_id, status, started_at)
-        VALUES ($1, 'running', $2)
+        VALUES ($1, 'in_progress', $2)
         RETURNING id
       `, [schedule.id, startedAt]);
 
