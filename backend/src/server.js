@@ -42,8 +42,8 @@ app.use(express.urlencoded({ extended: true }));
 // Note: Static file serving removed for security
 // Files are now served through authenticated endpoints in their respective routes
 
-// Routes - Auth routes with stricter rate limiting
-app.use('/api/auth', authLimiter, require('./routes/auth'));
+// Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/arrangements', require('./routes/arrangements'));
