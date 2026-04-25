@@ -201,6 +201,9 @@ class BackupScheduler {
     const nextRun = new Date(now);
 
     switch (frequency) {
+      case '15min':
+        nextRun.setMinutes(nextRun.getMinutes() + 15);
+        break;
       case 'custom':
         // Check if it's the 15-minute auto-backup
         if (scheduleName && scheduleName.includes('15 minutes')) {
@@ -229,27 +232,65 @@ class BackupScheduler {
 
   async cleanupOldBackups() {
     try {
-      // Get all backup history records, ordered by completion time
+      const now = new Date();
+
+      // Get all backup history records with their schedule info
       const result = await db.query(`
-        SELECT id, file_path
-        FROM backup_history
-        WHERE status = 'completed'
-          AND file_path IS NOT NULL
-        ORDER BY completed_at DESC
+        SELECT
+          bh.id,
+          bh.file_path,
+          bh.completed_at,
+          bs.name as schedule_name,
+          bs.frequency
+        FROM backup_history bh
+        LEFT JOIN backup_schedules bs ON bh.schedule_id = bs.id
+        WHERE bh.status = 'completed'
+          AND bh.file_path IS NOT NULL
+        ORDER BY bh.completed_at DESC
       `);
 
       const backups = result.rows;
+      let deletedCount = 0;
 
-      // Keep the last 30 backups, delete the rest
-      if (backups.length > 30) {
-        const backupsToDelete = backups.slice(30);
+      for (const backup of backups) {
+        const backupAge = now - new Date(backup.completed_at);
+        const daysOld = backupAge / (1000 * 60 * 60 * 24);
+        let shouldDelete = false;
 
-        for (const backup of backupsToDelete) {
+        // Determine retention policy based on schedule type
+        if (backup.schedule_name && backup.schedule_name.includes('15 Minutes')) {
+          // 15-minute backups: delete after 3 days
+          shouldDelete = daysOld > 3;
+        } else if (backup.frequency === '15min') {
+          // Also catch by frequency
+          shouldDelete = daysOld > 3;
+        } else if (backup.schedule_name && backup.schedule_name.includes('Daily')) {
+          // Daily backups: delete after 30 days
+          shouldDelete = daysOld > 30;
+        } else if (backup.frequency === 'daily') {
+          // Also catch by frequency
+          shouldDelete = daysOld > 30;
+        } else if (backup.schedule_name && backup.schedule_name.includes('Monthly')) {
+          // Monthly backups: keep permanently
+          shouldDelete = false;
+        } else if (backup.frequency === 'monthly') {
+          // Also catch by frequency
+          shouldDelete = false;
+        } else if (!backup.schedule_id) {
+          // Manual backups: delete after 30 days
+          shouldDelete = daysOld > 30;
+        }
+
+        if (shouldDelete) {
           // Delete the file if it exists
           if (backup.file_path && fs.existsSync(backup.file_path)) {
             try {
               fs.unlinkSync(backup.file_path);
-              console.log(`🗑️  Deleted old backup file: ${backup.file_path}`);
+              deletedCount++;
+
+              const retentionType = backup.schedule_name?.includes('15 Minutes') ? '15-min' :
+                                   backup.schedule_name?.includes('Daily') ? 'daily' : 'manual';
+              console.log(`🗑️  Deleted ${retentionType} backup (${Math.floor(daysOld)} days old): ${path.basename(backup.file_path)}`);
             } catch (error) {
               console.error(`⚠️  Failed to delete backup file: ${backup.file_path}`, error);
             }
@@ -262,6 +303,10 @@ class BackupScheduler {
             WHERE id = $1
           `, [backup.id]);
         }
+      }
+
+      if (deletedCount > 0) {
+        console.log(`✅ Cleanup complete: ${deletedCount} old backup(s) deleted`);
       }
     } catch (error) {
       console.error('❌ Error cleaning up old backups:', error);

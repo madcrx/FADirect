@@ -12,44 +12,69 @@ const db = require('./config/database');
 const app = express();
 const httpServer = http.createServer(app);
 
-// Ensure automatic backup schedule exists
+// Ensure automatic backup schedules exist
 async function ensureAutoBackupSchedule() {
   try {
-    // Check if auto-backup schedule exists
-    const result = await db.query(`
-      SELECT * FROM backup_schedules
-      WHERE name = 'Auto Backup (Every 15 minutes)'
-    `);
+    const schedules = [
+      {
+        name: 'Auto Backup - 15 Minutes (3 day retention)',
+        frequency: '15min',
+        nextRunMinutes: 15,
+      },
+      {
+        name: 'Auto Backup - Daily (30 day retention)',
+        frequency: 'daily',
+        nextRunHours: 24,
+      },
+      {
+        name: 'Auto Backup - Monthly (permanent retention)',
+        frequency: 'monthly',
+        nextRunDays: 30,
+      },
+    ];
 
-    if (result.rows.length === 0) {
-      // Create auto-backup schedule
-      const nextRun = new Date();
-      nextRun.setMinutes(nextRun.getMinutes() + 15);
+    for (const schedule of schedules) {
+      const result = await db.query(`
+        SELECT * FROM backup_schedules
+        WHERE name = $1
+      `, [schedule.name]);
 
-      await db.query(`
-        INSERT INTO backup_schedules (
-          name,
-          frequency,
-          destination,
-          destination_config,
-          is_active,
-          next_run_at
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-      `, [
-        'Auto Backup (Every 15 minutes)',
-        'custom',  // We'll handle this frequency manually
-        'local',
-        '{}',
-        true,
-        nextRun
-      ]);
+      if (result.rows.length === 0) {
+        const nextRun = new Date();
 
-      console.log('✅ Created automatic backup schedule (every 15 minutes)');
-    } else {
-      console.log('✓ Automatic backup schedule already exists');
+        if (schedule.nextRunMinutes) {
+          nextRun.setMinutes(nextRun.getMinutes() + schedule.nextRunMinutes);
+        } else if (schedule.nextRunHours) {
+          nextRun.setHours(nextRun.getHours() + schedule.nextRunHours);
+        } else if (schedule.nextRunDays) {
+          nextRun.setDate(nextRun.getDate() + schedule.nextRunDays);
+        }
+
+        await db.query(`
+          INSERT INTO backup_schedules (
+            name,
+            frequency,
+            destination,
+            destination_config,
+            is_active,
+            next_run_at
+          ) VALUES ($1, $2, $3, $4, $5, $6)
+        `, [
+          schedule.name,
+          schedule.frequency,
+          'local',
+          '{}',
+          true,
+          nextRun
+        ]);
+
+        console.log(`✅ Created ${schedule.name}`);
+      }
     }
+
+    console.log('✓ All automatic backup schedules configured');
   } catch (error) {
-    console.error('⚠️  Failed to create automatic backup schedule:', error.message);
+    console.error('⚠️  Failed to create automatic backup schedules:', error.message);
   }
 }
 
