@@ -46,6 +46,7 @@ import {
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
+import { socketService, RosterEvents } from '@/services/socket';
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, addWeeks, subMonths, addMonths, startOfDay, endOfDay, isSameDay } from 'date-fns';
 
 interface Job {
@@ -131,6 +132,74 @@ export default function BookingsPage() {
   useEffect(() => {
     loadData();
   }, [selectedDate, deletedFilter, viewMode]);
+
+  // WebSocket connection and real-time updates
+  useEffect(() => {
+    // Connect to WebSocket
+    socketService.connect();
+
+    // Handle roster events for real-time updates
+    const handleStaffAssigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    const handleStaffUnassigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    const handleVehicleAssigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    const handleVehicleUnassigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    const handleEquipmentAssigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    const handleEquipmentUnassigned = () => {
+      loadData();
+      if (selectedJob) {
+        refreshSelectedJob(selectedJob.id);
+      }
+    };
+
+    // Subscribe to events
+    socketService.on(RosterEvents.STAFF_ASSIGNED, handleStaffAssigned);
+    socketService.on(RosterEvents.STAFF_UNASSIGNED, handleStaffUnassigned);
+    socketService.on(RosterEvents.VEHICLE_ASSIGNED, handleVehicleAssigned);
+    socketService.on(RosterEvents.VEHICLE_UNASSIGNED, handleVehicleUnassigned);
+    socketService.on(RosterEvents.EQUIPMENT_ASSIGNED, handleEquipmentAssigned);
+    socketService.on(RosterEvents.EQUIPMENT_UNASSIGNED, handleEquipmentUnassigned);
+
+    // Cleanup on unmount
+    return () => {
+      socketService.off(RosterEvents.STAFF_ASSIGNED, handleStaffAssigned);
+      socketService.off(RosterEvents.STAFF_UNASSIGNED, handleStaffUnassigned);
+      socketService.off(RosterEvents.VEHICLE_ASSIGNED, handleVehicleAssigned);
+      socketService.off(RosterEvents.VEHICLE_UNASSIGNED, handleVehicleUnassigned);
+      socketService.off(RosterEvents.EQUIPMENT_ASSIGNED, handleEquipmentAssigned);
+      socketService.off(RosterEvents.EQUIPMENT_UNASSIGNED, handleEquipmentUnassigned);
+      socketService.disconnect();
+    };
+  }, [selectedJob]);
 
   const getDateRange = () => {
     switch (viewMode) {
