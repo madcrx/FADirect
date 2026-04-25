@@ -177,7 +177,7 @@ export default function Layout() {
     <Box>
       <Toolbar sx={{ backgroundColor: 'primary.main', color: 'white' }}>
         <Typography variant="h6" noWrap component="div" fontWeight="bold">
-          FA Direct Portal
+          CarePortal
         </Typography>
       </Toolbar>
       <Divider />
@@ -255,7 +255,7 @@ export default function Layout() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find(item => item.path === location.pathname)?.text || 'FA Direct'}
+            {menuItems.find(item => item.path === location.pathname)?.text || 'CarePortal'}
           </Typography>
           <IconButton color="inherit" onClick={() => navigate('/search')}>
             <SearchIcon />

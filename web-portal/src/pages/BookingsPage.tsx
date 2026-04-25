@@ -540,6 +540,20 @@ export default function BookingsPage() {
     return vacant;
   };
 
+  // Format role for display
+  const formatRole = (role: string) => {
+    const roleMap: { [key: string]: string } = {
+      arranger: 'Arranger',
+      conductor: 'Conductor',
+      funeral_director_assistant: 'Funeral Director Assistant',
+      embalmer: 'Embalmer',
+      hearse_driver: 'Hearse Driver',
+      coach_driver: 'Coach Driver',
+    };
+    const roleKey = role.toLowerCase().replace(/ /g, '_');
+    return roleMap[roleKey] || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   // Get vacant vehicle types
   const getVacantVehicles = () => {
     if (!selectedJob?.requirements) return [];
@@ -780,7 +794,7 @@ export default function BookingsPage() {
                             )}
                             {job.staff.length > 0 && (
                               <Typography variant="caption" color="text.secondary" display="block">
-                                👤 {job.staff.map((s) => `${s.fullName} (${s.role})`).join(', ')}
+                                👤 {job.staff.map((s) => `${s.fullName} (${formatRole(s.role)})`).join(', ')}
                               </Typography>
                             )}
                             {job.vehicles.length > 0 && (
@@ -1114,7 +1128,7 @@ export default function BookingsPage() {
                         </ListItemIcon>
                         <ListItemText
                           primary={staff.fullName}
-                          secondary={`${staff.role} (click to remove)`}
+                          secondary={`${formatRole(staff.role)} (click to remove)`}
                         />
                       </ListItem>
                     ))}

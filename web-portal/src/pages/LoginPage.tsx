@@ -104,7 +104,7 @@ export default function LoginPage() {
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
               <Typography variant="h4" gutterBottom sx={{ color: 'primary.main', fontWeight: 700 }}>
-                FA Direct Portal
+                CarePortal
               </Typography>
               <Typography variant="body1" color="text.secondary">
                 Funeral Arrangement Management System
