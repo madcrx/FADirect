@@ -180,7 +180,7 @@ export default function Layout() {
           <img
             src="/images/careportal-logo.PNG"
             alt="CarePortal"
-            style={{ height: '60px', width: 'auto' }}
+            style={{ height: '105px', width: 'auto' }}
           />
         </Box>
       </Toolbar>
