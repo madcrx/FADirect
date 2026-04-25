@@ -64,7 +64,6 @@ CREATE INDEX IF NOT EXISTS idx_arrangement_participants_user_id ON arrangement_p
 
 -- Staff profiles indexes
 CREATE INDEX IF NOT EXISTS idx_staff_profiles_user_id ON staff_profiles(user_id);
-CREATE INDEX IF NOT EXISTS idx_staff_profiles_role ON staff_profiles USING GIN(roles);
 
 -- Vehicles table indexes
 CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles(registration) WHERE deleted_at IS NULL;
