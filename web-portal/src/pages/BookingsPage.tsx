@@ -31,6 +31,8 @@ import {
   Avatar,
   Divider,
   Slider,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -47,6 +49,11 @@ import {
   CheckCircle as CheckCircleIcon,
   ZoomOut as ZoomOutIcon,
   ZoomIn as ZoomInIcon,
+  ViewDay as ViewDayIcon,
+  ViewWeek as ViewWeekIcon,
+  CalendarViewMonth as ViewMonthIcon,
+  ViewColumn as ViewColumnIcon,
+  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { socketService, RosterEvents } from '@/services/socket';
@@ -848,50 +855,51 @@ export default function BookingsPage() {
             </Box>
 
             {/* View Mode Selector */}
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                size="small"
-                variant={viewMode === 'day' ? 'contained' : 'outlined'}
-                onClick={() => setViewMode('day')}
-              >
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={(e, newMode) => newMode && setViewMode(newMode)}
+              size="small"
+              aria-label="view mode"
+            >
+              <ToggleButton value="day" aria-label="day view">
+                <ViewDayIcon sx={{ mr: 0.5 }} />
                 Day
-              </Button>
-              <Button
-                size="small"
-                variant={viewMode === 'week' ? 'contained' : 'outlined'}
-                onClick={() => setViewMode('week')}
-              >
+              </ToggleButton>
+              <ToggleButton value="week" aria-label="week view">
+                <ViewWeekIcon sx={{ mr: 0.5 }} />
                 Week
-              </Button>
-              <Button
-                size="small"
-                variant={viewMode === 'month' ? 'contained' : 'outlined'}
-                onClick={() => setViewMode('month')}
-              >
+              </ToggleButton>
+              <ToggleButton value="month" aria-label="month view">
+                <ViewMonthIcon sx={{ mr: 0.5 }} />
                 Month
-              </Button>
-              <Button
-                size="small"
-                variant={viewMode === 'kanban' ? 'contained' : 'outlined'}
-                onClick={() => setViewMode('kanban')}
-              >
+              </ToggleButton>
+              <ToggleButton value="kanban" aria-label="job status view">
+                <ViewColumnIcon sx={{ mr: 0.5 }} />
                 Job Status
-              </Button>
-            </Box>
+              </ToggleButton>
+            </ToggleButtonGroup>
 
             {/* Deleted Items Filter */}
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel>Deleted Items</InputLabel>
-              <Select
-                value={deletedFilter}
-                label="Deleted Items"
-                onChange={(e) => setDeletedFilter(e.target.value as 'hide' | 'only' | 'all')}
-              >
-                <MenuItem value="hide">Hide Deleted</MenuItem>
-                <MenuItem value="only">Only Deleted</MenuItem>
-                <MenuItem value="all">All Including Deleted</MenuItem>
-              </Select>
-            </FormControl>
+            <ToggleButtonGroup
+              value={deletedFilter}
+              exclusive
+              onChange={(e, newFilter) => newFilter && setDeletedFilter(newFilter)}
+              size="small"
+              aria-label="deleted items filter"
+            >
+              <ToggleButton value="hide" aria-label="hide deleted">
+                <FilterListIcon sx={{ mr: 0.5 }} />
+                Active
+              </ToggleButton>
+              <ToggleButton value="only" aria-label="only deleted">
+                <DeleteIcon sx={{ mr: 0.5 }} />
+                Deleted
+              </ToggleButton>
+              <ToggleButton value="all" aria-label="all items">
+                All
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Box>
         </CardContent>
       </Card>
@@ -1435,15 +1443,27 @@ export default function BookingsPage() {
               </Typography>
             </Box>
 
-            <Tabs
+            <ToggleButtonGroup
               value={resourceTab}
-              onChange={(_, val) => setResourceTab(val)}
-              sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+              exclusive
+              onChange={(_, val) => val && setResourceTab(val)}
+              fullWidth
+              size="small"
+              sx={{ mb: 2 }}
             >
-              <Tab label="Staff" value="staff" icon={<PersonIcon />} iconPosition="start" />
-              <Tab label="Vehicles" value="vehicles" icon={<VehicleIcon />} iconPosition="start" />
-              <Tab label="Equipment" value="equipment" icon={<EquipmentIcon />} iconPosition="start" />
-            </Tabs>
+              <ToggleButton value="staff" aria-label="staff">
+                <PersonIcon sx={{ mr: 0.5 }} />
+                Staff
+              </ToggleButton>
+              <ToggleButton value="vehicles" aria-label="vehicles">
+                <VehicleIcon sx={{ mr: 0.5 }} />
+                Vehicles
+              </ToggleButton>
+              <ToggleButton value="equipment" aria-label="equipment">
+                <EquipmentIcon sx={{ mr: 0.5 }} />
+                Equipment
+              </ToggleButton>
+            </ToggleButtonGroup>
 
             {/* Currently Assigned Section */}
             <Box sx={{ mb: 3 }}>
