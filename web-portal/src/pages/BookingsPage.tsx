@@ -30,6 +30,7 @@ import {
   Tab,
   Avatar,
   Divider,
+  Slider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -44,6 +45,8 @@ import {
   Inventory as EquipmentIcon,
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
+  ZoomOut as ZoomOutIcon,
+  ZoomIn as ZoomInIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { socketService, RosterEvents } from '@/services/socket';
@@ -58,6 +61,8 @@ interface Job {
   endTime: string;
   location: string;
   status: string;
+  deceasedName?: string;
+  arrangementId?: string;
   staff: Array<{ fullName: string; role: string }>;
   vehicles: Array<{ registration: string; type: string }>;
   equipment: Array<{ name: string; equipmentType: string }>;
@@ -89,6 +94,10 @@ export default function BookingsPage() {
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'kanban'>('week');
   const [deletedFilter, setDeletedFilter] = useState<'hide' | 'only' | 'all'>('hide');
   const [draggedJob, setDraggedJob] = useState<Job | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(() => {
+    const saved = localStorage.getItem('dailyRunSheetZoom');
+    return saved ? parseInt(saved) : 3;
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -720,6 +729,48 @@ export default function BookingsPage() {
     }
   };
 
+  const handleZoomChange = (event: Event, newValue: number | number[]) => {
+    const zoom = newValue as number;
+    setZoomLevel(zoom);
+    localStorage.setItem('dailyRunSheetZoom', zoom.toString());
+  };
+
+  const getGridSize = () => {
+    // For calendar view (day columns)
+    switch (zoomLevel) {
+      case 1: // Smallest - many columns
+        return { xs: 12, sm: 4, md: 3, lg: 2, xl: 2 };
+      case 2: // Small
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 2 };
+      case 3: // Medium (default)
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
+      case 4: // Large
+        return { xs: 12, sm: 12, md: 6, lg: 4, xl: 3 };
+      case 5: // Largest - few columns
+        return { xs: 12, sm: 12, md: 12, lg: 6, xl: 4 };
+      default:
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
+    }
+  };
+
+  const getKanbanGridSize = () => {
+    // For kanban view (status columns)
+    switch (zoomLevel) {
+      case 1: // Smallest - many columns
+        return { xs: 12, sm: 6, md: 3, lg: 3, xl: 3 };
+      case 2: // Small
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
+      case 3: // Medium (default)
+        return { xs: 12, sm: 6, md: 3, lg: 3, xl: 3 };
+      case 4: // Large
+        return { xs: 12, sm: 12, md: 6, lg: 6, xl: 4 };
+      case 5: // Largest - one column
+        return { xs: 12, sm: 12, md: 12, lg: 12, xl: 6 };
+      default:
+        return { xs: 12, sm: 6, md: 3, lg: 3, xl: 3 };
+    }
+  };
+
   const kanbanStatuses = [
     { value: 'scheduled', label: 'Scheduled', color: 'info.main' },
     { value: 'confirmed', label: 'Confirmed', color: 'primary.main' },
@@ -845,12 +896,45 @@ export default function BookingsPage() {
         </CardContent>
       </Card>
 
+      {/* Zoom Control */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ZoomOutIcon color="action" />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="caption" color="text.secondary" gutterBottom>
+                Card Size
+              </Typography>
+              <Slider
+                value={zoomLevel}
+                onChange={handleZoomChange}
+                min={1}
+                max={5}
+                step={1}
+                marks={[
+                  { value: 1, label: 'XS' },
+                  { value: 2, label: 'S' },
+                  { value: 3, label: 'M' },
+                  { value: 4, label: 'L' },
+                  { value: 5, label: 'XL' },
+                ]}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => ['XS', 'S', 'M', 'L', 'XL'][value - 1]}
+              />
+            </Box>
+            <ZoomInIcon color="action" />
+          </Box>
+        </CardContent>
+      </Card>
+
       {/* Jobs View */}
       {viewMode === 'kanban' ? (
         /* Kanban Board View */
         <Grid container spacing={2}>
-          {kanbanStatuses.map((statusCol) => (
-            <Grid item xs={12} sm={6} md={3} key={statusCol.value}>
+          {kanbanStatuses.map((statusCol) => {
+            const kanbanGrid = getKanbanGridSize();
+            return (
+            <Grid item xs={kanbanGrid.xs} sm={kanbanGrid.sm} md={kanbanGrid.md} lg={kanbanGrid.lg} xl={kanbanGrid.xl} key={statusCol.value}>
               <Card
                 sx={{
                   minHeight: 600,
@@ -897,6 +981,11 @@ export default function BookingsPage() {
                             <Typography variant="body2" fontWeight="bold" gutterBottom>
                               {job.title}
                             </Typography>
+                            {job.deceasedName && (
+                              <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
+                                👤 {job.deceasedName}
+                              </Typography>
+                            )}
                             <Chip
                               label={job.jobTypeName}
                               size="small"
@@ -958,7 +1047,8 @@ export default function BookingsPage() {
                 </CardContent>
               </Card>
             </Grid>
-          ))}
+            );
+          })}
         </Grid>
       ) : (
         /* Calendar View */
@@ -966,13 +1056,16 @@ export default function BookingsPage() {
           {daysToDisplay.map((day) => {
           const dayJobs = getJobsForDay(day);
           const isToday = isSameDay(day, new Date());
+          const calendarGrid = getGridSize();
 
           return (
             <Grid
               item
-              xs={12}
-              md={viewMode === 'day' ? 12 : viewMode === 'week' ? 6 : 4}
-              lg={viewMode === 'day' ? 12 : viewMode === 'week' ? 3 : 2}
+              xs={calendarGrid.xs}
+              sm={calendarGrid.sm}
+              md={calendarGrid.md}
+              lg={calendarGrid.lg}
+              xl={calendarGrid.xl}
               key={day.toString()}
             >
               <Card
@@ -1015,6 +1108,11 @@ export default function BookingsPage() {
                             <Typography variant="body2" fontWeight="bold" gutterBottom>
                               {job.title}
                             </Typography>
+                            {job.deceasedName && (
+                              <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
+                                👤 {job.deceasedName}
+                              </Typography>
+                            )}
                             <Chip
                               label={job.jobTypeName}
                               size="small"
