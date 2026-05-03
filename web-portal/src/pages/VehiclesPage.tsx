@@ -451,8 +451,9 @@ export default function VehiclesPage() {
                     component="img"
                     sx={{
                       width: '100%',
-                      height: 200,
-                      objectFit: 'cover',
+                      aspectRatio: '16 / 9',
+                      objectFit: 'contain',
+                      bgcolor: 'action.hover',
                     }}
                     image={getAuthenticatedImageUrl(vehicle.photoUrl)}
                     alt={`${vehicle.make} ${vehicle.model}`}
@@ -461,7 +462,7 @@ export default function VehiclesPage() {
                   <Box
                     sx={{
                       width: '100%',
-                      height: 200,
+                      aspectRatio: '16 / 9',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -641,7 +642,11 @@ export default function VehiclesPage() {
                 {photoPreview && (
                   <Box
                     component="img"
-                    src={photoPreview}
+                    src={
+                      photoPreview.startsWith('blob:') || photoPreview.startsWith('data:')
+                        ? photoPreview
+                        : getAuthenticatedImageUrl(photoPreview)
+                    }
                     alt="Vehicle preview"
                     sx={{
                       width: 120,

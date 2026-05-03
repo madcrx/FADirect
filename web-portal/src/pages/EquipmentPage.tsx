@@ -289,7 +289,8 @@ export default function EquipmentPage() {
                   sx={{
                     width: '100%',
                     aspectRatio: '4 / 3',
-                    objectFit: 'cover',
+                    objectFit: 'contain',
+                    bgcolor: 'action.hover',
                   }}
                   image={getAuthenticatedImageUrl(item.photoUrl)}
                   alt={item.name}
@@ -407,7 +408,11 @@ export default function EquipmentPage() {
                 {photoPreview && (
                   <Box
                     component="img"
-                    src={photoPreview}
+                    src={
+                      photoPreview.startsWith('blob:') || photoPreview.startsWith('data:')
+                        ? photoPreview
+                        : getAuthenticatedImageUrl(photoPreview)
+                    }
                     alt="Equipment preview"
                     sx={{
                       width: 120,
