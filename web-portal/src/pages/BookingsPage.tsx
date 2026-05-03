@@ -86,8 +86,9 @@ export default function BookingsPage() {
   const [arrangements, setArrangements] = useState<Array<{id: string; deceasedName: string}>>([]);
   const [equipment, setEquipment] = useState<Array<{id: string; name: string; equipmentType: string; status: string}>>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month' | 'kanban'>('week');
   const [deletedFilter, setDeletedFilter] = useState<'hide' | 'only' | 'all'>('hide');
+  const [draggedJob, setDraggedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -691,6 +692,41 @@ export default function BookingsPage() {
 
   const daysToDisplay = getDaysToDisplay();
 
+  // Kanban view helpers
+  const getJobsByStatus = (status: string) => {
+    return jobs.filter(job => job.status === status);
+  };
+
+  const handleDragStart = (job: Job) => {
+    setDraggedJob(job);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    if (!draggedJob) return;
+
+    try {
+      await api.put(`/roster/jobs/${draggedJob.id}`, { status: newStatus });
+      setSuccess(`Job moved to ${newStatus.replace('_', ' ')}`);
+      await loadData();
+      setDraggedJob(null);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to update job status');
+      setDraggedJob(null);
+    }
+  };
+
+  const kanbanStatuses = [
+    { value: 'scheduled', label: 'Scheduled', color: 'info.main' },
+    { value: 'confirmed', label: 'Confirmed', color: 'primary.main' },
+    { value: 'completed', label: 'Completed', color: 'success.main' },
+    { value: 'cancelled', label: 'Cancelled', color: 'error.main' },
+  ];
+
   if (loading) {
     return (
       <Box p={3}>
@@ -783,6 +819,13 @@ export default function BookingsPage() {
               >
                 Month
               </Button>
+              <Button
+                size="small"
+                variant={viewMode === 'kanban' ? 'contained' : 'outlined'}
+                onClick={() => setViewMode('kanban')}
+              >
+                Kanban
+              </Button>
             </Box>
 
             {/* Deleted Items Filter */}
@@ -803,8 +846,124 @@ export default function BookingsPage() {
       </Card>
 
       {/* Jobs View */}
-      <Grid container spacing={2}>
-        {daysToDisplay.map((day) => {
+      {viewMode === 'kanban' ? (
+        /* Kanban Board View */
+        <Grid container spacing={2}>
+          {kanbanStatuses.map((statusCol) => (
+            <Grid item xs={12} sm={6} md={3} key={statusCol.value}>
+              <Card
+                sx={{
+                  minHeight: 600,
+                  bgcolor: 'background.paper',
+                }}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, statusCol.value)}
+              >
+                <CardContent>
+                  <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography variant="h6" fontWeight="bold">
+                        {statusCol.label}
+                      </Typography>
+                      <Chip
+                        label={`${getJobsByStatus(statusCol.value).length} jobs`}
+                        size="small"
+                        sx={{ mt: 1, bgcolor: statusCol.color, color: 'white' }}
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {getJobsByStatus(statusCol.value).map((job) => (
+                      <Card
+                        key={job.id}
+                        draggable
+                        onDragStart={() => handleDragStart(job)}
+                        sx={{
+                          borderLeft: 4,
+                          borderColor: job.jobTypeColor || 'primary.main',
+                          cursor: 'grab',
+                          '&:active': { cursor: 'grabbing' },
+                          '&:hover': { bgcolor: 'action.hover', transform: 'scale(1.02)' },
+                          transition: 'all 0.2s',
+                        }}
+                        onClick={() => {
+                          setSelectedJob(job);
+                          setResourceDrawerOpen(true);
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Box>
+                            <Typography variant="body2" fontWeight="bold" gutterBottom>
+                              {job.title}
+                            </Typography>
+                            <Chip
+                              label={job.jobTypeName}
+                              size="small"
+                              sx={{
+                                bgcolor: job.jobTypeColor || 'primary.main',
+                                color: 'white',
+                                mb: 1,
+                              }}
+                            />
+                            <Typography variant="caption" display="block" color="text.secondary">
+                              📅 {format(new Date(job.startTime), 'MMM d, yyyy')}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              🕐 {format(new Date(job.startTime), 'HH:mm')} -{' '}
+                              {format(new Date(job.endTime), 'HH:mm')}
+                            </Typography>
+                            {job.location && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                📍 {job.location}
+                              </Typography>
+                            )}
+                            {job.staff.length > 0 && (
+                              <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {job.staff.map((s, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    icon={<PersonIcon />}
+                                    label={s.fullName}
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                ))}
+                              </Box>
+                            )}
+                            {job.vehicles.length > 0 && (
+                              <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {job.vehicles.map((v, idx) => (
+                                  <Chip
+                                    key={idx}
+                                    icon={<VehicleIcon />}
+                                    label={v.registration}
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                ))}
+                              </Box>
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {getJobsByStatus(statusCol.value).length === 0 && (
+                      <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                        <Typography variant="caption">No jobs in this status</Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        /* Calendar View */
+        <Grid container spacing={2}>
+          {daysToDisplay.map((day) => {
           const dayJobs = getJobsForDay(day);
           const isToday = isSameDay(day, new Date());
 
@@ -906,7 +1065,8 @@ export default function BookingsPage() {
             </Grid>
           );
         })}
-      </Grid>
+        </Grid>
+      )}
 
       {/* Create Job Dialog */}
       <Dialog open={jobDialog} onClose={() => setJobDialog(false)} maxWidth="sm" fullWidth>
