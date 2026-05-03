@@ -24,6 +24,7 @@ import {
   Paper,
   Stack,
   Tooltip,
+  Slider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -36,6 +37,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
+  ZoomOut as ZoomOutIcon,
+  ZoomIn as ZoomInIcon,
 } from '@mui/icons-material';
 import api, { getAuthenticatedImageUrl } from '@/services/api';
 import ImageCropDialog from '@/components/ImageCropDialog';
@@ -77,6 +80,10 @@ export default function VehiclesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [zoomLevel, setZoomLevel] = useState<number>(() => {
+    const saved = localStorage.getItem('vehiclesPageZoom');
+    return saved ? parseInt(saved) : 3;
+  });
   const [formData, setFormData] = useState({
     vehicleType: 'hearse',
     make: '',
@@ -194,6 +201,29 @@ export default function VehiclesPage() {
   const handleCropCancel = () => {
     setCropDialogOpen(false);
     setImageToCrop(null);
+  };
+
+  const handleZoomChange = (event: Event, newValue: number | number[]) => {
+    const zoom = newValue as number;
+    setZoomLevel(zoom);
+    localStorage.setItem('vehiclesPageZoom', zoom.toString());
+  };
+
+  const getGridSize = () => {
+    switch (zoomLevel) {
+      case 1: // Smallest - many cards
+        return { xs: 12, sm: 3, md: 2, lg: 2, xl: 1.5 };
+      case 2: // Small
+        return { xs: 12, sm: 4, md: 3, lg: 2, xl: 2 };
+      case 3: // Medium (default)
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
+      case 4: // Large
+        return { xs: 12, sm: 12, md: 6, lg: 4, xl: 4 };
+      case 5: // Largest - few cards
+        return { xs: 12, sm: 12, md: 12, lg: 6, xl: 6 };
+      default:
+        return { xs: 12, sm: 6, md: 4, lg: 3, xl: 3 };
+    }
   };
 
   const handleCloseDialog = () => {
@@ -425,15 +455,47 @@ export default function VehiclesPage() {
         </CardContent>
       </Card>
 
+      {/* Zoom Control */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <ZoomOutIcon color="action" />
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="caption" color="text.secondary" gutterBottom>
+                Card Size
+              </Typography>
+              <Slider
+                value={zoomLevel}
+                onChange={handleZoomChange}
+                min={1}
+                max={5}
+                step={1}
+                marks={[
+                  { value: 1, label: 'XS' },
+                  { value: 2, label: 'S' },
+                  { value: 3, label: 'M' },
+                  { value: 4, label: 'L' },
+                  { value: 5, label: 'XL' },
+                ]}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => ['XS', 'S', 'M', 'L', 'XL'][value - 1]}
+              />
+            </Box>
+            <ZoomInIcon color="action" />
+          </Box>
+        </CardContent>
+      </Card>
+
       {/* Vehicles Grid */}
       <Grid container spacing={3}>
         {filteredVehicles.map((vehicle) => {
           const statusConfig = getStatusConfig(vehicle.status);
           const regExpired = isRegistrationExpired(vehicle.registrationExpiry);
           const serviceDue = isServiceDue(vehicle.nextServiceDate);
+          const gridSize = getGridSize();
 
           return (
-            <Grid item xs={12} sm={4} md={3} lg={2} key={vehicle.id}>
+            <Grid item xs={gridSize.xs} sm={gridSize.sm} md={gridSize.md} lg={gridSize.lg} xl={gridSize.xl} key={vehicle.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {/* Status Badge */}
                 <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 1 }}>
