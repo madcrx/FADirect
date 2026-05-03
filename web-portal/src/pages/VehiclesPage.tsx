@@ -433,7 +433,7 @@ export default function VehiclesPage() {
           const serviceDue = isServiceDue(vehicle.nextServiceDate);
 
           return (
-            <Grid item xs={12} sm={6} md={4} key={vehicle.id}>
+            <Grid item xs={12} sm={4} md={3} lg={2} key={vehicle.id}>
               <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {/* Status Badge */}
                 <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 1 }}>

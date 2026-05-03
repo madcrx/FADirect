@@ -281,7 +281,7 @@ export default function EquipmentPage() {
 
       <Grid container spacing={3}>
         {equipment.map((item) => (
-          <Grid item xs={12} sm={6} md={4} key={item.id}>
+          <Grid item xs={12} sm={4} md={3} lg={2} key={item.id}>
             <Card>
               {item.photoUrl ? (
                 <CardMedia
