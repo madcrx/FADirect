@@ -29,6 +29,7 @@ import MournersPage from './pages/MournersPage';
 import RevenuePage from './pages/RevenuePage';
 import LeaveManagementPage from './pages/LeaveManagementPage';
 import PreArrangementFormPage from './pages/PreArrangementFormPage';
+import PendingRegistrationsPage from './pages/PendingRegistrationsPage';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
             <Route path="mourners" element={<MournersPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="leave-management" element={<LeaveManagementPage />} />
+            <Route path="registrations" element={<PendingRegistrationsPage />} />
             <Route path="vehicles" element={<VehiclesPage />} />
             <Route path="equipment" element={<EquipmentPage />} />
             <Route path="search" element={<SearchPage />} />

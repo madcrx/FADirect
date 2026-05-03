@@ -40,6 +40,7 @@ import {
   DriveEta as DriveEtaIcon,
   Inventory as InventoryIcon,
   EventAvailable as EventAvailableIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -111,6 +112,7 @@ const menuSections: MenuSection[] = [
   {
     heading: 'ADMIN',
     items: [
+      { text: 'User Registrations', icon: <PersonAddIcon />, path: '/registrations', requiresRoles: ['admin', 'management'] },
       { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },
       { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
       { text: 'Trash', icon: <TrashIcon />, path: '/trash' },
