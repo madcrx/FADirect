@@ -21,7 +21,8 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  Slider,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -292,9 +293,39 @@ export default function EquipmentPage() {
             Manage equipment, assets, and inventory
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-          Add Equipment
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {/* Compact Zoom Control */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <Tooltip title="Zoom Out">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => handleZoomChange(null as any, Math.max(1, zoomLevel - 1))}
+                  disabled={zoomLevel === 1}
+                >
+                  <ZoomOutIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Typography variant="body2" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 'medium' }}>
+              {['XS', 'S', 'M', 'L', 'XL'][zoomLevel - 1]}
+            </Typography>
+            <Tooltip title="Zoom In">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => handleZoomChange(null as any, Math.min(5, zoomLevel + 1))}
+                  disabled={zoomLevel === 5}
+                >
+                  <ZoomInIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+            Add Equipment
+          </Button>
+        </Box>
       </Box>
 
       {success && (
@@ -308,37 +339,6 @@ export default function EquipmentPage() {
           {error}
         </Alert>
       )}
-
-      {/* Zoom Control */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <ZoomOutIcon color="action" />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="caption" color="text.secondary" gutterBottom>
-                Card Size
-              </Typography>
-              <Slider
-                value={zoomLevel}
-                onChange={handleZoomChange}
-                min={1}
-                max={5}
-                step={1}
-                marks={[
-                  { value: 1, label: 'XS' },
-                  { value: 2, label: 'S' },
-                  { value: 3, label: 'M' },
-                  { value: 4, label: 'L' },
-                  { value: 5, label: 'XL' },
-                ]}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => ['XS', 'S', 'M', 'L', 'XL'][value - 1]}
-              />
-            </Box>
-            <ZoomInIcon color="action" />
-          </Box>
-        </CardContent>
-      </Card>
 
       <Grid container spacing={3}>
         {equipment.map((item) => {

@@ -30,9 +30,9 @@ import {
   Tab,
   Avatar,
   Divider,
-  Slider,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -804,7 +804,26 @@ export default function BookingsPage() {
             Manage daily operations, jobs, and resource allocation
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 0.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <IconButton
+              size="small"
+              onClick={() => handleZoomChange(null as any, Math.max(1, zoomLevel - 1))}
+              disabled={zoomLevel === 1}
+            >
+              <ZoomOutIcon fontSize="small" />
+            </IconButton>
+            <Typography variant="body2" sx={{ minWidth: 24, textAlign: 'center', fontWeight: 'medium' }}>
+              {['XS', 'S', 'M', 'L', 'XL'][zoomLevel - 1]}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => handleZoomChange(null as any, Math.min(5, zoomLevel + 1))}
+              disabled={zoomLevel === 5}
+            >
+              <ZoomInIcon fontSize="small" />
+            </IconButton>
+          </Box>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setJobDialog(true)}>
             Add Job
           </Button>
@@ -900,37 +919,6 @@ export default function BookingsPage() {
                 All
               </ToggleButton>
             </ToggleButtonGroup>
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Zoom Control */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <ZoomOutIcon color="action" />
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="caption" color="text.secondary" gutterBottom>
-                Card Size
-              </Typography>
-              <Slider
-                value={zoomLevel}
-                onChange={handleZoomChange}
-                min={1}
-                max={5}
-                step={1}
-                marks={[
-                  { value: 1, label: 'XS' },
-                  { value: 2, label: 'S' },
-                  { value: 3, label: 'M' },
-                  { value: 4, label: 'L' },
-                  { value: 5, label: 'XL' },
-                ]}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => ['XS', 'S', 'M', 'L', 'XL'][value - 1]}
-              />
-            </Box>
-            <ZoomInIcon color="action" />
           </Box>
         </CardContent>
       </Card>
