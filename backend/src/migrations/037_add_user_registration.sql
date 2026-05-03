@@ -55,8 +55,10 @@ CREATE TABLE IF NOT EXISTS admin_notifications (
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_roles
   ON admin_notifications USING GIN(target_roles);
 CREATE INDEX IF NOT EXISTS idx_admin_notifications_created
-  ON admin_notifications(created_at DESC)
-  WHERE expires_at IS NULL OR expires_at > NOW();
+  ON admin_notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_notifications_expires
+  ON admin_notifications(expires_at)
+  WHERE expires_at IS NOT NULL;
 
 -- Email queue for registration notifications
 ALTER TABLE email_queue
