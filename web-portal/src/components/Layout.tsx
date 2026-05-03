@@ -193,7 +193,7 @@ export default function Layout() {
           .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
-              <ListItem sx={{ py: 1.5, px: 2 }}>
+              <ListItem sx={{ py: 0.75, px: 2 }}>
                 <Typography
                   variant="overline"
                   sx={{
@@ -215,7 +215,7 @@ export default function Layout() {
                   selected={location.pathname === item.path}
                   onClick={() => handleMenuClick(item.path)}
                   disabled={item.badge === 'Soon'}
-                  sx={{ pl: section.heading ? 3 : 2 }}
+                  sx={{ pl: section.heading ? 3 : 2, py: 0.75 }}
                 >
                   <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit', minWidth: 40 }}>
                     {item.icon}
@@ -235,7 +235,7 @@ export default function Layout() {
                 </ListItemButton>
               </ListItem>
             ))}
-            {sectionIndex < menuSections.filter(s => !s.requiresRoles || hasRole(s.requiresRoles)).length - 1 && <Divider sx={{ my: 0.5 }} />}
+            {sectionIndex < menuSections.filter(s => !s.requiresRoles || hasRole(s.requiresRoles)).length - 1 && <Divider sx={{ my: 0.25 }} />}
           </Box>
         ))}
       </List>
