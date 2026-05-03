@@ -623,6 +623,19 @@ export default function BookingsPage() {
     return roleMap[roleKey] || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Get confirmation status display info
+  const getConfirmationStatus = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return { color: 'success' as const, label: 'Confirmed', icon: '✓' };
+      case 'declined':
+        return { color: 'error' as const, label: 'Declined', icon: '✗' };
+      case 'pending':
+      default:
+        return { color: 'warning' as const, label: 'Pending', icon: '?' };
+    }
+  };
+
   // Get vacant vehicle types
   const getVacantVehicles = () => {
     if (!selectedJob?.requirements) return [];
@@ -1183,24 +1196,36 @@ export default function BookingsPage() {
                 {/* Staff Tab */}
                 {resourceTab === 'staff' && (
                   <>
-                    {selectedJob.staff.map((staff: any, index: number) => (
-                      <ListItem
-                        key={`assigned-${index}`}
-                        sx={{
-                          cursor: 'pointer',
-                          '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
-                        }}
-                        onClick={() => handleUnassignStaff(staff.id, staff.role)}
-                      >
-                        <ListItemIcon>
-                          <CheckCircleIcon color="success" fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={staff.fullName}
-                          secondary={`${formatRole(staff.role)} (click to remove)`}
-                        />
-                      </ListItem>
-                    ))}
+                    {selectedJob.staff.map((staff: any, index: number) => {
+                      const confirmStatus = getConfirmationStatus(staff.confirmationStatus);
+                      return (
+                        <ListItem
+                          key={`assigned-${index}`}
+                          sx={{
+                            cursor: 'pointer',
+                            '&:hover': { bgcolor: 'error.lighter', borderRadius: 1 },
+                          }}
+                          onClick={() => handleUnassignStaff(staff.id, staff.role)}
+                          secondaryAction={
+                            <Chip
+                              label={confirmStatus.label}
+                              size="small"
+                              color={confirmStatus.color}
+                              variant="outlined"
+                              sx={{ fontSize: '0.7rem' }}
+                            />
+                          }
+                        >
+                          <ListItemIcon>
+                            <CheckCircleIcon color="success" fontSize="small" />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={staff.fullName}
+                            secondary={`${formatRole(staff.role)} (click to remove)`}
+                          />
+                        </ListItem>
+                      );
+                    })}
                     {getVacantStaffRoles().map((vacant, index) => (
                       <ListItem key={`vacant-${index}`}>
                         <ListItemIcon>

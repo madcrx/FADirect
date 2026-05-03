@@ -24,7 +24,11 @@ exports.getJobs = async (req, res, next) => {
           'id', u.id,
           'fullName', u.name,
           'role', jsa.role,
-          'isPrimary', jsa.is_primary
+          'isPrimary', jsa.is_primary,
+          'assignmentId', jsa.id,
+          'confirmationStatus', jsa.confirmation_status,
+          'confirmedAt', jsa.confirmed_at,
+          'confirmationNotes', jsa.confirmation_notes
         )) FILTER (WHERE u.id IS NOT NULL) as staff,
         json_agg(DISTINCT jsonb_build_object(
           'id', v.id,
