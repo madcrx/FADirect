@@ -41,6 +41,7 @@ async function runMigrations() {
     '033_add_file_sending.sql',
     '034_add_performance_indexes.sql',
     '035_fix_backup_schedules_schema.sql',
+    '036_add_shift_confirmation.sql',
   ];
 
   try {

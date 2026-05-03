@@ -290,6 +290,44 @@ exports.assignStaff = async (req, res, next) => {
       ]
     );
 
+    // Create roster notification for shift assignment
+    const assignment = result.rows[0];
+    await db.query(
+      `INSERT INTO roster_notifications (
+        assignment_id, user_id, notification_type, title, body, data
+      ) VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        assignment.id,
+        staffId,
+        'roster_assigned',
+        'New Shift Assignment',
+        `You've been assigned to a job as ${role}`,
+        JSON.stringify({
+          jobId,
+          role,
+          isPrimary: isPrimary || false,
+          assignedAt: new Date().toISOString()
+        })
+      ]
+    );
+
+    // Send push notification to staff member's devices
+    const pushNotificationService = require('../services/pushNotificationService');
+    const jobDetails = await db.query(
+      'SELECT title, start_time FROM jobs WHERE id = $1',
+      [jobId]
+    );
+
+    if (jobDetails.rows.length > 0) {
+      await pushNotificationService.sendShiftAssignmentNotification(staffId, {
+        assignmentId: assignment.id,
+        jobId,
+        jobTitle: jobDetails.rows[0].title,
+        startTime: jobDetails.rows[0].start_time,
+        role
+      });
+    }
+
     // Emit WebSocket event for real-time updates
     rosterEvents.staffAssigned(jobId, result.rows[0]);
 
@@ -559,6 +597,277 @@ exports.getJobTypes = async (req, res, next) => {
     );
 
     res.json({ jobTypes: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get my shifts (for mobile app)
+ * GET /roster/my-shifts
+ */
+exports.getMyShifts = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(`
+      SELECT
+        jsa.id as assignment_id,
+        jsa.role,
+        jsa.confirmation_status,
+        jsa.confirmed_at,
+        jsa.confirmation_notes,
+        j.id as job_id,
+        j.title,
+        j.description,
+        j.location,
+        j.start_time,
+        j.end_time,
+        j.status as job_status,
+        j.special_instructions,
+        jt.name as job_type,
+        jt.color as job_type_color,
+        a.id as arrangement_id,
+        a.deceased_name,
+        a.mourner_id
+      FROM job_staff_assignments jsa
+      JOIN jobs j ON jsa.job_id = j.id
+      LEFT JOIN job_types jt ON j.job_type_id = jt.id
+      LEFT JOIN arrangements a ON j.arrangement_id = a.id
+      WHERE jsa.staff_id = $1
+        AND j.deleted_at IS NULL
+        AND j.status IN ('scheduled', 'in_progress')
+        AND j.start_time >= NOW() - INTERVAL '24 hours'
+      ORDER BY j.start_time ASC
+    `, [userId]);
+
+    res.json({ shifts: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Confirm shift assignment
+ * POST /roster/assignments/:assignmentId/confirm
+ */
+exports.confirmShift = async (req, res, next) => {
+  try {
+    const { assignmentId } = req.params;
+    const userId = req.user.id;
+    const { notes } = req.body;
+
+    // Verify assignment belongs to this user
+    const checkResult = await db.query(`
+      SELECT * FROM job_staff_assignments
+      WHERE id = $1 AND staff_id = $2
+    `, [assignmentId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Assignment not found' } });
+    }
+
+    // Update confirmation status
+    const result = await db.query(`
+      UPDATE job_staff_assignments
+      SET confirmation_status = 'accepted',
+          confirmed_at = NOW(),
+          confirmation_notes = $1
+      WHERE id = $2
+      RETURNING *
+    `, [notes || null, assignmentId]);
+
+    // Create notification for admin/manager
+    const assignment = result.rows[0];
+    await db.query(`
+      INSERT INTO roster_notifications (
+        assignment_id, user_id, notification_type, title, body, data
+      )
+      SELECT
+        $1, u.id, 'shift_confirmed',
+        'Shift Confirmed',
+        $2 || ' has confirmed their shift assignment',
+        jsonb_build_object('assignment_id', $1, 'confirmed_by', $3)
+      FROM users u
+      WHERE 'admin' = ANY(u.role) OR 'management' = ANY(u.role)
+    `, [assignmentId, req.user.name, userId]);
+
+    // Emit WebSocket event
+    rosterEvents.shiftConfirmed(assignment.job_id, assignmentId, userId);
+
+    res.json({
+      success: true,
+      message: 'Shift confirmed successfully',
+      assignment: result.rows[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Decline shift assignment
+ * POST /roster/assignments/:assignmentId/decline
+ */
+exports.declineShift = async (req, res, next) => {
+  try {
+    const { assignmentId } = req.params;
+    const userId = req.user.id;
+    const { notes } = req.body;
+
+    // Verify assignment belongs to this user
+    const checkResult = await db.query(`
+      SELECT * FROM job_staff_assignments
+      WHERE id = $1 AND staff_id = $2
+    `, [assignmentId, userId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Assignment not found' } });
+    }
+
+    // Update confirmation status
+    const result = await db.query(`
+      UPDATE job_staff_assignments
+      SET confirmation_status = 'declined',
+          confirmed_at = NOW(),
+          confirmation_notes = $1
+      WHERE id = $2
+      RETURNING *
+    `, [notes || null, assignmentId]);
+
+    // Create notification for admin/manager
+    const assignment = result.rows[0];
+    await db.query(`
+      INSERT INTO roster_notifications (
+        assignment_id, user_id, notification_type, title, body, data
+      )
+      SELECT
+        $1, u.id, 'shift_declined',
+        'Shift Declined',
+        $2 || ' has declined their shift assignment' || CASE WHEN $3 IS NOT NULL THEN ': ' || $3 ELSE '' END,
+        jsonb_build_object('assignment_id', $1, 'declined_by', $4, 'reason', $3)
+      FROM users u
+      WHERE 'admin' = ANY(u.role) OR 'management' = ANY(u.role)
+    `, [assignmentId, req.user.name, notes, userId]);
+
+    // Emit WebSocket event
+    rosterEvents.shiftDeclined(assignment.job_id, assignmentId, userId, notes);
+
+    res.json({
+      success: true,
+      message: 'Shift declined',
+      assignment: result.rows[0]
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get roster notifications
+ * GET /roster/notifications
+ */
+exports.getRosterNotifications = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { limit = 50, unreadOnly = false } = req.query;
+
+    let query = `
+      SELECT * FROM roster_notifications
+      WHERE user_id = $1
+    `;
+
+    if (unreadOnly === 'true') {
+      query += ' AND read_at IS NULL';
+    }
+
+    query += ' ORDER BY sent_at DESC LIMIT $2';
+
+    const result = await db.query(query, [userId, parseInt(limit)]);
+
+    res.json({ notifications: result.rows });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Mark notification as read
+ * PUT /roster/notifications/:notificationId/read
+ */
+exports.markNotificationRead = async (req, res, next) => {
+  try {
+    const { notificationId } = req.params;
+    const userId = req.user.id;
+
+    const result = await db.query(`
+      UPDATE roster_notifications
+      SET read_at = NOW()
+      WHERE id = $1 AND user_id = $2
+      RETURNING *
+    `, [notificationId, userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: { message: 'Notification not found' } });
+    }
+
+    res.json({ notification: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Register device for push notifications
+ * POST /roster/register-device
+ */
+exports.registerDevice = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { deviceToken, deviceType, deviceName } = req.body;
+
+    if (!deviceToken || !deviceType) {
+      return res.status(400).json({ error: { message: 'Device token and type are required' } });
+    }
+
+    // Upsert device token
+    await db.query(`
+      INSERT INTO push_notification_tokens (user_id, device_token, device_type, device_name, last_used_at)
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (user_id, device_token)
+      DO UPDATE SET
+        device_type = EXCLUDED.device_type,
+        device_name = EXCLUDED.device_name,
+        is_active = true,
+        last_used_at = NOW()
+    `, [userId, deviceToken, deviceType, deviceName]);
+
+    res.json({ success: true, message: 'Device registered successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Unregister device from push notifications
+ * DELETE /roster/unregister-device
+ */
+exports.unregisterDevice = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { deviceToken } = req.body;
+
+    if (!deviceToken) {
+      return res.status(400).json({ error: { message: 'Device token is required' } });
+    }
+
+    await db.query(`
+      UPDATE push_notification_tokens
+      SET is_active = false
+      WHERE user_id = $1 AND device_token = $2
+    `, [userId, deviceToken]);
+
+    res.json({ success: true, message: 'Device unregistered successfully' });
   } catch (error) {
     next(error);
   }

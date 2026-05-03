@@ -119,6 +119,14 @@ const rosterEvents = {
   jobDeleted: (jobId) => {
     emitToAll('roster:job-deleted', { jobId });
   },
+
+  shiftConfirmed: (jobId, assignmentId, userId) => {
+    emitToAll('roster:shift-confirmed', { jobId, assignmentId, userId });
+  },
+
+  shiftDeclined: (jobId, assignmentId, userId, reason) => {
+    emitToAll('roster:shift-declined', { jobId, assignmentId, userId, reason });
+  },
 };
 
 /**
