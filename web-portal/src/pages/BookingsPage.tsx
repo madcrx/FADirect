@@ -875,7 +875,7 @@ export default function BookingsPage() {
                 variant={viewMode === 'kanban' ? 'contained' : 'outlined'}
                 onClick={() => setViewMode('kanban')}
               >
-                Kanban
+                Job Status
               </Button>
             </Box>
 
@@ -929,7 +929,7 @@ export default function BookingsPage() {
 
       {/* Jobs View */}
       {viewMode === 'kanban' ? (
-        /* Kanban Board View */
+        /* Job Status Board View */
         <Grid container spacing={2}>
           {kanbanStatuses.map((statusCol) => {
             const kanbanGrid = getKanbanGridSize();
