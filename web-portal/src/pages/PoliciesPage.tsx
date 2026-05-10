@@ -380,13 +380,13 @@ export default function PoliciesPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                           <Box
                             sx={{
-                              bgcolor: `${getCategoryColor(policy.category_name)}.light`,
+                              bgcolor: `${getCategoryColor(policy.category_name)}.main`,
                               borderRadius: 1.5,
                               p: 1,
                               display: 'flex',
                             }}
                           >
-                            <DocumentIcon sx={{ fontSize: 24, color: `${getCategoryColor(policy.category_name)}.main` }} />
+                            <DocumentIcon sx={{ fontSize: 24, color: 'white' }} />
                           </Box>
                         </Box>
                         <Typography variant="body2" fontWeight="600" gutterBottom>
@@ -397,9 +397,10 @@ export default function PoliciesPage() {
                             label={policy.category_name}
                             size="small"
                             sx={{
-                              bgcolor: `${getCategoryColor(policy.category_name)}.light`,
-                              color: `${getCategoryColor(policy.category_name)}.main`,
+                              bgcolor: `${getCategoryColor(policy.category_name)}.main`,
+                              color: 'white',
                               fontSize: '0.7rem',
+                              fontWeight: 500,
                             }}
                           />
                         )}
