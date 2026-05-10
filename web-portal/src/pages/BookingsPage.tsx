@@ -799,7 +799,7 @@ export default function BookingsPage() {
 
   const kanbanStatuses = [
     { value: 'scheduled', label: 'Scheduled', color: 'info.main' },
-    { value: 'confirmed', label: 'Confirmed', color: 'primary.main' },
+    { value: 'in_progress', label: 'In Progress', color: 'primary.main' },
     { value: 'completed', label: 'Completed', color: 'success.main' },
     { value: 'cancelled', label: 'Cancelled', color: 'error.main' },
   ];
