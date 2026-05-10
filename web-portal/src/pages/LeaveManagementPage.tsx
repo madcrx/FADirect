@@ -144,7 +144,7 @@ const LeaveManagementPage = () => {
   };
 
   const handleSubmitRequest = async () => {
-    if (!currentUser || !leaveRequest.startDate || !leaveRequest.endDate) {
+    if (!currentUser || !leaveRequest.startDate || !leaveRequest.endDate || !leaveRequest.reason) {
       showSnackbar('Please fill in all required fields', 'error');
       return;
     }
@@ -154,6 +154,7 @@ const LeaveManagementPage = () => {
       await api.post('/leave', {
         startDate: leaveRequest.startDate,
         endDate: leaveRequest.endDate,
+        leaveType: leaveRequest.leaveType,
         reason: leaveRequest.reason,
       });
       showSnackbar('Leave request submitted successfully', 'success');
@@ -406,10 +407,11 @@ const LeaveManagementPage = () => {
               fullWidth
               multiline
               rows={4}
-              label="Reason (Optional)"
+              label="Reason"
               value={leaveRequest.reason}
               onChange={(e) => setLeaveRequest({ ...leaveRequest, reason: e.target.value })}
               placeholder="Please provide a reason for your leave request..."
+              required
             />
           </Box>
         </DialogContent>

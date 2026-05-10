@@ -69,6 +69,7 @@ export default function PoliciesPage() {
   const [policies, setPolicies] = useState<PolicyDocument[]>([]);
   const [categories, setCategories] = useState<PolicyCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [uploadDialog, setUploadDialog] = useState(false);
   const [editDialog, setEditDialog] = useState(false);
@@ -149,10 +150,19 @@ export default function PoliciesPage() {
     }
   };
 
-  const filteredPolicies =
-    selectedCategory === 'all'
-      ? policies
-      : policies.filter((p) => p.category_name === categories.find(c => c.id === selectedCategory)?.name);
+  const filteredPolicies = policies
+    .filter((p) => {
+      // Filter by category
+      if (selectedCategory !== 'all') {
+        const categoryName = categories.find(c => c.id === selectedCategory)?.name;
+        if (p.category_name !== categoryName) return false;
+      }
+      // Filter by pending acknowledgment
+      if (showPendingOnly && (!p.requires_acknowledgment || p.acknowledged)) {
+        return false;
+      }
+      return true;
+    });
 
   const handleAcknowledge = async (policyId: string) => {
     try {
@@ -294,6 +304,16 @@ export default function PoliciesPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const handleReviewNow = () => {
+    setShowPendingOnly(true);
+    setSelectedCategory('all');
+    // Scroll to the table
+    const tableElement = document.getElementById('policies-table');
+    if (tableElement) {
+      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const getCategoryColor = (categoryName?: string) => {
     if (!categoryName) return 'default';
     const colors: Record<string, string> = {
@@ -359,7 +379,7 @@ export default function PoliciesPage() {
           icon={<WarningIcon />}
           sx={{ mb: 3 }}
           action={
-            <Button color="inherit" size="small" sx={{ color: 'text.primary' }}>
+            <Button color="inherit" size="small" sx={{ color: 'text.primary' }} onClick={handleReviewNow}>
               Review Now
             </Button>
           }
@@ -415,7 +435,13 @@ export default function PoliciesPage() {
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', mb: 2, display: 'block' }}>
                 You have {pendingCount} pending policy updates that require your acknowledgement.
               </Typography>
-              <Button variant="contained" size="small" fullWidth sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}>
+              <Button
+                variant="contained"
+                size="small"
+                fullWidth
+                onClick={handleReviewNow}
+                sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}
+              >
                 Review Now →
               </Button>
             </CardContent>
@@ -474,11 +500,22 @@ export default function PoliciesPage() {
           </Card>
 
           {/* All Policies Table */}
-          <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <Card id="policies-table" sx={{ border: '1px solid', borderColor: 'divider' }}>
             <CardContent>
-              <Typography variant="h6" fontWeight="600" gutterBottom>
-                All Policies
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6" fontWeight="600">
+                  All Policies
+                </Typography>
+                {showPendingOnly && (
+                  <Button
+                    size="small"
+                    onClick={() => setShowPendingOnly(false)}
+                    variant="outlined"
+                  >
+                    Show All
+                  </Button>
+                )}
+              </Box>
               <TableContainer>
                 <Table size="small" sx={{ '& .MuiTableCell-root': { py: 1.5 } }}>
                   <TableHead>
