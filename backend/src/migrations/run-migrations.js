@@ -45,6 +45,8 @@ async function runMigrations() {
     '037_add_user_registration.sql',
     '038_add_policy_management.sql',
     '039_add_leave_type.sql',
+    '040_add_workflow_automation.sql',
+    '041_add_audit_history.sql',
   ];
 
   try {
