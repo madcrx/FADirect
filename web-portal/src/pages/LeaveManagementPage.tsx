@@ -26,7 +26,7 @@ import {
   Grid,
 } from '@mui/material';
 import { Check as CheckIcon, Close as CloseIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
-import { leaveApi, authApi } from '@/services/api';
+import api, { leaveApi, authApi } from '@/services/api';
 import type { Leave, User } from '@/types';
 
 const LeaveManagementPage = () => {
@@ -150,16 +150,18 @@ const LeaveManagementPage = () => {
     }
 
     try {
-      await leaveApi.createLeave(currentUser.id, {
-        ...leaveRequest,
-        status: 'pending',
+      // Use the /leave endpoint directly instead of staff-profiles endpoint
+      await api.post('/leave', {
+        startDate: leaveRequest.startDate,
+        endDate: leaveRequest.endDate,
+        reason: leaveRequest.reason,
       });
       showSnackbar('Leave request submitted successfully', 'success');
       handleCloseRequestDialog();
       fetchLeaves();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting leave request:', error);
-      showSnackbar('Failed to submit leave request', 'error');
+      showSnackbar(error.response?.data?.error?.message || 'Failed to submit leave request', 'error');
     }
   };
 
