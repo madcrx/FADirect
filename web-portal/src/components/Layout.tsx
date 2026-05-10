@@ -68,8 +68,8 @@ const menuSections: MenuSection[] = [
   {
     items: [
       { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-      { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
-      { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
+      { text: 'Reports', icon: <BarChartIcon />, path: '/reports', requiresRoles: ['admin', 'management'] },
+      { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics', requiresRoles: ['admin', 'management'] },
     ],
   },
   {
@@ -91,9 +91,9 @@ const menuSections: MenuSection[] = [
     heading: 'OPERATIONS',
     items: [
       { text: 'Daily Run Sheet', icon: <CalendarIcon />, path: '/bookings' },
-      { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
-      { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
-      { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
+      { text: 'Staff', icon: <PeopleIcon />, path: '/staff', requiresRoles: ['admin', 'management'] },
+      { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles', requiresRoles: ['admin', 'management'] },
+      { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment', requiresRoles: ['admin', 'management'] },
     ],
   },
   {
@@ -114,19 +114,21 @@ const menuSections: MenuSection[] = [
   {
     heading: 'FINANCES',
     items: [
-      { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists' },
-      { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing' },
+      { text: 'Price Lists', icon: <ReceiptIcon />, path: '/price-lists', requiresRoles: ['admin', 'management'] },
+      { text: 'Invoicing', icon: <AttachMoneyIcon />, path: '/invoicing', requiresRoles: ['admin', 'management'] },
     ],
+    requiresRoles: ['admin', 'management'],
   },
   {
     heading: 'ADMIN',
     items: [
       { text: 'User Registrations', icon: <PersonAddIcon />, path: '/registrations', requiresRoles: ['admin', 'management'] },
-      { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs' },
-      { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups' },
-      { text: 'Trash', icon: <TrashIcon />, path: '/trash' },
-      { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+      { text: 'Call Logs', icon: <PhoneIcon />, path: '/call-logs', requiresRoles: ['admin', 'management'] },
+      { text: 'Export & Backup', icon: <BackupIcon />, path: '/backups', requiresRoles: ['admin', 'management'] },
+      { text: 'Trash', icon: <TrashIcon />, path: '/trash', requiresRoles: ['admin', 'management'] },
+      { text: 'Settings', icon: <SettingsIcon />, path: '/settings', requiresRoles: ['admin', 'management'] },
     ],
+    requiresRoles: ['admin', 'management'],
   },
 ];
 
