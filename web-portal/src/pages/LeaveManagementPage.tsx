@@ -73,9 +73,30 @@ const LeaveManagementPage = () => {
   const fetchLeaves = async () => {
     try {
       setLoading(true);
-      const status = currentTab === 'all' ? undefined : currentTab;
-      const data = await leaveApi.getAllLeave(status);
-      setLeaves(data);
+      const params: any = {};
+      if (currentTab !== 'all') {
+        params.status = currentTab;
+      }
+      // Use /leave endpoint instead of /staff-profiles/leave/all
+      const response = await api.get('/leave', { params });
+      const leaveData = response.data.leaveRequests || response.data.leaves || [];
+
+      // Transform to match Leave interface
+      const transformedLeaves = leaveData.map((lr: any) => ({
+        id: lr.id,
+        userId: lr.staff_id,
+        staffName: lr.staff_name,
+        leaveType: lr.leave_type || 'annual',
+        startDate: lr.start_date,
+        endDate: lr.end_date,
+        reason: lr.reason,
+        status: lr.status,
+        createdAt: lr.created_at,
+        approvedBy: lr.approved_by,
+        approvedAt: lr.approved_at,
+      }));
+
+      setLeaves(transformedLeaves);
     } catch (error) {
       console.error('Error fetching leaves:', error);
       showSnackbar('Failed to load leave requests', 'error');
@@ -113,17 +134,17 @@ const LeaveManagementPage = () => {
 
     try {
       if (confirmAction === 'delete') {
-        await leaveApi.deleteLeave(selectedLeave.userId, selectedLeave.id);
+        await api.delete(`/leave/${selectedLeave.id}`);
         showSnackbar('Leave request deleted successfully', 'success');
       } else {
         const newStatus = confirmAction === 'approve' ? 'approved' : 'rejected';
-        await leaveApi.updateLeaveStatus(selectedLeave.userId, selectedLeave.id, newStatus);
+        await api.put(`/leave/${selectedLeave.id}/status`, { status: newStatus });
         showSnackbar(`Leave request ${confirmAction}d successfully`, 'success');
       }
       fetchLeaves();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error ${confirmAction}ing leave:`, error);
-      showSnackbar(`Failed to ${confirmAction} leave request`, 'error');
+      showSnackbar(error.response?.data?.error?.message || `Failed to ${confirmAction} leave request`, 'error');
     } finally {
       handleCloseConfirmDialog();
     }
