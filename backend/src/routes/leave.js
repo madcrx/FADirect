@@ -92,15 +92,46 @@ router.post('/', authenticateToken, validateRequest(schemas.createLeave), async 
     }
 
     const result = await db.query(
-      `INSERT INTO leave_requests (staff_id, start_date, end_date, reason, status)
-       VALUES ($1, $2, $3, $4, 'pending')
+      `INSERT INTO leave_requests (staff_id, start_date, end_date, leave_type, reason, status)
+       VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
-      [req.user.id, startDate, endDate, reason]
+      [req.user.id, startDate, endDate, req.body.leaveType || 'annual', reason]
     );
+
+    const leaveRequest = result.rows[0];
+
+    // Get the requesting user's name
+    const userResult = await db.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const userName = userResult.rows[0]?.name || 'Unknown';
+
+    // Notify all managers and admins about the new leave request
+    const managersResult = await db.query(
+      `SELECT id FROM users
+       WHERE 'admin' = ANY(role) OR 'management' = ANY(role)`
+    );
+
+    const notificationPromises = managersResult.rows.map(manager =>
+      db.query(
+        `INSERT INTO notifications (user_id, title, body, type, category, entity_type, entity_id, action_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          manager.id,
+          'New Leave Request',
+          `${userName} has requested leave from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`,
+          'info',
+          'leave',
+          'leave_request',
+          leaveRequest.id,
+          '/leave-management'
+        ]
+      )
+    );
+
+    await Promise.all(notificationPromises);
 
     res.status(201).json({
       message: 'Leave request submitted successfully',
-      leaveRequest: result.rows[0]
+      leaveRequest
     });
   } catch (error) {
     next(error);
@@ -143,9 +174,31 @@ router.put('/:id/status', authenticateToken, validateRequest([validators.uuid('i
       });
     }
 
+    const leaveRequest = result.rows[0];
+
+    // Get approver's name
+    const approverResult = await db.query('SELECT name FROM users WHERE id = $1', [req.user.id]);
+    const approverName = approverResult.rows[0]?.name || 'Manager';
+
+    // Notify the staff member about the decision
+    await db.query(
+      `INSERT INTO notifications (user_id, title, body, type, category, entity_type, entity_id, action_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        leaveRequest.staff_id,
+        `Leave Request ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+        `Your leave request from ${new Date(leaveRequest.start_date).toLocaleDateString()} to ${new Date(leaveRequest.end_date).toLocaleDateString()} has been ${status} by ${approverName}`,
+        status === 'approved' ? 'success' : 'warning',
+        'leave',
+        'leave_request',
+        leaveRequest.id,
+        '/leave-management'
+      ]
+    );
+
     res.json({
       message: `Leave request ${status}`,
-      leaveRequest: result.rows[0]
+      leaveRequest
     });
   } catch (error) {
     next(error);
