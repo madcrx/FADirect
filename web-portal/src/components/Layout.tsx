@@ -99,7 +99,7 @@ const menuSections: MenuSection[] = [
   {
     heading: 'HR RESOURCES',
     items: [
-      { text: 'Self Service Onboarding', icon: <OnboardingIcon />, path: '/onboarding' },
+      { text: 'Onboarding', icon: <OnboardingIcon />, path: '/onboarding' },
       { text: 'Policies & Procedures', icon: <DescriptionIcon />, path: '/policies' },
       { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management' },
     ],
@@ -217,14 +217,14 @@ export default function Layout() {
           .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
-              <ListItem sx={{ py: 0.25, px: 3, mt: sectionIndex > 0 ? 0.25 : 0 }}>
+              <ListItem sx={{ py: 0.25, px: 3, mt: sectionIndex > 0 ? 1 : 0.5 }}>
                 <Typography
                   variant="overline"
                   sx={{
-                    fontWeight: 700,
-                    fontSize: '0.65rem',
-                    color: 'rgba(255,255,255,0.5)',
-                    letterSpacing: '0.1em',
+                    fontWeight: 800,
+                    fontSize: '0.75rem',
+                    color: 'rgba(255,255,255,0.9)',
+                    letterSpacing: '0.12em',
                   }}
                 >
                   {section.heading}
