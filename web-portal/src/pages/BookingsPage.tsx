@@ -57,7 +57,7 @@ import {
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { socketService, RosterEvents } from '@/services/socket';
-import { format, addDays, startOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, addWeeks, subMonths, addMonths, startOfDay, endOfDay, isSameDay } from 'date-fns';
+import { format, addDays, startOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, addWeeks, subMonths, addMonths, startOfDay, endOfDay, isSameDay, endOfWeek, eachDayOfInterval, getDay } from 'date-fns';
 
 interface Job {
   id: string;
@@ -708,6 +708,24 @@ export default function BookingsPage() {
 
   const daysToDisplay = getDaysToDisplay();
 
+  // Get calendar weeks for month view (including padding days from prev/next month)
+  const getMonthCalendarWeeks = () => {
+    const monthStart = startOfMonth(selectedDate);
+    const monthEnd = endOfMonth(selectedDate);
+    const calendarStart = startOfWeek(monthStart);
+    const calendarEnd = endOfWeek(monthEnd);
+
+    const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+    // Group days into weeks
+    const weeks: Date[][] = [];
+    for (let i = 0; i < allDays.length; i += 7) {
+      weeks.push(allDays.slice(i, i + 7));
+    }
+
+    return weeks;
+  };
+
   // Kanban view helpers
   const getJobsByStatus = (status: string) => {
     return jobs.filter(job => job.status === status);
@@ -1046,8 +1064,101 @@ export default function BookingsPage() {
             );
           })}
         </Grid>
+      ) : viewMode === 'month' ? (
+        /* Month Calendar View */
+        <Box>
+          {/* Day of week headers */}
+          <Grid container spacing={1} sx={{ mb: 1 }}>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              <Grid item xs key={day} sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">
+                  {day}
+                </Typography>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Calendar grid */}
+          {getMonthCalendarWeeks().map((week, weekIdx) => (
+            <Grid container spacing={1} key={weekIdx} sx={{ mb: 1 }}>
+              {week.map((day) => {
+                const dayJobs = getJobsForDay(day);
+                const isToday = isSameDay(day, new Date());
+                const isCurrentMonth = format(day, 'M') === format(selectedDate, 'M');
+
+                return (
+                  <Grid item xs key={day.toString()}>
+                    <Card
+                      sx={{
+                        minHeight: 120,
+                        bgcolor: isToday ? 'action.selected' : isCurrentMonth ? 'background.paper' : 'action.hover',
+                        border: isToday ? 2 : 1,
+                        borderColor: isToday ? 'primary.main' : 'divider',
+                        opacity: isCurrentMonth ? 1 : 0.6,
+                      }}
+                    >
+                      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={isToday ? 'bold' : 'normal'}
+                            color={isToday ? 'primary' : 'text.primary'}
+                          >
+                            {format(day, 'd')}
+                          </Typography>
+                          {dayJobs.length > 0 && (
+                            <Chip
+                              label={dayJobs.length}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.65rem',
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                              }}
+                            />
+                          )}
+                        </Box>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {dayJobs.slice(0, 3).map((job) => (
+                            <Box
+                              key={job.id}
+                              onClick={() => {
+                                setSelectedJob(job);
+                                setResourceDrawerOpen(true);
+                              }}
+                              sx={{
+                                p: 0.5,
+                                borderLeft: 3,
+                                borderColor: job.jobTypeColor || 'primary.main',
+                                bgcolor: 'background.default',
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: 'action.hover' },
+                                borderRadius: 0.5,
+                              }}
+                            >
+                              <Typography variant="caption" sx={{ fontSize: '0.65rem', lineHeight: 1.2 }} noWrap>
+                                {format(new Date(job.startTime), 'HH:mm')} {job.title}
+                              </Typography>
+                            </Box>
+                          ))}
+                          {dayJobs.length > 3 && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem', pl: 0.5 }}>
+                              +{dayJobs.length - 3} more
+                            </Typography>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          ))}
+        </Box>
       ) : (
-        /* Calendar View */
+        /* Day/Week Calendar View */
         <Grid container spacing={2}>
           {daysToDisplay.map((day) => {
           const dayJobs = getJobsForDay(day);
@@ -1145,7 +1256,10 @@ export default function BookingsPage() {
                           </Box>
                           <IconButton
                             size="small"
-                            onClick={() => handleDeleteJob(job.id, job.title)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteJob(job.id, job.title);
+                            }}
                             sx={{ ml: 1 }}
                           >
                             <DeleteIcon fontSize="small" />
