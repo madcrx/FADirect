@@ -23,6 +23,12 @@ import {
   Snackbar,
   TextField,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TableHead,
+  TableContainer,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -37,6 +43,11 @@ import {
   Download as DownloadIcon,
   Delete as DeleteIcon,
   Assignment as FormIcon,
+  RequestQuote as QuoteIcon,
+  History as HistoryIcon,
+  Add as AddIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { arrangementsApi, messagesApi, documentsApi, photosApi, videosApi, preArrangementFormsApi } from '@/services/api';
 import type { Arrangement, Message, Document, Photo } from '@/types';
@@ -79,6 +90,12 @@ export default function ArrangementDetailPage() {
   const [newMessage, setNewMessage] = useState('');
   const [preArrangementForm, setPreArrangementForm] = useState<any>(null);
   const [loadingForm, setLoadingForm] = useState(false);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [quoteDialog, setQuoteDialog] = useState(false);
+  const [quoteLineItems, setQuoteLineItems] = useState<any[]>([{ description: '', quantity: 1, unitPrice: 0 }]);
+  const [quoteNotes, setQuoteNotes] = useState('');
+  const [loadingQuotes, setLoadingQuotes] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -90,12 +107,14 @@ export default function ArrangementDetailPage() {
     if (!id) return;
 
     try {
-      const [arrData, msgData, docData, photoData, videoData] = await Promise.all([
+      const [arrData, msgData, docData, photoData, videoData, quotesData, historyData] = await Promise.all([
         arrangementsApi.getById(id),
         messagesApi.getByArrangement(id).catch(() => []),
         documentsApi.getByArrangement(id).catch(() => []),
         photosApi.getByArrangement(id).catch(() => []),
         videosApi.getByArrangement(id).catch(() => []),
+        api.get(`/quotes/arrangement/${id}`).then(res => res.data.quotes).catch(() => []),
+        api.get(`/audit/related/arrangement/${id}`).then(res => res.data.history).catch(() => []),
       ]);
 
       setArrangement(arrData);
@@ -103,6 +122,8 @@ export default function ArrangementDetailPage() {
       setDocuments(docData);
       setPhotos(photoData);
       setVideos(videoData);
+      setQuotes(quotesData);
+      setHistory(historyData);
 
       // Load pre-arrangement form if exists
       try {
@@ -263,6 +284,97 @@ export default function ArrangementDetailPage() {
     } finally {
       setLoadingForm(false);
     }
+  };
+
+  const handleCreateQuote = async () => {
+    if (!id) return;
+    setLoadingQuotes(true);
+
+    try {
+      await api.post('/quotes', {
+        arrangementId: id,
+        notes: quoteNotes,
+        lineItems: quoteLineItems.filter(item => item.description.trim()),
+      });
+
+      setSnackbar({
+        open: true,
+        message: 'Quote created successfully',
+        severity: 'success'
+      });
+      setQuoteDialog(false);
+      setQuoteLineItems([{ description: '', quantity: 1, unitPrice: 0 }]);
+      setQuoteNotes('');
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to create quote',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingQuotes(false);
+    }
+  };
+
+  const handleAcceptQuote = async (quoteId: string) => {
+    setLoadingQuotes(true);
+    try {
+      await api.post(`/quotes/${quoteId}/accept`);
+      setSnackbar({
+        open: true,
+        message: 'Quote accepted. Job will be created automatically.',
+        severity: 'success'
+      });
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to accept quote',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingQuotes(false);
+    }
+  };
+
+  const handleSendQuote = async (quoteId: string) => {
+    setLoadingQuotes(true);
+    try {
+      await api.post(`/quotes/${quoteId}/send`);
+      setSnackbar({
+        open: true,
+        message: 'Quote sent to customer',
+        severity: 'success'
+      });
+      await loadData();
+    } catch (error: any) {
+      setSnackbar({
+        open: true,
+        message: error.response?.data?.error?.message || 'Failed to send quote',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingQuotes(false);
+    }
+  };
+
+  const addQuoteLineItem = () => {
+    setQuoteLineItems([...quoteLineItems, { description: '', quantity: 1, unitPrice: 0 }]);
+  };
+
+  const updateQuoteLineItem = (index: number, field: string, value: any) => {
+    const updated = [...quoteLineItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setQuoteLineItems(updated);
+  };
+
+  const removeQuoteLineItem = (index: number) => {
+    setQuoteLineItems(quoteLineItems.filter((_, i) => i !== index));
+  };
+
+  const getQuoteTotalAmount = () => {
+    return quoteLineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   };
 
   if (loading || !arrangement) {
@@ -470,10 +582,12 @@ export default function ArrangementDetailPage() {
           <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} variant="scrollable">
             <Tab icon={<TimelineIcon />} iconPosition="start" label="Workflow" />
             <Tab icon={<ChecklistIcon />} iconPosition="start" label="Checklist" />
+            <Tab icon={<QuoteIcon />} iconPosition="start" label={`Quotes (${quotes.length})`} />
             <Tab icon={<MessageIcon />} iconPosition="start" label={`Messages (${messages.length})`} />
             <Tab icon={<DescriptionIcon />} iconPosition="start" label={`Documents (${documents.length})`} />
             <Tab icon={<PhotoIcon />} iconPosition="start" label={`Photos (${photos.length})`} />
             <Tab icon={<VideoIcon />} iconPosition="start" label={`Videos (${videos.length})`} />
+            <Tab icon={<HistoryIcon />} iconPosition="start" label={`History (${history.length})`} />
           </Tabs>
         </Box>
 
@@ -490,6 +604,117 @@ export default function ArrangementDetailPage() {
         </TabPanel>
 
         <TabPanel value={tabValue} index={2}>
+          {/* Quotes Tab */}
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setQuoteDialog(true)}
+              disabled={loadingQuotes}
+            >
+              Create Quote
+            </Button>
+          </Box>
+
+          {quotes.length === 0 ? (
+            <Typography color="text.secondary">No quotes created yet.</Typography>
+          ) : (
+            <List>
+              {quotes.map((quote, index) => (
+                <div key={quote.id}>
+                  {index > 0 && <Divider />}
+                  <ListItem>
+                    <Box sx={{ width: '100%' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Box>
+                          <Typography variant="h6">{quote.quoteNumber}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Created {format(new Date(quote.createdAt), 'dd/MM/yyyy')} by {quote.createdByName}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                          <Chip
+                            label={quote.status.toUpperCase()}
+                            color={quote.status === 'accepted' ? 'success' : quote.status === 'rejected' ? 'error' : 'default'}
+                          />
+                          <Typography variant="h6">${parseFloat(quote.totalAmount).toFixed(2)}</Typography>
+                        </Box>
+                      </Box>
+
+                      {quote.lineItems && quote.lineItems.length > 0 && (
+                        <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Description</TableCell>
+                                <TableCell align="right">Qty</TableCell>
+                                <TableCell align="right">Unit Price</TableCell>
+                                <TableCell align="right">Total</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {quote.lineItems.map((item: any) => (
+                                <TableRow key={item.id}>
+                                  <TableCell>{item.description}</TableCell>
+                                  <TableCell align="right">{item.quantity}</TableCell>
+                                  <TableCell align="right">${parseFloat(item.unitPrice).toFixed(2)}</TableCell>
+                                  <TableCell align="right">${parseFloat(item.totalPrice).toFixed(2)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+
+                      {quote.notes && (
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>Notes:</strong> {quote.notes}
+                        </Typography>
+                      )}
+
+                      {quote.status === 'draft' && (
+                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleSendQuote(quote.id)}
+                            disabled={loadingQuotes}
+                          >
+                            Send to Customer
+                          </Button>
+                        </Box>
+                      )}
+
+                      {quote.status === 'sent' && (
+                        <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            startIcon={<CheckIcon />}
+                            onClick={() => handleAcceptQuote(quote.id)}
+                            disabled={loadingQuotes}
+                          >
+                            Accept Quote
+                          </Button>
+                        </Box>
+                      )}
+
+                      {quote.status === 'accepted' && quote.acceptedAt && (
+                        <Alert severity="success" sx={{ mt: 2 }}>
+                          Quote accepted on {format(new Date(quote.acceptedAt), 'dd/MM/yyyy')} by {quote.acceptedByName}.
+                          Job has been automatically created.
+                        </Alert>
+                      )}
+                    </Box>
+                  </ListItem>
+                </div>
+              ))}
+            </List>
+          )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={6}>
           <Box sx={{ display: 'flex', flexDirection: 'column', height: '500px' }}>
             {/* Messages List */}
             <Box sx={{ flexGrow: 1, overflowY: 'auto', mb: 2 }}>
@@ -556,7 +781,7 @@ export default function ArrangementDetailPage() {
           </Box>
         </TabPanel>
 
-        <TabPanel value={tabValue} index={3}>
+        <TabPanel value={tabValue} index={6}>
           <Box sx={{ mb: 2 }}>
             <Button
               variant="contained"
@@ -598,7 +823,7 @@ export default function ArrangementDetailPage() {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={4}>
+        <TabPanel value={tabValue} index={6}>
           <Box sx={{ mb: 2 }}>
             <Button
               variant="contained"
@@ -640,7 +865,7 @@ export default function ArrangementDetailPage() {
           )}
         </TabPanel>
 
-        <TabPanel value={tabValue} index={5}>
+        <TabPanel value={tabValue} index={6}>
           <Box sx={{ mb: 2 }}>
             <Button
               variant="contained"
@@ -682,7 +907,186 @@ export default function ArrangementDetailPage() {
             </Grid>
           )}
         </TabPanel>
+
+        <TabPanel value={tabValue} index={7}>
+          {/* History Tab */}
+          {history.length === 0 ? (
+            <Typography color="text.secondary">No history available.</Typography>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell><strong>Date/Time</strong></TableCell>
+                    <TableCell><strong>Entity</strong></TableCell>
+                    <TableCell><strong>Action</strong></TableCell>
+                    <TableCell><strong>Details</strong></TableCell>
+                    <TableCell><strong>Performed By</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {history.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell>
+                        {format(new Date(entry.createdAt), 'dd/MM/yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={entry.entityType.toUpperCase()}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={entry.action.replace('_', ' ').toUpperCase()}
+                          size="small"
+                          color={
+                            entry.action === 'created' ? 'success' :
+                            entry.action === 'deleted' ? 'error' :
+                            entry.action === 'accepted' ? 'success' :
+                            entry.action === 'rejected' ? 'warning' :
+                            'default'
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {entry.notes ? (
+                          <Typography variant="body2">{entry.notes}</Typography>
+                        ) : entry.fieldName ? (
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              {entry.fieldName}:
+                            </Typography>
+                            <Typography variant="body2">
+                              {entry.oldValue && <span><del>{entry.oldValue}</del> → </span>}
+                              <strong>{entry.newValue}</strong>
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">—</Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {entry.userName || 'System'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </TabPanel>
       </Card>
+
+      {/* Quote Creation Dialog */}
+      <Dialog open={quoteDialog} onClose={() => setQuoteDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create Quote</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h6" gutterBottom>Line Items</Typography>
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Description</TableCell>
+                    <TableCell width={100}>Quantity</TableCell>
+                    <TableCell width={120}>Unit Price</TableCell>
+                    <TableCell width={120}>Total</TableCell>
+                    <TableCell width={60}></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {quoteLineItems.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={item.description}
+                          onChange={(e) => updateQuoteLineItem(index, 'description', e.target.value)}
+                          placeholder="Item description"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={item.quantity}
+                          onChange={(e) => updateQuoteLineItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                          inputProps={{ min: 1 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <TextField
+                          type="number"
+                          size="small"
+                          value={item.unitPrice}
+                          onChange={(e) => updateQuoteLineItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                          inputProps={{ min: 0, step: 0.01 }}
+                          InputProps={{ startAdornment: '$' }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        ${(item.quantity * item.unitPrice).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          size="small"
+                          onClick={() => removeQuoteLineItem(index)}
+                          disabled={quoteLineItems.length === 1}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={addQuoteLineItem}
+                      >
+                        Add Line Item
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={3} align="right">
+                      <Typography variant="h6">Total Amount:</Typography>
+                    </TableCell>
+                    <TableCell colSpan={2}>
+                      <Typography variant="h6">${getQuoteTotalAmount().toFixed(2)}</Typography>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Notes (optional)"
+              value={quoteNotes}
+              onChange={(e) => setQuoteNotes(e.target.value)}
+              sx={{ mt: 3 }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setQuoteDialog(false)}>Cancel</Button>
+          <Button
+            onClick={handleCreateQuote}
+            variant="contained"
+            disabled={loadingQuotes || quoteLineItems.every(item => !item.description.trim())}
+          >
+            Create Quote
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
