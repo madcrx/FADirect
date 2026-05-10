@@ -307,7 +307,7 @@ export default function PoliciesPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                           <Box
                             sx={{
-                              bgcolor: `${getCategoryColor(policy.category)}.lighter`,
+                              bgcolor: `${getCategoryColor(policy.category)}.light`,
                               borderRadius: 1.5,
                               p: 1,
                               display: 'flex',
@@ -323,7 +323,7 @@ export default function PoliciesPage() {
                           label={policy.category}
                           size="small"
                           sx={{
-                            bgcolor: `${getCategoryColor(policy.category)}.lighter`,
+                            bgcolor: `${getCategoryColor(policy.category)}.light`,
                             color: `${getCategoryColor(policy.category)}.main`,
                             fontSize: '0.7rem',
                           }}
@@ -377,7 +377,7 @@ export default function PoliciesPage() {
                             label={policy.category}
                             size="small"
                             sx={{
-                              bgcolor: `${getCategoryColor(policy.category)}.lighter`,
+                              bgcolor: `${getCategoryColor(policy.category)}.light`,
                               color: `${getCategoryColor(policy.category)}.main`,
                               fontSize: '0.7rem',
                             }}

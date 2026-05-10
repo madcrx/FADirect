@@ -91,15 +91,20 @@ const menuSections: MenuSection[] = [
     items: [
       { text: 'Daily Run Sheet', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff' },
-      { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management', requiresRoles: ['admin', 'management'] },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles' },
       { text: 'Equipment', icon: <InventoryIcon />, path: '/equipment' },
     ],
   },
   {
-    heading: 'COMPLIANCE',
+    heading: 'HR RESOURCES',
     items: [
       { text: 'Policies & Procedures', icon: <DescriptionIcon />, path: '/policies' },
+      { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management', requiresRoles: ['admin', 'management'] },
+    ],
+  },
+  {
+    heading: 'FORMS',
+    items: [
       { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
       { text: 'Files', icon: <FolderIcon />, path: '/files' },
     ],
@@ -187,22 +192,17 @@ export default function Layout() {
     }}>
       <Toolbar sx={{
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        py: 3,
+        justifyContent: 'center',
+        py: 2.5,
         px: 3,
-        gap: 1,
       }}>
         <Box sx={{ textAlign: 'center' }}>
           <img
-            src="/images/careportal-logo.png"
+            src="/images/careportal-logo.svg"
             alt="CarePortal"
-            style={{ height: '80px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+            style={{ height: '70px', width: 'auto', filter: 'brightness(0) invert(1)' }}
           />
         </Box>
-        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
-          Admin Portal
-        </Typography>
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
       <List sx={{ py: 1, flex: 1, overflowY: 'auto' }}>
@@ -211,7 +211,7 @@ export default function Layout() {
           .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
-              <ListItem sx={{ py: 1, px: 3, mt: sectionIndex > 0 ? 1 : 0 }}>
+              <ListItem sx={{ py: 0.5, px: 3, mt: sectionIndex > 0 ? 0.5 : 0 }}>
                 <Typography
                   variant="overline"
                   sx={{

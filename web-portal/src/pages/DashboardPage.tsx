@@ -42,11 +42,12 @@ const StatCard = ({ title, value, icon, color, subtitle }: any) => (
         </Typography>
         <Box
           sx={{
-            backgroundColor: `${color}.lighter`,
+            backgroundColor: `${color}.light`,
             borderRadius: 1.5,
             p: 1,
             display: 'flex',
             alignItems: 'center',
+            opacity: 0.15,
           }}
         >
           {icon}
