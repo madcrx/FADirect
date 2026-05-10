@@ -102,6 +102,20 @@ export default function PoliciesPage() {
     loadCategories();
   }, []);
 
+  // Update category counts when policies change
+  useEffect(() => {
+    if (categories.length > 0 && policies.length > 0) {
+      const updatedCategories = categories.map(cat => {
+        if (cat.id === 'all') {
+          return { ...cat, count: policies.length };
+        }
+        const count = policies.filter(p => p.category_name === cat.name).length;
+        return { ...cat, count };
+      });
+      setCategories(updatedCategories);
+    }
+  }, [policies]);
+
   const loadCurrentUser = async () => {
     try {
       const user = await authApi.getCurrentUser();
