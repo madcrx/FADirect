@@ -5,6 +5,48 @@ const { authenticateToken } = require('../middleware/auth');
 const { validateRequest } = require('../middleware/validate');
 const { schemas, validators } = require('../validators');
 
+// Get all pre-arrangement forms
+router.get('/all', authenticateToken, async (req, res, next) => {
+  try {
+    const result = await db.query(
+      `SELECT
+        paf.*,
+        a.deceased_name,
+        u_to.name as sent_to_name,
+        u_by.name as sent_by_name,
+        u_edit.name as last_edited_by_name
+       FROM pre_arrangement_forms paf
+       LEFT JOIN arrangements a ON paf.arrangement_id = a.id
+       LEFT JOIN users u_to ON paf.sent_to_user_id = u_to.id
+       LEFT JOIN users u_by ON paf.sent_by_user_id = u_by.id
+       LEFT JOIN users u_edit ON paf.last_edited_by = u_edit.id
+       ORDER BY paf.created_at DESC`
+    );
+
+    const forms = result.rows.map(form => ({
+      id: form.id,
+      arrangementId: form.arrangement_id,
+      deceasedName: form.deceased_name,
+      sentToUserId: form.sent_to_user_id,
+      sentToName: form.sent_to_name,
+      sentByUserId: form.sent_by_user_id,
+      sentByName: form.sent_by_name,
+      status: form.status,
+      sentAt: form.sent_at,
+      completedAt: form.completed_at,
+      lastEditedBy: form.last_edited_by,
+      lastEditedByName: form.last_edited_by_name,
+      lastEditedAt: form.last_edited_at,
+      createdAt: form.created_at,
+      updatedAt: form.updated_at,
+    }));
+
+    res.json({ forms });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Send pre-arrangement form to mourner
 router.post('/send', authenticateToken, validateRequest(schemas.sendForm), async (req, res, next) => {
   try {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -35,8 +36,10 @@ import {
   Image as ImageIcon,
   Folder as FolderIcon,
   Send as SendIcon,
+  Description as FormIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material';
-import api from '@/services/api';
+import api, { preArrangementFormsApi } from '@/services/api';
 import { format } from 'date-fns';
 
 interface FileItem {
@@ -53,9 +56,23 @@ interface FileItem {
   url: string;
 }
 
+interface PreArrangementFormItem {
+  id: string;
+  arrangementId: string;
+  deceasedName: string | null;
+  status: 'sent' | 'in_progress' | 'completed' | 'cancelled';
+  sentAt: string;
+  completedAt?: string;
+  sentToName: string | null;
+  lastEditedByName?: string | null;
+  lastEditedAt?: string;
+}
+
 export default function FileManagerPage() {
+  const navigate = useNavigate();
   const [documents, setDocuments] = useState<FileItem[]>([]);
   const [photos, setPhotos] = useState<FileItem[]>([]);
+  const [forms, setForms] = useState<PreArrangementFormItem[]>([]);
   const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,9 +98,10 @@ export default function FileManagerPage() {
   const loadFiles = async () => {
     setLoading(true);
     try {
-      const [docsRes, photosRes] = await Promise.all([
+      const [docsRes, photosRes, formsRes] = await Promise.all([
         api.get('/documents'),
         api.get('/photos'),
+        api.get('/pre-arrangement-forms/all').catch(() => ({ data: { forms: [] } })),
       ]);
 
       const docsData = docsRes.data.documents?.map((doc: any) => ({
@@ -114,8 +132,21 @@ export default function FileManagerPage() {
         url: photo.url,
       })) || [];
 
+      const formsData = formsRes.data.forms?.map((form: any) => ({
+        id: form.id,
+        arrangementId: form.arrangementId,
+        deceasedName: form.deceasedName,
+        status: form.status,
+        sentAt: form.sentAt,
+        completedAt: form.completedAt,
+        sentToName: form.sentToName,
+        lastEditedByName: form.lastEditedByName,
+        lastEditedAt: form.lastEditedAt,
+      })) || [];
+
       setDocuments(docsData);
       setPhotos(photosData);
+      setForms(formsData);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load files');
     } finally {
@@ -236,8 +267,19 @@ export default function FileManagerPage() {
     );
   };
 
-  const currentFiles = selectedTab === 0 ? documents : photos;
+  const filterForms = (forms: PreArrangementFormItem[]) => {
+    if (!searchTerm) return forms;
+    const search = searchTerm.toLowerCase();
+    return forms.filter(
+      (form) =>
+        form.deceasedName?.toLowerCase().includes(search) ||
+        form.sentToName?.toLowerCase().includes(search)
+    );
+  };
+
+  const currentFiles = selectedTab === 0 ? documents : selectedTab === 1 ? photos : [];
   const filteredFiles = filterFiles(currentFiles);
+  const filteredForms = filterForms(forms);
 
   // Group files by arrangement
   const filesByArrangement = filteredFiles.reduce((acc, file) => {
@@ -313,10 +355,121 @@ export default function FileManagerPage() {
         <Tabs value={selectedTab} onChange={(_, val) => setSelectedTab(val)}>
           <Tab label={`Documents (${documents.length})`} />
           <Tab label={`Photos (${photos.length})`} />
+          <Tab label={`Forms (${forms.length})`} />
         </Tabs>
       </Box>
 
-      {filteredFiles.length === 0 ? (
+      {selectedTab === 2 ? (
+        // Forms Tab
+        filteredForms.length === 0 ? (
+          <Card>
+            <CardContent>
+              <Box sx={{ textAlign: 'center', py: 8 }}>
+                <FormIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                  No forms found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Pre-arrangement forms will appear here when sent
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell width="40px"></TableCell>
+                      <TableCell>Deceased Name</TableCell>
+                      <TableCell>Sent To</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Sent Date</TableCell>
+                      <TableCell>Completed Date</TableCell>
+                      <TableCell>Last Edited</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredForms.map((form) => (
+                      <TableRow key={form.id} hover>
+                        <TableCell>
+                          <FormIcon color="primary" />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight="medium">
+                            {form.deceasedName || 'Unknown'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {form.sentToName || 'Unknown'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={form.status}
+                            size="small"
+                            color={
+                              form.status === 'completed'
+                                ? 'success'
+                                : form.status === 'in_progress'
+                                ? 'warning'
+                                : form.status === 'cancelled'
+                                ? 'error'
+                                : 'default'
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {form.sentAt ? format(new Date(form.sentAt), 'dd MMM yyyy') : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {form.completedAt
+                              ? format(new Date(form.completedAt), 'dd MMM yyyy')
+                              : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {form.lastEditedByName && form.lastEditedAt ? (
+                            <>
+                              <Typography variant="body2">
+                                {form.lastEditedByName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {format(new Date(form.lastEditedAt), 'dd MMM yyyy HH:mm')}
+                              </Typography>
+                            </>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              -
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => navigate(`/arrangements/${form.arrangementId}/pre-arrangement-form`)}
+                            title="View/Edit Form"
+                          >
+                            {form.status === 'completed' ? <ViewIcon /> : <EditIcon />}
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        )
+      ) : filteredFiles.length === 0 ? (
         <Card>
           <CardContent>
             <Box sx={{ textAlign: 'center', py: 8 }}>
