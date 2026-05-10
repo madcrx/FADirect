@@ -37,28 +37,19 @@ async function createStaffProfileForUser(phoneNumber) {
       `INSERT INTO staff_profiles (
         user_id,
         position,
-        department,
-        emergency_contact_name,
-        emergency_contact_phone,
-        date_of_birth,
-        address
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        is_available
+      ) VALUES ($1, $2, $3)
       RETURNING *`,
       [
         user.id,
         'Staff Member', // Default position
-        'General', // Default department
-        null, // To be filled in later
-        null,
-        null,
-        null
+        true // Available by default
       ]
     );
 
     console.log(`✅ Created staff profile for ${user.name}`);
     console.log(`   Profile ID: ${result.rows[0].id}`);
     console.log(`   Position: Staff Member`);
-    console.log(`   Department: General`);
     console.log('\n💡 User can now update their profile details in the Staff page');
 
     process.exit(0);
