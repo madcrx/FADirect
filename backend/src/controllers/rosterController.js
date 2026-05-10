@@ -20,6 +20,7 @@ exports.getJobs = async (req, res, next) => {
         jt.name as job_type_name,
         jt.color as job_type_color,
         a.deceased_name,
+        CASE WHEN inv.id IS NOT NULL THEN TRUE ELSE FALSE END as has_invoice,
         json_agg(DISTINCT jsonb_build_object(
           'id', u.id,
           'fullName', u.name,
@@ -46,6 +47,7 @@ exports.getJobs = async (req, res, next) => {
       FROM jobs j
       LEFT JOIN job_types jt ON j.job_type_id = jt.id
       LEFT JOIN arrangements a ON j.arrangement_id = a.id
+      LEFT JOIN invoices inv ON j.arrangement_id = inv.arrangement_id AND inv.deleted_at IS NULL
       LEFT JOIN job_staff_assignments jsa ON j.id = jsa.job_id
       LEFT JOIN users u ON jsa.staff_id = u.id
       LEFT JOIN job_vehicle_assignments jva ON j.id = jva.job_id
@@ -78,7 +80,7 @@ exports.getJobs = async (req, res, next) => {
     }
 
     query += `
-      GROUP BY j.id, jt.name, jt.color, a.deceased_name
+      GROUP BY j.id, jt.name, jt.color, a.deceased_name, inv.id
       ORDER BY j.start_time ASC
     `;
 
@@ -109,6 +111,7 @@ exports.getJobs = async (req, res, next) => {
         staff: row.staff || [],
         vehicles: row.vehicles || [],
         equipment: row.equipment || [],
+        hasInvoice: row.has_invoice,
         deletedAt: row.deleted_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,

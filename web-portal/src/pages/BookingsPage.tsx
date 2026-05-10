@@ -74,6 +74,7 @@ interface Job {
   vehicles: Array<{ registration: string; type: string }>;
   equipment: Array<{ name: string; equipmentType: string }>;
   deletedAt?: string | null;
+  hasInvoice?: boolean;
   requirements?: {
     arranger?: number;
     conductor?: number;
@@ -729,7 +730,13 @@ export default function BookingsPage() {
 
   // Kanban view helpers
   const getJobsByStatus = (status: string) => {
-    return jobs.filter(job => job.status === status);
+    return jobs.filter(job => {
+      // For completed status, only show jobs that have been invoiced
+      if (status === 'completed') {
+        return job.status === status && job.hasInvoice;
+      }
+      return job.status === status;
+    });
   };
 
   const handleDragStart = (job: Job) => {
