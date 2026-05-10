@@ -176,31 +176,43 @@ export default function Layout() {
   };
 
   const drawer = (
-    <Box>
-      <Toolbar sx={{ backgroundColor: 'white', display: 'flex', justifyContent: 'center', py: 2 }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <img
-            src="/images/careportal-logo.png"
-            alt="CarePortal"
-            style={{ height: '105px', width: 'auto' }}
-          />
-        </Box>
+    <Box sx={{
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      backgroundColor: 'primary.main',
+      color: 'white',
+    }}>
+      <Toolbar sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        py: 3,
+        px: 3,
+        gap: 0.5,
+      }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: 'white', fontSize: '1.125rem' }}>
+          CarePortal
+        </Typography>
+        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+          Admin Portal
+        </Typography>
       </Toolbar>
-      <Divider />
-      <List sx={{ py: 0 }}>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+      <List sx={{ py: 1, flex: 1, overflowY: 'auto' }}>
         {menuSections
           .filter(section => !section.requiresRoles || hasRole(section.requiresRoles))
           .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
-              <ListItem sx={{ py: 0.75, px: 2 }}>
+              <ListItem sx={{ py: 1, px: 3, mt: sectionIndex > 0 ? 1 : 0 }}>
                 <Typography
                   variant="overline"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.7rem',
-                    color: 'warning.main',
-                    letterSpacing: 1,
+                    fontSize: '0.65rem',
+                    color: 'rgba(255,255,255,0.5)',
+                    letterSpacing: '0.1em',
                   }}
                 >
                   {section.heading}
@@ -215,27 +227,40 @@ export default function Layout() {
                   selected={location.pathname === item.path}
                   onClick={() => handleMenuClick(item.path)}
                   disabled={item.badge === 'Soon'}
-                  sx={{ pl: section.heading ? 3 : 2, py: 0.75 }}
+                  sx={{
+                    px: 3,
+                    py: 1,
+                    mx: 1.5,
+                    borderRadius: 1,
+                    color: location.pathname === item.path ? 'white' : 'rgba(255,255,255,0.7)',
+                    backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
+                      color: 'white',
+                    },
+                  }}
                 >
-                  <ListItemIcon sx={{ color: location.pathname === item.path ? 'primary.main' : 'inherit', minWidth: 40 }}>
+                  <ListItemIcon sx={{
+                    color: location.pathname === item.path ? 'white' : 'rgba(255,255,255,0.7)',
+                    minWidth: 40
+                  }}>
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={item.text}
                     primaryTypographyProps={{
                       fontWeight: location.pathname === item.path ? 600 : 400,
-                      fontSize: '0.9rem',
+                      fontSize: '0.875rem',
                     }}
                   />
                   {item.badge && (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
                       {item.badge}
                     </Typography>
                   )}
                 </ListItemButton>
               </ListItem>
             ))}
-            {sectionIndex < menuSections.filter(s => !s.requiresRoles || hasRole(s.requiresRoles)).length - 1 && <Divider sx={{ my: 0.25 }} />}
           </Box>
         ))}
       </List>
@@ -246,29 +271,42 @@ export default function Layout() {
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
+        elevation={0}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          backgroundColor: 'white',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ gap: 2 }}>
           <IconButton
-            color="inherit"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 1, display: { sm: 'none' }, color: 'text.primary' }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h5"
+            noWrap
+            component="div"
+            sx={{
+              fontWeight: 700,
+              color: 'text.primary',
+              letterSpacing: '-0.01em',
+            }}
+          >
             {menuItems.find(item => item.path === location.pathname)?.text || 'CarePortal'}
           </Typography>
-          <IconButton color="inherit" onClick={() => navigate('/search')}>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton onClick={() => navigate('/search')} sx={{ color: 'text.secondary' }}>
             <SearchIcon />
           </IconButton>
           <NotificationCenter />
-          <IconButton color="inherit" onClick={handleProfileMenuOpen}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+          <IconButton onClick={handleProfileMenuOpen} sx={{ color: 'text.secondary' }}>
+            <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
               <AccountCircleIcon />
             </Avatar>
           </IconButton>
