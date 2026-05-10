@@ -54,7 +54,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
       paramCount++;
     }
 
-    query += ` ORDER BY lr.start_date DESC`;
+    query += ` ORDER BY lr.start_date ASC`;
 
     const result = await db.query(query, params);
 
