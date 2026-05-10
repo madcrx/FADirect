@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
-const pool = require('../db/pool');
+const db = require('../config/database');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 
 // Configure multer for file uploads
@@ -51,7 +51,7 @@ const upload = multer({
 // Get all policy categories
 router.get('/categories', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
+    const result = await db.query(
       `SELECT id, name, description, display_order, created_at, updated_at
        FROM policy_categories
        ORDER BY display_order, name`
@@ -105,7 +105,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     query += ` ORDER BY pd.created_at DESC`;
 
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
 
     res.json({ policies: result.rows });
   } catch (error) {
@@ -120,7 +120,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.userId;
 
-    const result = await pool.query(
+    const result = await db.query(
       `SELECT
         pd.*,
         pc.name as category_name,
@@ -173,7 +173,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'management']), upload
       return res.status(400).json({ error: { message: 'Title and version are required' } });
     }
 
-    const result = await pool.query(
+    const result = await db.query(
       `INSERT INTO policy_documents (
         title, category_id, version, file_path, file_name, file_size, mime_type,
         requires_acknowledgment, description, effective_date, review_date, created_by, updated_by
@@ -197,7 +197,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'management']), upload
 
     // If requires acknowledgment, create notification for all users
     if (requires_acknowledgment === 'true') {
-      await pool.query(
+      await db.query(
         `INSERT INTO admin_notifications (title, message, type, action_url, created_by)
          VALUES ($1, $2, $3, $4, $5)`,
         [
@@ -236,7 +236,7 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'management']), uplo
     } = req.body;
 
     // Check if policy exists
-    const existing = await pool.query(
+    const existing = await db.query(
       'SELECT * FROM policy_documents WHERE id = $1 AND deleted_at IS NULL',
       [id]
     );
@@ -283,7 +283,7 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'management']), uplo
     updateQuery += ` WHERE id = $${params.length + 1} RETURNING *`;
     params.push(id);
 
-    const result = await pool.query(updateQuery, params);
+    const result = await db.query(updateQuery, params);
 
     res.json({ policy: result.rows[0] });
   } catch (error) {
@@ -300,7 +300,7 @@ router.delete('/:id', authenticateToken, requireRole(['admin', 'management']), a
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
+    const result = await db.query(
       'UPDATE policy_documents SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL RETURNING *',
       [id]
     );
@@ -321,7 +321,7 @@ router.get('/:id/download', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const result = await pool.query(
+    const result = await db.query(
       'SELECT file_path, file_name, mime_type FROM policy_documents WHERE id = $1 AND deleted_at IS NULL',
       [id]
     );
@@ -350,7 +350,7 @@ router.post('/:id/acknowledge', authenticateToken, async (req, res) => {
     const userAgent = req.get('user-agent');
 
     // Check if policy exists and requires acknowledgment
-    const policy = await pool.query(
+    const policy = await db.query(
       'SELECT * FROM policy_documents WHERE id = $1 AND deleted_at IS NULL',
       [id]
     );
@@ -364,7 +364,7 @@ router.post('/:id/acknowledge', authenticateToken, async (req, res) => {
     }
 
     // Check if already acknowledged
-    const existing = await pool.query(
+    const existing = await db.query(
       'SELECT * FROM policy_acknowledgments WHERE policy_id = $1 AND user_id = $2',
       [id, userId]
     );
@@ -374,7 +374,7 @@ router.post('/:id/acknowledge', authenticateToken, async (req, res) => {
     }
 
     // Create acknowledgment
-    await pool.query(
+    await db.query(
       `INSERT INTO policy_acknowledgments (policy_id, user_id, ip_address, user_agent)
        VALUES ($1, $2, $3, $4)`,
       [id, userId, ipAddress, userAgent]
@@ -392,7 +392,7 @@ router.get('/pending/acknowledgments', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const result = await pool.query(
+    const result = await db.query(
       `SELECT
         pd.id,
         pd.title,
