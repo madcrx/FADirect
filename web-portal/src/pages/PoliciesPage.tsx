@@ -38,15 +38,19 @@ import {
   Print as PrintIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import api from '@/services/api';
+import { authApi } from '@/services/api';
+import type { User } from '@/types';
 
 interface PolicyDocument {
   id: string;
   title: string;
-  category: string;
+  category_name?: string;
   version: string;
-  lastUpdated: Date;
-  size: string;
-  requiresAcknowledgment: boolean;
+  updated_at?: string;
+  created_at: string;
+  file_size?: number;
+  requires_acknowledgment: boolean;
   acknowledged: boolean;
 }
 
@@ -64,10 +68,39 @@ export default function PoliciesPage() {
   const [uploadDialog, setUploadDialog] = useState(false);
   const [viewDialog, setViewDialog] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [uploadForm, setUploadForm] = useState({
+    title: '',
+    category_id: '',
+    version: '',
+    description: '',
+    requires_acknowledgment: false,
+    file: null as File | null,
+  });
 
   useEffect(() => {
+    loadCurrentUser();
     loadPolicies();
+    loadCategories();
   }, []);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = await authApi.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
+
+  const hasRole = (roles: string[]) => {
+    if (!currentUser?.role) return false;
+    const userRoles = Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role];
+    return roles.some(role => userRoles.includes(role));
+  };
 
   const loadPolicies = () => {
     // Mock data - replace with actual API call

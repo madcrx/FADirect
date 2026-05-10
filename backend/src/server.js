@@ -140,6 +140,7 @@ app.use('/api/leave', require('./routes/leave'));
 app.use('/api/config', require('./routes/config'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/registration', require('./routes/registration'));
+app.use('/api/policies', require('./routes/policies'));
 
 // Serve uploaded files with authentication
 const path = require('path');
