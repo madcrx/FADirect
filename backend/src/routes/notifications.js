@@ -117,6 +117,26 @@ router.put('/read-all', authenticateToken, async (req, res, next) => {
   }
 });
 
+// Delete all read notifications (must come before /:id route)
+router.delete('/clear-read', authenticateToken, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await db.query(`
+      DELETE FROM notifications
+      WHERE user_id = $1 AND read = true
+      RETURNING id
+    `, [userId]);
+
+    res.json({
+      message: 'Read notifications cleared',
+      count: result.rows.length
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Delete notification
 router.delete('/:id', authenticateToken, async (req, res, next) => {
   try {
@@ -134,26 +154,6 @@ router.delete('/:id', authenticateToken, async (req, res, next) => {
     }
 
     res.json({ message: 'Notification deleted' });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Delete all read notifications
-router.delete('/clear-read', authenticateToken, async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-
-    const result = await db.query(`
-      DELETE FROM notifications
-      WHERE user_id = $1 AND read = true
-      RETURNING id
-    `, [userId]);
-
-    res.json({
-      message: 'Read notifications cleared',
-      count: result.rows.length
-    });
   } catch (error) {
     next(error);
   }
