@@ -30,6 +30,7 @@ import RevenuePage from './pages/RevenuePage';
 import LeaveManagementPage from './pages/LeaveManagementPage';
 import PreArrangementFormPage from './pages/PreArrangementFormPage';
 import PendingRegistrationsPage from './pages/PendingRegistrationsPage';
+import PoliciesPage from './pages/PoliciesPage';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
             <Route path="price-lists" element={<PriceListsPage />} />
             <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="government-forms" element={<GovernmentFormsPage />} />
+            <Route path="policies" element={<PoliciesPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="revenue" element={<RevenuePage />} />

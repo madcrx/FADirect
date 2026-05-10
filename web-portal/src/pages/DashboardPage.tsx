@@ -24,23 +24,27 @@ import { dashboardApi, arrangementsApi, authApi } from '@/services/api';
 import type { DashboardStats, Arrangement, User } from '@/types';
 import { format } from 'date-fns';
 
-const StatCard = ({ title, value, icon, color }: any) => (
-  <Card>
-    <CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box>
-          <Typography color="text.secondary" gutterBottom variant="body2">
-            {title}
-          </Typography>
-          <Typography variant="h4" fontWeight="bold">
-            {value}
-          </Typography>
-        </Box>
+const StatCard = ({ title, value, icon, color, subtitle }: any) => (
+  <Card sx={{ height: '100%', border: '1px solid', borderColor: 'divider' }}>
+    <CardContent sx={{ pb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            color: 'text.secondary',
+            fontSize: '0.7rem',
+          }}
+        >
+          {title}
+        </Typography>
         <Box
           sx={{
-            backgroundColor: `${color}.light`,
-            borderRadius: 2,
-            p: 1.5,
+            backgroundColor: `${color}.lighter`,
+            borderRadius: 1.5,
+            p: 1,
             display: 'flex',
             alignItems: 'center',
           }}
@@ -48,6 +52,14 @@ const StatCard = ({ title, value, icon, color }: any) => (
           {icon}
         </Box>
       </Box>
+      <Typography variant="h3" fontWeight="bold" sx={{ mb: 0.5, color: 'text.primary' }}>
+        {value}
+      </Typography>
+      {subtitle && (
+        <Typography variant="caption" color="text.secondary">
+          {subtitle}
+        </Typography>
+      )}
     </CardContent>
   </Card>
 );
@@ -125,88 +137,115 @@ export default function DashboardPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Dashboard
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Overview of your funeral arrangements and business metrics
-      </Typography>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          Manager Dashboard
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {format(new Date(), 'EEEE, MMMM d, yyyy')}
+        </Typography>
+      </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
+      {/* Key Metrics */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title="Total Arrangements"
             value={stats.totalArrangements}
-            icon={<AssignmentIcon sx={{ color: 'primary.main', fontSize: 32 }} />}
+            subtitle="All time"
+            icon={<AssignmentIcon sx={{ color: 'primary.main', fontSize: 28 }} />}
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
-            title="Active"
+            title="Active Cases"
             value={stats.activeArrangements}
-            icon={<TrendingUpIcon sx={{ color: 'success.main', fontSize: 32 }} />}
+            subtitle="Currently in progress"
+            icon={<TrendingUpIcon sx={{ color: 'success.main', fontSize: 28 }} />}
             color="success"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={hasRole(['admin', 'management']) ? 3 : 4}>
+        <Grid item xs={12} sm={6} lg={3}>
           <StatCard
             title="Completed This Month"
             value={stats.completedThisMonth}
-            icon={<CheckCircleIcon sx={{ color: 'info.main', fontSize: 32 }} />}
+            subtitle={format(new Date(), 'MMMM yyyy')}
+            icon={<CheckCircleIcon sx={{ color: 'info.main', fontSize: 28 }} />}
             color="info"
           />
         </Grid>
         {hasRole(['admin', 'management']) && (
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} lg={3}>
             <StatCard
-              title="Revenue (Coming Soon)"
+              title="Monthly Revenue"
               value="$0"
-              icon={<AttachMoneyIcon sx={{ color: 'secondary.main', fontSize: 32 }} />}
+              subtitle="Coming soon"
+              icon={<AttachMoneyIcon sx={{ color: 'secondary.main', fontSize: 28 }} />}
               color="secondary"
             />
           </Grid>
         )}
       </Grid>
 
-      <Card>
+      {/* Recent Arrangements Table */}
+      <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom fontWeight="bold">
+          <Typography variant="h6" gutterBottom fontWeight="600" sx={{ mb: 2 }}>
             Recent Arrangements
           </Typography>
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
+          <TableContainer>
+            <Table size="small" sx={{ '& .MuiTableCell-root': { py: 1.5 } }}>
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Deceased Name</strong></TableCell>
-                  <TableCell><strong>Arranger</strong></TableCell>
-                  <TableCell><strong>Funeral Type</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
-                  <TableCell><strong>Created</strong></TableCell>
+                  <TableCell>Deceased Name</TableCell>
+                  <TableCell>Arranger</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Date Created</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {recentArrangements.map((arrangement) => (
-                  <TableRow key={arrangement.id} hover sx={{ cursor: 'pointer' }}>
-                    <TableCell>{arrangement.deceasedName}</TableCell>
-                    <TableCell>{arrangement.arrangerName || 'N/A'}</TableCell>
-                    <TableCell sx={{ textTransform: 'capitalize' }}>
-                      {arrangement.funeralType.replace('_', ' ')}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={arrangement.status}
-                        color={getStatusColor(arrangement.status) as any}
-                        size="small"
-                        sx={{ textTransform: 'capitalize' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(arrangement.createdAt), 'dd/MM/yyyy')}
+                {recentArrangements.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                      No recent arrangements
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  recentArrangements.map((arrangement) => (
+                    <TableRow
+                      key={arrangement.id}
+                      hover
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': { backgroundColor: 'action.hover' },
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 500 }}>{arrangement.deceasedName}</TableCell>
+                      <TableCell>{arrangement.arrangerName || 'N/A'}</TableCell>
+                      <TableCell sx={{ textTransform: 'capitalize' }}>
+                        {arrangement.funeralType.replace(/_/g, ' ')}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={arrangement.status}
+                          color={getStatusColor(arrangement.status) as any}
+                          size="small"
+                          sx={{
+                            textTransform: 'capitalize',
+                            height: '24px',
+                            fontSize: '0.75rem',
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>
+                        {format(new Date(arrangement.createdAt), 'MMM d, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </TableContainer>

@@ -41,6 +41,7 @@ import {
   Inventory as InventoryIcon,
   EventAvailable as EventAvailableIcon,
   PersonAdd as PersonAddIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -96,8 +97,9 @@ const menuSections: MenuSection[] = [
     ],
   },
   {
-    heading: 'FORMS',
+    heading: 'COMPLIANCE',
     items: [
+      { text: 'Policies & Procedures', icon: <DescriptionIcon />, path: '/policies' },
       { text: 'Government Forms', icon: <GavelIcon />, path: '/government-forms' },
       { text: 'Files', icon: <FolderIcon />, path: '/files' },
     ],
@@ -186,14 +188,18 @@ export default function Layout() {
       <Toolbar sx={{
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         py: 3,
         px: 3,
-        gap: 0.5,
+        gap: 1,
       }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: 'white', fontSize: '1.125rem' }}>
-          CarePortal
-        </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          <img
+            src="/images/careportal-logo.png"
+            alt="CarePortal"
+            style={{ height: '80px', width: 'auto', filter: 'brightness(0) invert(1)' }}
+          />
+        </Box>
         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
           Admin Portal
         </Typography>
