@@ -268,7 +268,12 @@ export default function PoliciesPage() {
             Print Directory
           </Button>
           {hasRole(['admin', 'management']) && (
-            <Button variant="contained" startIcon={<UploadIcon />} onClick={() => setUploadDialog(true)}>
+            <Button
+              variant="contained"
+              startIcon={<UploadIcon />}
+              onClick={() => setUploadDialog(true)}
+              sx={{ color: 'white' }}
+            >
               Upload New
             </Button>
           )}
@@ -296,7 +301,7 @@ export default function PoliciesPage() {
           icon={<WarningIcon />}
           sx={{ mb: 3 }}
           action={
-            <Button color="inherit" size="small">
+            <Button color="inherit" size="small" sx={{ color: 'text.primary' }}>
               Review Now
             </Button>
           }
@@ -584,7 +589,7 @@ export default function PoliciesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUploadDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleUpload}>
+          <Button variant="contained" onClick={handleUpload} sx={{ color: 'white' }}>
             Upload
           </Button>
         </DialogActions>

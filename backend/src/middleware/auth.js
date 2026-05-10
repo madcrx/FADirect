@@ -51,8 +51,29 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+const requireRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: { message: 'Authentication required' } });
+    }
+
+    // Handle both string and array role formats
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role));
+
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        error: { message: `Access denied. Required roles: ${allowedRoles.join(', ')}` }
+      });
+    }
+
+    next();
+  };
+};
+
 module.exports = {
   authenticateToken,
   optionalAuth,
   requireAdmin,
+  requireRole,
 };
