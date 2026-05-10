@@ -141,6 +141,8 @@ app.use('/api/config', require('./routes/config'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/registration', require('./routes/registration'));
 app.use('/api/policies', require('./routes/policies'));
+app.use('/api/quotes', require('./routes/quotes'));
+app.use('/api/audit', require('./routes/audit'));
 
 // Serve uploaded files with authentication
 const path = require('path');
