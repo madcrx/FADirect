@@ -43,6 +43,7 @@ async function runMigrations() {
     '035_fix_backup_schedules_schema.sql',
     '036_add_shift_confirmation.sql',
     '037_add_user_registration.sql',
+    '038_add_policy_management.sql',
   ];
 
   try {
