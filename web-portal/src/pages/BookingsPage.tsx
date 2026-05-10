@@ -33,6 +33,13 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -54,6 +61,7 @@ import {
   CalendarViewMonth as ViewMonthIcon,
   ViewColumn as ViewColumnIcon,
   FilterList as FilterListIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import api from '@/services/api';
 import { socketService, RosterEvents } from '@/services/socket';
@@ -115,10 +123,11 @@ export default function BookingsPage() {
   // Resource allocation sidebar state
   const [resourceDrawerOpen, setResourceDrawerOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [resourceTab, setResourceTab] = useState<'staff' | 'vehicles' | 'equipment'>('staff');
+  const [resourceTab, setResourceTab] = useState<'staff' | 'vehicles' | 'equipment' | 'history'>('staff');
   const [availableStaff, setAvailableStaff] = useState<Array<any>>([]);
   const [availableVehicles, setAvailableVehicles] = useState<Array<any>>([]);
   const [availableEquipment, setAvailableEquipment] = useState<Array<any>>([]);
+  const [jobHistory, setJobHistory] = useState<Array<any>>([]);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [selectedStaffForAssignment, setSelectedStaffForAssignment] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState('');
@@ -421,10 +430,11 @@ export default function BookingsPage() {
   // Load available resources for the selected job
   const loadAvailableResources = async (job: Job) => {
     try {
-      const [staffRes, vehiclesRes, equipmentRes] = await Promise.all([
+      const [staffRes, vehiclesRes, equipmentRes, historyRes] = await Promise.all([
         api.get('/staff-profiles'),
         api.get('/vehicles'),
         api.get('/equipment'),
+        api.get(`/audit/related/job/${job.id}`).catch(() => ({ data: { history: [] } })),
       ]);
 
       // Filter out already assigned resources
@@ -435,6 +445,7 @@ export default function BookingsPage() {
       setAvailableStaff(staffRes.data.staff || []);
       setAvailableVehicles(vehiclesRes.data.vehicles?.filter((v: any) => !assignedVehicleIds.includes(v.id) && v.status === 'available') || []);
       setAvailableEquipment(equipmentRes.data.equipment?.filter((e: any) => !assignedEquipmentIds.includes(e.id) && e.status === 'available') || []);
+      setJobHistory(historyRes.data.history || []);
     } catch (err: any) {
       console.error('Failed to load resources:', err);
     }
@@ -1688,16 +1699,20 @@ export default function BookingsPage() {
               sx={{ mb: 2 }}
             >
               <ToggleButton value="staff" aria-label="staff">
-                <PersonIcon sx={{ mr: 0.5 }} />
+                <PersonIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
                 Staff
               </ToggleButton>
               <ToggleButton value="vehicles" aria-label="vehicles">
-                <VehicleIcon sx={{ mr: 0.5 }} />
+                <VehicleIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
                 Vehicles
               </ToggleButton>
               <ToggleButton value="equipment" aria-label="equipment">
-                <EquipmentIcon sx={{ mr: 0.5 }} />
+                <EquipmentIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
                 Equipment
+              </ToggleButton>
+              <ToggleButton value="history" aria-label="history">
+                <HistoryIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                History
               </ToggleButton>
             </ToggleButtonGroup>
 
@@ -1926,6 +1941,60 @@ export default function BookingsPage() {
                   <Typography variant="caption" color="text.secondary" sx={{ px: 2 }}>
                     All equipment is assigned or unavailable
                   </Typography>
+                )}
+
+                {/* History Tab */}
+                {resourceTab === 'history' && (
+                  <Box sx={{ mt: 2, maxHeight: '60vh', overflowY: 'auto' }}>
+                    {jobHistory.length === 0 ? (
+                      <Typography variant="caption" color="text.secondary">
+                        No history available for this job.
+                      </Typography>
+                    ) : (
+                      <List dense>
+                        {jobHistory.map((entry: any, index: number) => (
+                          <ListItem key={entry.id} divider={index < jobHistory.length - 1}>
+                            <Box sx={{ width: '100%' }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Chip
+                                  label={entry.action.replace('_', ' ').toUpperCase()}
+                                  size="small"
+                                  color={
+                                    entry.action === 'created' ? 'success' :
+                                    entry.action === 'deleted' ? 'error' :
+                                    entry.action === 'resource_assigned' ? 'info' :
+                                    entry.action === 'finalized' ? 'success' :
+                                    'default'
+                                  }
+                                />
+                                <Typography variant="caption" color="text.secondary">
+                                  {format(new Date(entry.createdAt), 'dd/MM HH:mm')}
+                                </Typography>
+                              </Box>
+
+                              {entry.notes && (
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                                  {entry.notes}
+                                </Typography>
+                              )}
+
+                              {entry.fieldName && (
+                                <Typography variant="caption" display="block" color="text.secondary">
+                                  <strong>{entry.fieldName}:</strong>{' '}
+                                  {entry.oldValue && <><del>{entry.oldValue}</del> → </>}
+                                  {entry.newValue}
+                                </Typography>
+                              )}
+
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                By: {entry.userName || 'System'}
+                              </Typography>
+                            </Box>
+                          </ListItem>
+                        ))}
+                      </List>
+                    )}
+                  </Box>
                 )}
               </List>
             </Box>
