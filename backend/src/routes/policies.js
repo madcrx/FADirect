@@ -68,7 +68,7 @@ router.get('/categories', authenticateToken, async (req, res) => {
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { category_id, requires_acknowledgment } = req.query;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     let query = `
       SELECT
@@ -118,7 +118,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const result = await db.query(
       `SELECT
@@ -191,7 +191,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'management']), upload
         description || null,
         effective_date || null,
         review_date || null,
-        req.user.userId,
+        req.user.id,
       ]
     );
 
@@ -205,7 +205,7 @@ router.post('/', authenticateToken, requireRole(['admin', 'management']), upload
           `New policy "${title}" (v${version}) requires your acknowledgment.`,
           'info',
           `/policies/${result.rows[0].id}`,
-          req.user.userId,
+          req.user.id,
         ]
       );
     }
@@ -267,7 +267,7 @@ router.put('/:id', authenticateToken, requireRole(['admin', 'management']), uplo
       description || null,
       effective_date || null,
       review_date || null,
-      req.user.userId,
+      req.user.id,
     ];
 
     // If new file uploaded, update file fields and delete old file
@@ -345,7 +345,7 @@ router.get('/:id/download', authenticateToken, async (req, res) => {
 router.post('/:id/acknowledge', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id; // JWT payload uses 'id' not 'userId'
     const ipAddress = req.ip;
     const userAgent = req.get('user-agent');
 
@@ -390,7 +390,7 @@ router.post('/:id/acknowledge', authenticateToken, async (req, res) => {
 // Get pending acknowledgments for current user
 router.get('/pending/acknowledgments', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const result = await db.query(
       `SELECT

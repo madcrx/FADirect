@@ -31,6 +31,7 @@ import LeaveManagementPage from './pages/LeaveManagementPage';
 import PreArrangementFormPage from './pages/PreArrangementFormPage';
 import PendingRegistrationsPage from './pages/PendingRegistrationsPage';
 import PoliciesPage from './pages/PoliciesPage';
+import OnboardingPage from './pages/OnboardingPage';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
             <Route path="invoicing" element={<InvoicingPage />} />
             <Route path="government-forms" element={<GovernmentFormsPage />} />
             <Route path="policies" element={<PoliciesPage />} />
+            <Route path="onboarding" element={<OnboardingPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="revenue" element={<RevenuePage />} />

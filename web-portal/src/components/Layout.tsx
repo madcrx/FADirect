@@ -42,6 +42,7 @@ import {
   EventAvailable as EventAvailableIcon,
   PersonAdd as PersonAddIcon,
   Description as DescriptionIcon,
+  School as OnboardingIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -98,8 +99,9 @@ const menuSections: MenuSection[] = [
   {
     heading: 'HR RESOURCES',
     items: [
+      { text: 'Self Service Onboarding', icon: <OnboardingIcon />, path: '/onboarding' },
       { text: 'Policies & Procedures', icon: <DescriptionIcon />, path: '/policies' },
-      { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management', requiresRoles: ['admin', 'management'] },
+      { text: 'Leave Management', icon: <EventAvailableIcon />, path: '/leave-management' },
     ],
   },
   {

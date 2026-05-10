@@ -21,10 +21,13 @@ import {
   DialogActions,
   Alert,
   Snackbar,
+  TextField,
+  MenuItem,
+  Grid,
 } from '@mui/material';
-import { Check as CheckIcon, Close as CloseIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { leaveApi } from '@/services/api';
-import type { Leave } from '@/types';
+import { Check as CheckIcon, Close as CloseIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { leaveApi, authApi } from '@/services/api';
+import type { Leave, User } from '@/types';
 
 const LeaveManagementPage = () => {
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -33,6 +36,14 @@ const LeaveManagementPage = () => {
   const [selectedLeave, setSelectedLeave] = useState<Leave | null>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | 'delete' | null>(null);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [leaveRequest, setLeaveRequest] = useState({
+    leaveType: 'annual',
+    startDate: '',
+    endDate: '',
+    reason: '',
+  });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -40,8 +51,24 @@ const LeaveManagementPage = () => {
   });
 
   useEffect(() => {
+    loadCurrentUser();
     fetchLeaves();
   }, [currentTab]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = await authApi.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Failed to load current user:', error);
+    }
+  };
+
+  const hasRole = (roles: string[]) => {
+    if (!currentUser?.role) return false;
+    const userRoles = Array.isArray(currentUser.role) ? currentUser.role : [currentUser.role];
+    return roles.some(role => userRoles.includes(role));
+  };
 
   const fetchLeaves = async () => {
     try {
@@ -102,6 +129,40 @@ const LeaveManagementPage = () => {
     }
   };
 
+  const handleOpenRequestDialog = () => {
+    setLeaveRequest({
+      leaveType: 'annual',
+      startDate: '',
+      endDate: '',
+      reason: '',
+    });
+    setRequestDialogOpen(true);
+  };
+
+  const handleCloseRequestDialog = () => {
+    setRequestDialogOpen(false);
+  };
+
+  const handleSubmitRequest = async () => {
+    if (!currentUser || !leaveRequest.startDate || !leaveRequest.endDate) {
+      showSnackbar('Please fill in all required fields', 'error');
+      return;
+    }
+
+    try {
+      await leaveApi.createLeave(currentUser.id, {
+        ...leaveRequest,
+        status: 'pending',
+      });
+      showSnackbar('Leave request submitted successfully', 'success');
+      handleCloseRequestDialog();
+      fetchLeaves();
+    } catch (error) {
+      console.error('Error submitting leave request:', error);
+      showSnackbar('Failed to submit leave request', 'error');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -151,12 +212,24 @@ const LeaveManagementPage = () => {
   return (
     <Container maxWidth="xl">
       <Box sx={{ py: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Leave Management
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Review and approve staff leave requests
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Leave Management
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {hasRole(['admin', 'management']) ? 'Review and approve staff leave requests' : 'Request and manage your leave'}
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenRequestDialog}
+            sx={{ color: 'white' }}
+          >
+            Request Leave
+          </Button>
+        </Box>
 
         <Paper sx={{ mb: 3 }}>
           <Tabs value={currentTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -286,6 +359,62 @@ const LeaveManagementPage = () => {
             {confirmAction === 'approve' && 'Approve'}
             {confirmAction === 'reject' && 'Reject'}
             {confirmAction === 'delete' && 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={requestDialogOpen} onClose={handleCloseRequestDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Request Leave</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              select
+              label="Leave Type"
+              value={leaveRequest.leaveType}
+              onChange={(e) => setLeaveRequest({ ...leaveRequest, leaveType: e.target.value })}
+              required
+            >
+              <MenuItem value="annual">Annual Leave</MenuItem>
+              <MenuItem value="sick">Sick Leave</MenuItem>
+              <MenuItem value="personal">Personal Leave</MenuItem>
+              <MenuItem value="unpaid">Unpaid Leave</MenuItem>
+              <MenuItem value="other">Other</MenuItem>
+            </TextField>
+            <TextField
+              fullWidth
+              type="date"
+              label="Start Date"
+              value={leaveRequest.startDate}
+              onChange={(e) => setLeaveRequest({ ...leaveRequest, startDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              fullWidth
+              type="date"
+              label="End Date"
+              value={leaveRequest.endDate}
+              onChange={(e) => setLeaveRequest({ ...leaveRequest, endDate: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              required
+              inputProps={{ min: leaveRequest.startDate }}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Reason (Optional)"
+              value={leaveRequest.reason}
+              onChange={(e) => setLeaveRequest({ ...leaveRequest, reason: e.target.value })}
+              placeholder="Please provide a reason for your leave request..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRequestDialog}>Cancel</Button>
+          <Button variant="contained" onClick={handleSubmitRequest} sx={{ color: 'white' }}>
+            Submit Request
           </Button>
         </DialogActions>
       </Dialog>
