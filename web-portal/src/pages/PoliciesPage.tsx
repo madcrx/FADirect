@@ -512,9 +512,10 @@ export default function PoliciesPage() {
                               label={policy.category_name}
                               size="small"
                               sx={{
-                                bgcolor: `${getCategoryColor(policy.category_name)}.light`,
-                                color: `${getCategoryColor(policy.category_name)}.main`,
+                                bgcolor: `${getCategoryColor(policy.category_name)}.main`,
+                                color: 'white',
                                 fontSize: '0.7rem',
+                                fontWeight: 500,
                               }}
                             />
                           ) : (
