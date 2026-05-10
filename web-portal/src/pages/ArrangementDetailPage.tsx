@@ -270,14 +270,28 @@ export default function ArrangementDetailPage() {
   };
 
   const handleSendPreArrangementForm = async () => {
-    if (!id) return;
+    if (!id || !arrangement) return;
+
+    // Check if primary mourner has email
+    const primaryMourner = arrangement.participants?.find((p: any) => p.isPrimary);
+    const mournerEmail = primaryMourner?.email || arrangement.contactEmail;
+
+    if (!mournerEmail) {
+      setSnackbar({
+        open: true,
+        message: 'Cannot send form: No email address found for the primary mourner. Please add an email address to the arrangement contact details.',
+        severity: 'error'
+      });
+      return;
+    }
+
     setLoadingForm(true);
 
     try {
       await preArrangementFormsApi.send(id);
       setSnackbar({
         open: true,
-        message: 'Pre-Arrangement Form sent to mourner successfully',
+        message: `Pre-Arrangement Form sent to ${mournerEmail} successfully`,
         severity: 'success'
       });
       await loadData(); // Reload to get the new form

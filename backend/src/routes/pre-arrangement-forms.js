@@ -111,10 +111,12 @@ router.get('/arrangement/:arrangementId', authenticateToken, validateRequest([va
       `SELECT
         paf.*,
         u_to.name as sent_to_name,
-        u_by.name as sent_by_name
+        u_by.name as sent_by_name,
+        u_edit.name as last_edited_by_name
        FROM pre_arrangement_forms paf
        LEFT JOIN users u_to ON paf.sent_to_user_id = u_to.id
        LEFT JOIN users u_by ON paf.sent_by_user_id = u_by.id
+       LEFT JOIN users u_edit ON paf.last_edited_by = u_edit.id
        WHERE paf.arrangement_id = $1`,
       [arrangementId]
     );
@@ -137,6 +139,9 @@ router.get('/arrangement/:arrangementId', authenticateToken, validateRequest([va
         sentAt: form.sent_at,
         completedAt: form.completed_at,
         notes: form.notes,
+        lastEditedBy: form.last_edited_by,
+        lastEditedByName: form.last_edited_by_name,
+        lastEditedAt: form.last_edited_at,
       }
     });
   } catch (error) {
@@ -154,14 +159,28 @@ router.put('/:id', authenticateToken, validateRequest([validators.uuid('id'), ..
       return res.status(400).json({ error: { message: 'Form data is required' } });
     }
 
+    // Check if user is admin/manager for editing completed forms
+    const userRoles = Array.isArray(req.user.role) ? req.user.role : [req.user.role];
+    const isAdminOrManager = userRoles.some(role => ['admin', 'management'].includes(role));
+
     const updateFields = ['form_data = $1', 'updated_at = NOW()'];
-    const params = [JSON.stringify(formData), id];
+    const params = [JSON.stringify(formData)];
+    let paramIndex = 2;
+
+    // Track admin/manager edits
+    if (isAdminOrManager) {
+      updateFields.push(`last_edited_by = $${paramIndex++}`);
+      params.push(req.user.id);
+      updateFields.push(`last_edited_at = NOW()`);
+    }
+
+    params.push(id);
 
     if (status) {
       if (!['sent', 'in_progress', 'completed', 'cancelled'].includes(status)) {
         return res.status(400).json({ error: { message: 'Invalid status' } });
       }
-      updateFields.push(`status = $${params.length + 1}`);
+      updateFields.push(`status = $${paramIndex++}`);
       params.push(status);
 
       if (status === 'completed') {
@@ -172,7 +191,7 @@ router.put('/:id', authenticateToken, validateRequest([validators.uuid('id'), ..
     const result = await db.query(
       `UPDATE pre_arrangement_forms
        SET ${updateFields.join(', ')}
-       WHERE id = $2
+       WHERE id = $${params.length}
        RETURNING *`,
       params
     );
@@ -299,6 +318,57 @@ async function autoPopulateArrangement(arrangementId, formData) {
     if (formData.funeralPreferences?.preferredDate) {
       updates.push(`service_date = $${paramIndex++}`);
       params.push(formData.funeralPreferences.preferredDate);
+    }
+
+    // Contact information
+    if (formData.nextOfKin?.fullName) {
+      updates.push(`contact_name = $${paramIndex++}`);
+      params.push(formData.nextOfKin.fullName);
+    }
+    if (formData.nextOfKin?.phone) {
+      updates.push(`contact_phone = $${paramIndex++}`);
+      params.push(formData.nextOfKin.phone);
+    }
+    if (formData.nextOfKin?.email) {
+      updates.push(`contact_email = $${paramIndex++}`);
+      params.push(formData.nextOfKin.email);
+    }
+
+    // Additional details
+    if (formData.deceased?.placeOfDeath) {
+      updates.push(`place_of_death = $${paramIndex++}`);
+      params.push(formData.deceased.placeOfDeath);
+    }
+    if (formData.deceased?.locationOfDeceased) {
+      updates.push(`location_of_deceased = $${paramIndex++}`);
+      params.push(formData.deceased.locationOfDeceased);
+    }
+    if (formData.deceased?.causeOfDeath) {
+      updates.push(`cause_of_death = $${paramIndex++}`);
+      params.push(formData.deceased.causeOfDeath);
+    }
+    if (formData.legal?.medicalCertificateReceived !== undefined) {
+      updates.push(`medical_certificate_signed = $${paramIndex++}`);
+      params.push(formData.legal.medicalCertificateReceived);
+    }
+
+    // Special requests
+    if (formData.specialRequests) {
+      updates.push(`special_requests = $${paramIndex++}`);
+      params.push(formData.specialRequests);
+    }
+
+    // Append notes from form to arrangement notes
+    if (formData.notes || formData.specialRequests) {
+      const additionalNotes = [
+        '--- From Pre-Arrangement Form ---',
+        formData.notes || '',
+        formData.specialRequests ? `Special Requests: ${formData.specialRequests}` : ''
+      ].filter(Boolean).join('\n');
+
+      updates.push(`notes = COALESCE(notes || E'\\n\\n' || $${paramIndex}, $${paramIndex})`);
+      params.push(additionalNotes);
+      paramIndex++;
     }
 
     // Only update if there are fields to update

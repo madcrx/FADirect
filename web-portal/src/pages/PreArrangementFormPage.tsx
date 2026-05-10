@@ -9,8 +9,9 @@ import {
   Alert,
   Snackbar,
   CircularProgress,
+  Chip,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
 import PreArrangementForm from '@/components/PreArrangementForm';
 import { preArrangementFormsApi, arrangementsApi } from '@/services/api';
 import type { Arrangement } from '@/types';
@@ -22,6 +23,8 @@ export default function PreArrangementFormPage() {
   const [form, setForm] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -35,8 +38,20 @@ export default function PreArrangementFormPage() {
   useEffect(() => {
     if (arrangementId) {
       loadData();
+      loadCurrentUser();
     }
   }, [arrangementId]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const user = localStorage.getItem('user');
+      if (user) {
+        setCurrentUser(JSON.parse(user));
+      }
+    } catch (error) {
+      console.error('Failed to load user:', error);
+    }
+  };
 
   const loadData = async () => {
     if (!arrangementId) return;
@@ -134,6 +149,9 @@ export default function PreArrangementFormPage() {
   }
 
   const isCompleted = form.status === 'completed';
+  const userRoles = Array.isArray(currentUser?.role) ? currentUser.role : [currentUser?.role];
+  const isAdminOrManager = userRoles.some((role: string) => ['admin', 'management'].includes(role));
+  const canEdit = !isCompleted || (isCompleted && isAdminOrManager && isEditing);
 
   return (
     <Box>
@@ -147,17 +165,56 @@ export default function PreArrangementFormPage() {
 
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Pre-Arrangement Form
-          </Typography>
-          <Typography variant="body1" color="text.secondary" gutterBottom>
-            {arrangement?.deceasedName || 'Arrangement Details'}
-          </Typography>
-          {isCompleted && (
+          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+            <Box flex={1}>
+              <Typography variant="h4" fontWeight="bold" gutterBottom>
+                Pre-Arrangement Form
+              </Typography>
+              <Typography variant="body1" color="text.secondary" gutterBottom>
+                {arrangement?.deceasedName || 'Arrangement Details'}
+              </Typography>
+            </Box>
+            {isCompleted && isAdminOrManager && !isEditing && (
+              <Button
+                startIcon={<EditIcon />}
+                variant="outlined"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit Form
+              </Button>
+            )}
+            {isCompleted && isAdminOrManager && isEditing && (
+              <Button
+                variant="outlined"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel Edit
+              </Button>
+            )}
+          </Box>
+          {isCompleted && !isEditing && (
             <Alert severity="success" sx={{ mt: 2 }}>
               This form has been completed and submitted on{' '}
               {new Date(form.completedAt).toLocaleDateString()}
             </Alert>
+          )}
+          {isCompleted && isAdminOrManager && isEditing && (
+            <Alert severity="info" sx={{ mt: 2 }}>
+              You are editing a completed form as an administrator/manager. Changes will be tracked.
+            </Alert>
+          )}
+          {form.lastEditedBy && (
+            <Box mt={2} display="flex" gap={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Last edited by:
+              </Typography>
+              <Chip
+                label={`${form.lastEditedByName} on ${new Date(form.lastEditedAt).toLocaleString()}`}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
           )}
         </CardContent>
       </Card>
@@ -166,7 +223,7 @@ export default function PreArrangementFormPage() {
         initialData={form.formData || {}}
         onSubmit={handleSubmit}
         onSave={handleSave}
-        readOnly={isCompleted}
+        readOnly={!canEdit}
       />
 
       <Snackbar

@@ -29,6 +29,9 @@ interface FormData {
     occupation: string;
     nationality: string;
     religion: string;
+    placeOfDeath: string;
+    locationOfDeceased: string;
+    causeOfDeath: string;
   };
   nextOfKin: {
     fullName: string;
@@ -151,6 +154,9 @@ export default function PreArrangementForm({
       occupation: '',
       nationality: '',
       religion: '',
+      placeOfDeath: '',
+      locationOfDeceased: '',
+      causeOfDeath: '',
       ...initialData?.deceased,
     },
     nextOfKin: {
@@ -407,6 +413,37 @@ export default function PreArrangementForm({
               value={formData.deceased.religion}
               onChange={(e) => updateField('deceased', 'religion', e.target.value)}
               disabled={readOnly}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Place of Death"
+              value={formData.deceased.placeOfDeath}
+              onChange={(e) => updateField('deceased', 'placeOfDeath', e.target.value)}
+              disabled={readOnly}
+              placeholder="e.g., Hospital name, Home address, etc."
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Current Location of Deceased"
+              value={formData.deceased.locationOfDeceased}
+              onChange={(e) => updateField('deceased', 'locationOfDeceased', e.target.value)}
+              disabled={readOnly}
+              placeholder="e.g., Hospital morgue, Funeral home, etc."
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Cause of Death (if known)"
+              value={formData.deceased.causeOfDeath}
+              onChange={(e) => updateField('deceased', 'causeOfDeath', e.target.value)}
+              disabled={readOnly}
+              multiline
+              rows={2}
             />
           </Grid>
         </Grid>
