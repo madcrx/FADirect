@@ -81,19 +81,19 @@ const LeaveManagementPage = () => {
       const response = await api.get('/leave', { params });
       const leaveData = response.data.leaveRequests || response.data.leaves || [];
 
-      // Transform to match Leave interface
+      // Backend already returns camelCase, just use it directly
       const transformedLeaves = leaveData.map((lr: any) => ({
         id: lr.id,
-        userId: lr.staff_id,
-        staffName: lr.staff_name,
-        leaveType: lr.leave_type || 'annual',
-        startDate: lr.start_date,
-        endDate: lr.end_date,
+        userId: lr.staffId,
+        staffName: lr.staffName,
+        leaveType: lr.leaveType || 'annual',
+        startDate: lr.startDate,
+        endDate: lr.endDate,
         reason: lr.reason,
         status: lr.status,
-        createdAt: lr.created_at,
-        approvedBy: lr.approved_by,
-        approvedAt: lr.approved_at,
+        createdAt: lr.createdAt,
+        approvedBy: lr.approvedBy,
+        approvedAt: lr.approvedAt,
       }));
 
       setLeaves(transformedLeaves);

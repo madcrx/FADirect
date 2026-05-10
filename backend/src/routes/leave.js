@@ -14,7 +14,17 @@ router.get('/', authenticateToken, async (req, res, next) => {
 
     let query = `
       SELECT
-        lr.*,
+        lr.id,
+        lr.staff_id,
+        lr.leave_type,
+        lr.start_date,
+        lr.end_date,
+        lr.reason,
+        lr.status,
+        lr.approved_by,
+        lr.approved_at,
+        lr.created_at,
+        lr.updated_at,
         u.name as staff_name,
         u.phone_number as staff_phone,
         approver.name as approved_by_name
@@ -54,6 +64,7 @@ router.get('/', authenticateToken, async (req, res, next) => {
         staffId: row.staff_id,
         staffName: row.staff_name,
         staffPhone: row.staff_phone,
+        leaveType: row.leave_type,
         startDate: row.start_date,
         endDate: row.end_date,
         reason: row.reason,

@@ -44,6 +44,7 @@ async function runMigrations() {
     '036_add_shift_confirmation.sql',
     '037_add_user_registration.sql',
     '038_add_policy_management.sql',
+    '039_add_leave_type.sql',
   ];
 
   try {
