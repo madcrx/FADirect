@@ -209,13 +209,13 @@ export default function Layout() {
         </Box>
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-      <List sx={{ py: 1, flex: 1, overflowY: 'auto' }}>
+      <List sx={{ py: 0.5, flex: 1, overflowY: 'auto' }}>
         {menuSections
           .filter(section => !section.requiresRoles || hasRole(section.requiresRoles))
           .map((section, sectionIndex) => (
           <Box key={sectionIndex}>
             {section.heading && (
-              <ListItem sx={{ py: 0.5, px: 3, mt: sectionIndex > 0 ? 0.5 : 0 }}>
+              <ListItem sx={{ py: 0.25, px: 3, mt: sectionIndex > 0 ? 0.25 : 0 }}>
                 <Typography
                   variant="overline"
                   sx={{
@@ -239,8 +239,8 @@ export default function Layout() {
                   disabled={item.badge === 'Soon'}
                   sx={{
                     px: 3,
-                    py: 1,
-                    mx: 1.5,
+                    py: 0.5,
+                    mx: 0.75,
                     borderRadius: 1,
                     color: location.pathname === item.path ? 'white' : 'rgba(255,255,255,0.7)',
                     backgroundColor: location.pathname === item.path ? 'rgba(255,255,255,0.1)' : 'transparent',
