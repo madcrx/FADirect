@@ -196,16 +196,17 @@ export default function Layout() {
         py: 2.5,
         px: 3,
       }}>
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 700,
-            color: 'white',
-            letterSpacing: '0.02em',
-          }}
-        >
-          CarePortal
-        </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          <img
+            src="/images/careportal-logo.png"
+            alt="CarePortal"
+            style={{
+              height: '80px',
+              width: 'auto',
+              maxWidth: '200px',
+            }}
+          />
+        </Box>
       </Toolbar>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
       <List sx={{ py: 1, flex: 1, overflowY: 'auto' }}>
