@@ -109,6 +109,7 @@ exports.getJobs = async (req, res, next) => {
         staff: row.staff || [],
         vehicles: row.vehicles || [],
         equipment: row.equipment || [],
+        deletedAt: row.deleted_at,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }))

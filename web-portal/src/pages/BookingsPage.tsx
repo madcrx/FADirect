@@ -73,6 +73,7 @@ interface Job {
   staff: Array<{ fullName: string; role: string }>;
   vehicles: Array<{ registration: string; type: string }>;
   equipment: Array<{ name: string; equipmentType: string }>;
+  deletedAt?: string | null;
   requirements?: {
     arranger?: number;
     conductor?: number;
@@ -1157,8 +1158,124 @@ export default function BookingsPage() {
             </Grid>
           ))}
         </Box>
+      ) : viewMode === 'day' ? (
+        /* Day View - Jobs as Individual Cards */
+        <Grid container spacing={2}>
+          {jobs.map((job) => {
+            const isDeleted = !!job.deletedAt;
+            return (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={job.id}>
+                <Card
+                  sx={{
+                    borderLeft: 4,
+                    borderColor: job.jobTypeColor || 'primary.main',
+                    cursor: 'pointer',
+                    opacity: isDeleted ? 0.5 : 1,
+                    filter: isDeleted ? 'grayscale(50%)' : 'none',
+                    '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)' },
+                    transition: 'all 0.2s',
+                  }}
+                  onClick={() => {
+                    setSelectedJob(job);
+                    setResourceDrawerOpen(true);
+                  }}
+                >
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          {job.title}
+                        </Typography>
+                        {isDeleted && (
+                          <Chip
+                            label="DELETED"
+                            size="small"
+                            color="error"
+                            sx={{ mb: 1 }}
+                          />
+                        )}
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteJob(job.id, job.title);
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+
+                    {job.deceasedName && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        👤 {job.deceasedName}
+                      </Typography>
+                    )}
+
+                    <Chip
+                      label={job.jobTypeName}
+                      size="small"
+                      sx={{
+                        bgcolor: job.jobTypeColor || 'primary.main',
+                        color: 'white',
+                        mb: 2,
+                      }}
+                    />
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Typography variant="body2">
+                        🕐 {format(new Date(job.startTime), 'HH:mm')} - {format(new Date(job.endTime), 'HH:mm')}
+                      </Typography>
+                      {job.location && (
+                        <Typography variant="body2" color="text.secondary">
+                          📍 {job.location}
+                        </Typography>
+                      )}
+                      {job.staff.length > 0 && (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">
+                            Staff:
+                          </Typography>
+                          {job.staff.map((s, idx) => (
+                            <Typography key={idx} variant="body2">
+                              👤 {s.fullName} ({formatRole(s.role)})
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                      {job.vehicles.length > 0 && (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">
+                            Vehicles:
+                          </Typography>
+                          {job.vehicles.map((v, idx) => (
+                            <Typography key={idx} variant="body2">
+                              🚗 {v.registration}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                      {job.equipment && job.equipment.length > 0 && (
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">
+                            Equipment:
+                          </Typography>
+                          {job.equipment.map((e, idx) => (
+                            <Typography key={idx} variant="body2">
+                              📦 {e.name}
+                            </Typography>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
       ) : (
-        /* Day/Week Calendar View */
+        /* Week Calendar View */
         <Grid container spacing={2}>
           {daysToDisplay.map((day) => {
           const dayJobs = getJobsForDay(day);
@@ -1194,80 +1311,90 @@ export default function BookingsPage() {
                     <Chip label={`${dayJobs.length} jobs`} size="small" sx={{ mt: 1 }} />
                   </Box>
 
-                  {dayJobs.map((job) => (
-                    <Card
-                      key={job.id}
-                      sx={{
-                        mb: 1,
-                        borderLeft: 4,
-                        borderColor: job.jobTypeColor || 'primary.main',
-                        cursor: 'pointer',
-                        '&:hover': { bgcolor: 'action.hover' },
-                      }}
-                      onClick={() => {
-                        setSelectedJob(job);
-                        setResourceDrawerOpen(true);
-                      }}
-                    >
-                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" fontWeight="bold" gutterBottom>
-                              {job.title}
-                            </Typography>
-                            {job.deceasedName && (
-                              <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
-                                👤 {job.deceasedName}
+                  {dayJobs.map((job) => {
+                    const isDeleted = !!job.deletedAt;
+                    return (
+                      <Card
+                        key={job.id}
+                        sx={{
+                          mb: 1,
+                          borderLeft: 4,
+                          borderColor: job.jobTypeColor || 'primary.main',
+                          cursor: 'pointer',
+                          opacity: isDeleted ? 0.5 : 1,
+                          filter: isDeleted ? 'grayscale(50%)' : 'none',
+                          '&:hover': { bgcolor: 'action.hover' },
+                        }}
+                        onClick={() => {
+                          setSelectedJob(job);
+                          setResourceDrawerOpen(true);
+                        }}
+                      >
+                        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Box sx={{ flex: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                <Typography variant="body2" fontWeight="bold">
+                                  {job.title}
+                                </Typography>
+                                {isDeleted && (
+                                  <Chip label="DELETED" size="small" color="error" sx={{ height: 18, fontSize: '0.65rem' }} />
+                                )}
+                              </Box>
+                              {job.deceasedName && (
+                                <Typography variant="caption" display="block" color="text.secondary" sx={{ mb: 0.5 }}>
+                                  👤 {job.deceasedName}
+                                </Typography>
+                              )}
+                              <Chip
+                                label={job.jobTypeName}
+                                size="small"
+                                sx={{
+                                  bgcolor: job.jobTypeColor || 'primary.main',
+                                  color: 'white',
+                                  mb: 1,
+                                }}
+                              />
+                              <Typography variant="caption" display="block">
+                                {format(new Date(job.startTime), 'HH:mm')} -{' '}
+                                {format(new Date(job.endTime), 'HH:mm')}
                               </Typography>
-                            )}
-                            <Chip
-                              label={job.jobTypeName}
+                              {job.location && (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  📍 {job.location}
+                                </Typography>
+                              )}
+                              {job.staff.length > 0 && (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  👤 {job.staff.map((s) => `${s.fullName} (${formatRole(s.role)})`).join(', ')}
+                                </Typography>
+                              )}
+                              {job.vehicles.length > 0 && (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  🚗 {job.vehicles.map((v) => v.registration).join(', ')}
+                                </Typography>
+                              )}
+                              {job.equipment && job.equipment.length > 0 && (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  📦 {job.equipment.map((e) => e.name).join(', ')}
+                                </Typography>
+                              )}
+                            </Box>
+                            <IconButton
                               size="small"
-                              sx={{
-                                bgcolor: job.jobTypeColor || 'primary.main',
-                                color: 'white',
-                                mb: 1,
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteJob(job.id, job.title);
                               }}
-                            />
-                            <Typography variant="caption" display="block">
-                              {format(new Date(job.startTime), 'HH:mm')} -{' '}
-                              {format(new Date(job.endTime), 'HH:mm')}
-                            </Typography>
-                            {job.location && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                📍 {job.location}
-                              </Typography>
-                            )}
-                            {job.staff.length > 0 && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                👤 {job.staff.map((s) => `${s.fullName} (${formatRole(s.role)})`).join(', ')}
-                              </Typography>
-                            )}
-                            {job.vehicles.length > 0 && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                🚗 {job.vehicles.map((v) => v.registration).join(', ')}
-                              </Typography>
-                            )}
-                            {job.equipment && job.equipment.length > 0 && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                📦 {job.equipment.map((e) => e.name).join(', ')}
-                              </Typography>
-                            )}
+                              sx={{ ml: 1 }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
                           </Box>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteJob(job.id, job.title);
-                            }}
-                            sx={{ ml: 1 }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </CardContent>
               </Card>
             </Grid>
