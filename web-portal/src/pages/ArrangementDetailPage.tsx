@@ -29,6 +29,10 @@ import {
   DialogActions,
   TableHead,
   TableContainer,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -93,9 +97,11 @@ export default function ArrangementDetailPage() {
   const [quotes, setQuotes] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [quoteDialog, setQuoteDialog] = useState(false);
-  const [quoteLineItems, setQuoteLineItems] = useState<any[]>([{ description: '', quantity: 1, unitPrice: 0 }]);
+  const [quoteLineItems, setQuoteLineItems] = useState<any[]>([{ description: '', quantity: 1, unitPrice: 0, priceListItemId: null, isCustom: false }]);
   const [quoteNotes, setQuoteNotes] = useState('');
   const [loadingQuotes, setLoadingQuotes] = useState(false);
+  const [priceListItems, setPriceListItems] = useState<any[]>([]);
+  const [priceLists, setPriceLists] = useState<any[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -286,6 +292,36 @@ export default function ArrangementDetailPage() {
     }
   };
 
+  const loadPriceLists = async () => {
+    try {
+      const response = await api.get('/price-lists');
+      const lists = response.data.priceLists || [];
+      setPriceLists(lists);
+
+      // Flatten all items from all price lists
+      const allItems: any[] = [];
+      lists.forEach((list: any) => {
+        if (list.items) {
+          list.items.forEach((item: any) => {
+            allItems.push({
+              ...item,
+              priceListName: list.name,
+              priceListId: list.id,
+            });
+          });
+        }
+      });
+      setPriceListItems(allItems);
+    } catch (error) {
+      console.error('Failed to load price lists:', error);
+    }
+  };
+
+  const handleOpenQuoteDialog = () => {
+    loadPriceLists();
+    setQuoteDialog(true);
+  };
+
   const handleCreateQuote = async () => {
     if (!id) return;
     setLoadingQuotes(true);
@@ -360,12 +396,37 @@ export default function ArrangementDetailPage() {
   };
 
   const addQuoteLineItem = () => {
-    setQuoteLineItems([...quoteLineItems, { description: '', quantity: 1, unitPrice: 0 }]);
+    setQuoteLineItems([...quoteLineItems, { description: '', quantity: 1, unitPrice: 0, priceListItemId: null, isCustom: false }]);
   };
 
   const updateQuoteLineItem = (index: number, field: string, value: any) => {
     const updated = [...quoteLineItems];
-    updated[index] = { ...updated[index], [field]: value };
+
+    if (field === 'priceListItemId' && value) {
+      // User selected a price list item
+      const selectedItem = priceListItems.find(item => item.id === value);
+      if (selectedItem) {
+        updated[index] = {
+          description: selectedItem.description,
+          quantity: 1,
+          unitPrice: parseFloat(selectedItem.price),
+          priceListItemId: selectedItem.id,
+          isCustom: false,
+        };
+      }
+    } else if (field === 'isCustom' && value) {
+      // User wants to enter custom item
+      updated[index] = {
+        description: '',
+        quantity: 1,
+        unitPrice: 0,
+        priceListItemId: null,
+        isCustom: true,
+      };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
+
     setQuoteLineItems(updated);
   };
 
@@ -609,7 +670,7 @@ export default function ArrangementDetailPage() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setQuoteDialog(true)}
+              onClick={handleOpenQuoteDialog}
               disabled={loadingQuotes}
             >
               Create Quote
@@ -990,7 +1051,7 @@ export default function ArrangementDetailPage() {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Description</TableCell>
+                    <TableCell>Item / Service</TableCell>
                     <TableCell width={100}>Quantity</TableCell>
                     <TableCell width={120}>Unit Price</TableCell>
                     <TableCell width={120}>Total</TableCell>
@@ -1001,13 +1062,48 @@ export default function ArrangementDetailPage() {
                   {quoteLineItems.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          value={item.description}
-                          onChange={(e) => updateQuoteLineItem(index, 'description', e.target.value)}
-                          placeholder="Item description"
-                        />
+                        {item.isCustom ? (
+                          <Box>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={item.description}
+                              onChange={(e) => updateQuoteLineItem(index, 'description', e.target.value)}
+                              placeholder="Custom item description"
+                            />
+                            <Button
+                              size="small"
+                              onClick={() => updateQuoteLineItem(index, 'isCustom', false)}
+                              sx={{ mt: 0.5 }}
+                            >
+                              Select from Price List
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Box>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Select Item</InputLabel>
+                              <Select
+                                value={item.priceListItemId || ''}
+                                onChange={(e) => updateQuoteLineItem(index, 'priceListItemId', e.target.value)}
+                                label="Select Item"
+                              >
+                                {priceListItems.map((plItem: any) => (
+                                  <MenuItem key={plItem.id} value={plItem.id}>
+                                    {plItem.description} - ${parseFloat(plItem.price).toFixed(2)} ({plItem.priceListName})
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            <Button
+                              size="small"
+                              onClick={() => updateQuoteLineItem(index, 'isCustom', true)}
+                              sx={{ mt: 0.5 }}
+                            >
+                              Enter Custom Item
+                            </Button>
+                          </Box>
+                        )}
                       </TableCell>
                       <TableCell>
                         <TextField
