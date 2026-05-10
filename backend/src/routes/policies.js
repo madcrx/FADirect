@@ -332,9 +332,12 @@ router.get('/:id/download', authenticateToken, async (req, res) => {
 
     const { file_path, file_name, mime_type } = result.rows[0];
 
+    // Convert relative path to absolute path
+    const absolutePath = path.join(__dirname, '../../', file_path);
+
     res.setHeader('Content-Type', mime_type);
     res.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
-    res.sendFile(file_path);
+    res.sendFile(absolutePath);
   } catch (error) {
     console.error('Error downloading policy:', error);
     res.status(500).json({ error: { message: 'Failed to download policy' } });

@@ -48,11 +48,13 @@ interface PolicyDocument {
   id: string;
   title: string;
   category_name?: string;
+  category_id?: string;
   version: string;
   updated_at?: string;
   created_at: string;
   file_size?: number;
   file_name: string;
+  description?: string;
   requires_acknowledgment: boolean;
   acknowledged: boolean;
 }
@@ -69,6 +71,7 @@ export default function PoliciesPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [pendingCount, setPendingCount] = useState(0);
   const [uploadDialog, setUploadDialog] = useState(false);
+  const [editDialog, setEditDialog] = useState(false);
   const [viewDialog, setViewDialog] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyDocument | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,6 +79,14 @@ export default function PoliciesPage() {
   const [success, setSuccess] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [uploadForm, setUploadForm] = useState({
+    title: '',
+    category_id: '',
+    version: '',
+    description: '',
+    requires_acknowledgment: false,
+    file: null as File | null,
+  });
+  const [editForm, setEditForm] = useState({
     title: '',
     category_id: '',
     version: '',
@@ -225,6 +236,53 @@ export default function PoliciesPage() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to delete policy');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleOpenEditDialog = (policy: PolicyDocument) => {
+    setSelectedPolicy(policy);
+    setEditForm({
+      title: policy.title,
+      category_id: categories.find(c => c.name === policy.category_name)?.id || '',
+      version: policy.version,
+      description: policy.description || '',
+      requires_acknowledgment: policy.requires_acknowledgment,
+      file: null,
+    });
+    setEditDialog(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialog(false);
+    setSelectedPolicy(null);
+  };
+
+  const handleEdit = async () => {
+    if (!selectedPolicy || !editForm.title || !editForm.version) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('title', editForm.title);
+      if (editForm.category_id) formData.append('category_id', editForm.category_id);
+      formData.append('version', editForm.version);
+      formData.append('description', editForm.description);
+      formData.append('requires_acknowledgment', editForm.requires_acknowledgment.toString());
+      if (editForm.file) formData.append('file', editForm.file);
+
+      await api.put(`/policies/${selectedPolicy.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setSuccess('Policy updated successfully');
+      handleCloseEditDialog();
+      loadPolicies();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to update policy');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -491,6 +549,14 @@ export default function PoliciesPage() {
                               <>
                                 <IconButton
                                   size="small"
+                                  color="primary"
+                                  onClick={() => handleOpenEditDialog(policy)}
+                                  title="Edit"
+                                >
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
                                   color="error"
                                   onClick={() => handleDelete(policy.id)}
                                   title="Delete"
@@ -592,6 +658,87 @@ export default function PoliciesPage() {
           <Button onClick={() => setUploadDialog(false)}>Cancel</Button>
           <Button variant="contained" onClick={handleUpload} sx={{ color: 'white' }}>
             Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialog} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Policy Document</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            <TextField
+              fullWidth
+              label="Document Title"
+              value={editForm.title}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              select
+              label="Category"
+              value={editForm.category_id}
+              onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+            >
+              {categories
+                .filter(c => c.id !== 'all')
+                .map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+            </TextField>
+            <TextField
+              fullWidth
+              label="Version"
+              placeholder="e.g., v1.0"
+              value={editForm.version}
+              onChange={(e) => setEditForm({ ...editForm, version: e.target.value })}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              multiline
+              rows={3}
+              value={editForm.description}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+            />
+            <Box>
+              <Button variant="outlined" component="label" startIcon={<UploadIcon />} fullWidth>
+                {editForm.file ? editForm.file.name : 'Replace File (Optional)'}
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setEditForm({ ...editForm, file });
+                  }}
+                />
+              </Button>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Leave empty to keep existing file. Accepted: PDF, DOC, DOCX (Max 50MB)
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <input
+                type="checkbox"
+                id="edit-requires-ack"
+                checked={editForm.requires_acknowledgment}
+                onChange={(e) => setEditForm({ ...editForm, requires_acknowledgment: e.target.checked })}
+              />
+              <label htmlFor="edit-requires-ack">
+                <Typography variant="body2">Requires staff acknowledgment</Typography>
+              </label>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditDialog}>Cancel</Button>
+          <Button variant="contained" onClick={handleEdit} sx={{ color: 'white' }}>
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
