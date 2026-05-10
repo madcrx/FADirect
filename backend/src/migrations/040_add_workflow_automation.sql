@@ -43,10 +43,21 @@ ALTER TABLE arrangements ADD CONSTRAINT arrangements_status_check
 
 -- Add workflow tracking to jobs
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quote_id UUID REFERENCES quotes(id) ON DELETE SET NULL;
-ALTER TABLE jobs ADD COLUMN IF NOT EXISTS workflow_status VARCHAR(50) DEFAULT 'pending_resources'
-  CHECK (workflow_status IN ('pending_resources', 'resources_assigned', 'ready_to_invoice', 'invoiced', 'paid', 'completed'));
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS workflow_status VARCHAR(50) DEFAULT 'pending_resources';
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS resources_finalized_at TIMESTAMP;
 ALTER TABLE jobs ADD COLUMN IF NOT EXISTS resources_finalized_by UUID REFERENCES users(id) ON DELETE SET NULL;
+
+-- Add check constraint for workflow_status if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'jobs_workflow_status_check'
+  ) THEN
+    ALTER TABLE jobs ADD CONSTRAINT jobs_workflow_status_check
+      CHECK (workflow_status IN ('pending_resources', 'resources_assigned', 'ready_to_invoice', 'invoiced', 'paid', 'completed'));
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_jobs_quote ON jobs(quote_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_workflow_status ON jobs(workflow_status);
