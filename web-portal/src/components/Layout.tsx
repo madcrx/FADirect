@@ -184,6 +184,13 @@ export default function Layout() {
     }
   };
 
+  const getInitials = (name: string | undefined) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  };
+
   const drawer = (
     <Box sx={{
       height: '100%',
@@ -318,9 +325,17 @@ export default function Layout() {
           </IconButton>
           <NotificationCenter />
           <IconButton onClick={handleProfileMenuOpen} sx={{ color: 'text.secondary' }}>
-            <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-              <AccountCircleIcon />
-            </Avatar>
+            {currentUser?.profile_photo ? (
+              <Avatar
+                src={currentUser.profile_photo}
+                alt={currentUser.name}
+                sx={{ width: 36, height: 36 }}
+              />
+            ) : (
+              <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontWeight: 600, fontSize: '0.9rem' }}>
+                {getInitials(currentUser?.name)}
+              </Avatar>
+            )}
           </IconButton>
         </Toolbar>
       </AppBar>
