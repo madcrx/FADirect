@@ -37,18 +37,19 @@ CREATE TABLE IF NOT EXISTS quote_line_items (
 CREATE INDEX IF NOT EXISTS idx_quote_line_items_quote ON quote_line_items(quote_id);
 
 -- Update arrangements table to add workflow status
--- First, ensure all existing arrangements have valid statuses for the new constraint
+-- Step 1: Drop the old constraint first
+ALTER TABLE arrangements DROP CONSTRAINT IF EXISTS arrangements_status_check;
+
+-- Step 2: Update any existing arrangements to have valid statuses for the new constraint
+-- (This step is safe because there's no constraint to check against)
 UPDATE arrangements
 SET status = CASE
-  WHEN status NOT IN ('pending', 'in_progress', 'completed', 'cancelled') THEN 'pending'
+  WHEN status NOT IN ('pending', 'in_progress', 'completed', 'cancelled', 'quoted', 'quote_accepted') THEN 'pending'
   ELSE status
 END
 WHERE status NOT IN ('pending', 'quoted', 'quote_accepted', 'in_progress', 'completed', 'cancelled');
 
--- Drop the old constraint
-ALTER TABLE arrangements DROP CONSTRAINT IF EXISTS arrangements_status_check;
-
--- Add the new constraint with additional statuses
+-- Step 3: Add the new constraint with additional statuses
 ALTER TABLE arrangements ADD CONSTRAINT arrangements_status_check
   CHECK (status IN ('pending', 'quoted', 'quote_accepted', 'in_progress', 'completed', 'cancelled'));
 
