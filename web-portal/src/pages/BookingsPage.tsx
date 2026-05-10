@@ -1161,7 +1161,7 @@ export default function BookingsPage() {
       ) : viewMode === 'day' ? (
         /* Day View - Jobs as Individual Cards */
         <Grid container spacing={2}>
-          {jobs.map((job) => {
+          {getJobsForDay(selectedDate).map((job) => {
             const isDeleted = !!job.deletedAt;
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={job.id}>
