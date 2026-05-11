@@ -221,7 +221,7 @@ export default function AIAssistant({ context }: AIAssistantProps) {
               </Avatar>
               <Box>
                 <Typography variant="h6" fontWeight="bold">
-                  FADirect AI Assistant
+                  CarePortal Assistant
                 </Typography>
                 <Typography variant="caption">Always here to help</Typography>
               </Box>
