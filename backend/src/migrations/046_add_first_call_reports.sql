@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS first_call_reports (
   id SERIAL PRIMARY KEY,
 
   -- Foreign keys
-  template_id INTEGER REFERENCES form_templates(id),
+  template_id UUID REFERENCES form_templates(id),
   arrangement_id INTEGER REFERENCES arrangements(id) ON DELETE SET NULL,
   job_id INTEGER REFERENCES daily_run_sheet(id) ON DELETE SET NULL,
   submitted_by INTEGER NOT NULL REFERENCES users(id),
@@ -24,10 +24,7 @@ CREATE TABLE IF NOT EXISTS first_call_reports (
 
   -- Notes and errors
   notes TEXT,
-  processing_error TEXT,
-
-  CONSTRAINT fk_template FOREIGN KEY (template_id) REFERENCES form_templates(id),
-  CONSTRAINT fk_submitted_by FOREIGN KEY (submitted_by) REFERENCES users(id)
+  processing_error TEXT
 );
 
 -- Add indexes
@@ -146,12 +143,12 @@ BEGIN
           END,
           CASE
             WHEN (NEW.form_data->'removal_details'->>'coronerCase')::BOOLEAN = TRUE
-            THEN CONCAT(E'\n⚠️ CORONER CASE - Release #: ', NEW.form_data->'removal_details'->>'coronerReleaseNumber')
+            THEN CONCAT(E'\n*** CORONER CASE - Release #: ', NEW.form_data->'removal_details'->>'coronerReleaseNumber')
             ELSE ''
           END,
           CASE
             WHEN (NEW.form_data->'medical_info'->>'infectiousDisease')::BOOLEAN = TRUE
-            THEN CONCAT(E'\n⚠️ INFECTIOUS DISEASE: ', NEW.form_data->'medical_info'->>'diseaseDetails')
+            THEN CONCAT(E'\n*** INFECTIOUS DISEASE: ', NEW.form_data->'medical_info'->>'diseaseDetails')
             ELSE ''
           END,
           CASE
