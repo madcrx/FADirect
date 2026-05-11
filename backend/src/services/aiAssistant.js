@@ -99,7 +99,6 @@ class AIAssistant {
   constructor() {
     this.model = genAI.getGenerativeModel({
       model: 'gemini-pro',
-      systemInstruction: SYSTEM_CONTEXT,
     });
 
     this.conversations = new Map(); // Store conversation history by session ID
@@ -182,10 +181,18 @@ class AIAssistant {
 
       // Get conversation history
       const history = this.getConversation(sessionId);
-      const chatHistory = history.slice(0, -1).map(msg => ({
+      let chatHistory = history.slice(0, -1).map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }]
       }));
+
+      // Add system context as first message if this is a new conversation
+      if (chatHistory.length === 0) {
+        chatHistory = [
+          { role: 'user', parts: [{ text: 'System context: ' + SYSTEM_CONTEXT }] },
+          { role: 'model', parts: [{ text: 'Understood. I am CarePortal Assistant, ready to help with the funeral home management system.' }] }
+        ];
+      }
 
       // Start chat with history
       const chat = this.model.startChat({
