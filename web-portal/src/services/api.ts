@@ -262,4 +262,46 @@ export const preArrangementFormsApi = {
   },
 };
 
+// Form Templates API
+export const formTemplatesApi = {
+  getAll: async (showDeleted: boolean = false, formType?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (showDeleted) params.append('showDeleted', 'true');
+    if (formType) params.append('formType', formType);
+    const response = await api.get(`/form-templates?${params.toString()}`);
+    return response.data;
+  },
+  getById: async (id: string): Promise<any> => {
+    const response = await api.get(`/form-templates/${id}`);
+    return response.data;
+  },
+  getActiveByType: async (formType: string): Promise<any> => {
+    const response = await api.get(`/form-templates/active/${formType}`);
+    return response.data;
+  },
+  create: async (data: {
+    name: string;
+    description?: string;
+    formType: string;
+    templateData: any;
+  }): Promise<any> => {
+    const response = await api.post('/form-templates', data);
+    return response.data;
+  },
+  update: async (id: string, data: {
+    name: string;
+    description?: string;
+    templateData: any;
+  }): Promise<any> => {
+    const response = await api.put(`/form-templates/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/form-templates/${id}`);
+  },
+  restore: async (id: string): Promise<void> => {
+    await api.post(`/form-templates/${id}/restore`);
+  },
+};
+
 export default api;

@@ -143,6 +143,7 @@ app.use('/api/registration', require('./routes/registration'));
 app.use('/api/policies', require('./routes/policies'));
 app.use('/api/quotes', require('./routes/quotes'));
 app.use('/api/audit', require('./routes/audit'));
+app.use('/api/form-templates', require('./routes/form-templates'));
 
 // Serve uploaded files with authentication
 const path = require('path');

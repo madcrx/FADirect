@@ -39,7 +39,7 @@ import {
   Description as FormIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import api, { preArrangementFormsApi } from '@/services/api';
+import api, { formTemplatesApi } from '@/services/api';
 import { format } from 'date-fns';
 
 interface FileItem {
@@ -56,28 +56,32 @@ interface FileItem {
   url: string;
 }
 
-interface PreArrangementFormItem {
+interface FormTemplate {
   id: string;
-  arrangementId: string;
-  deceasedName: string | null;
-  status: 'sent' | 'in_progress' | 'completed' | 'cancelled';
-  sentAt: string;
-  completedAt?: string;
-  sentToName: string | null;
-  lastEditedByName?: string | null;
-  lastEditedAt?: string;
+  name: string;
+  description: string | null;
+  formType: string;
+  version: number;
+  isActive: boolean;
+  createdByName: string | null;
+  updatedByName: string | null;
+  deletedByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 export default function FileManagerPage() {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState<FileItem[]>([]);
   const [photos, setPhotos] = useState<FileItem[]>([]);
-  const [forms, setForms] = useState<PreArrangementFormItem[]>([]);
+  const [formTemplates, setFormTemplates] = useState<FormTemplate[]>([]);
   const [selectedTab, setSelectedTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [showDeleted, setShowDeleted] = useState(false);
   const [uploadDialog, setUploadDialog] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadType, setUploadType] = useState<'document' | 'photo'>('document');
@@ -90,18 +94,23 @@ export default function FileManagerPage() {
     file?: FileItem;
   }>({ open: false });
   const [sendNotes, setSendNotes] = useState('');
+  const [templateDialog, setTemplateDialog] = useState<{
+    open: boolean;
+    mode: 'create' | 'edit';
+    template?: FormTemplate;
+  }>({ open: false, mode: 'create' });
 
   useEffect(() => {
     loadFiles();
-  }, []);
+  }, [showDeleted]);
 
   const loadFiles = async () => {
     setLoading(true);
     try {
-      const [docsRes, photosRes, formsRes] = await Promise.all([
+      const [docsRes, photosRes, templatesRes] = await Promise.all([
         api.get('/documents'),
         api.get('/photos'),
-        preArrangementFormsApi.getAll().catch(() => ({ forms: [] })),
+        formTemplatesApi.getAll(showDeleted).catch(() => ({ templates: [] })),
       ]);
 
       const docsData = docsRes.data.documents?.map((doc: any) => ({
@@ -132,21 +141,24 @@ export default function FileManagerPage() {
         url: photo.url,
       })) || [];
 
-      const formsData = formsRes.forms?.map((form: any) => ({
-        id: form.id,
-        arrangementId: form.arrangementId,
-        deceasedName: form.deceasedName,
-        status: form.status,
-        sentAt: form.sentAt,
-        completedAt: form.completedAt,
-        sentToName: form.sentToName,
-        lastEditedByName: form.lastEditedByName,
-        lastEditedAt: form.lastEditedAt,
+      const templatesData = templatesRes.templates?.map((tmpl: any) => ({
+        id: tmpl.id,
+        name: tmpl.name,
+        description: tmpl.description,
+        formType: tmpl.formType,
+        version: tmpl.version,
+        isActive: tmpl.isActive,
+        createdByName: tmpl.createdByName,
+        updatedByName: tmpl.updatedByName,
+        deletedByName: tmpl.deletedByName,
+        createdAt: tmpl.createdAt,
+        updatedAt: tmpl.updatedAt,
+        deletedAt: tmpl.deletedAt,
       })) || [];
 
       setDocuments(docsData);
       setPhotos(photosData);
-      setForms(formsData);
+      setFormTemplates(templatesData);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load files');
     } finally {
@@ -267,19 +279,42 @@ export default function FileManagerPage() {
     );
   };
 
-  const filterForms = (forms: PreArrangementFormItem[]) => {
-    if (!searchTerm) return forms;
+  const filterTemplates = (templates: FormTemplate[]) => {
+    if (!searchTerm) return templates;
     const search = searchTerm.toLowerCase();
-    return forms.filter(
-      (form) =>
-        form.deceasedName?.toLowerCase().includes(search) ||
-        form.sentToName?.toLowerCase().includes(search)
+    return templates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(search) ||
+        template.description?.toLowerCase().includes(search) ||
+        template.formType.toLowerCase().includes(search)
     );
+  };
+
+  const handleDeleteTemplate = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this form template? This will create a new version.')) return;
+
+    try {
+      await formTemplatesApi.delete(id);
+      setSuccess('Form template deleted successfully');
+      await loadFiles();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to delete template');
+    }
+  };
+
+  const handleRestoreTemplate = async (id: string) => {
+    try {
+      await formTemplatesApi.restore(id);
+      setSuccess('Form template restored successfully');
+      await loadFiles();
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to restore template');
+    }
   };
 
   const currentFiles = selectedTab === 0 ? documents : selectedTab === 1 ? photos : [];
   const filteredFiles = filterFiles(currentFiles);
-  const filteredForms = filterForms(forms);
+  const filteredTemplates = filterTemplates(formTemplates);
 
   // Group files by arrangement
   const filesByArrangement = filteredFiles.reduce((acc, file) => {
@@ -355,22 +390,34 @@ export default function FileManagerPage() {
         <Tabs value={selectedTab} onChange={(_, val) => setSelectedTab(val)}>
           <Tab label={`Documents (${documents.length})`} />
           <Tab label={`Photos (${photos.length})`} />
-          <Tab label={`Forms (${forms.length})`} />
+          <Tab label={`Form Templates (${formTemplates.length})`} />
         </Tabs>
       </Box>
 
+      {selectedTab === 2 && (
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setShowDeleted(!showDeleted)}
+          >
+            {showDeleted ? 'Hide Deleted' : 'Show Deleted'}
+          </Button>
+        </Box>
+      )}
+
       {selectedTab === 2 ? (
-        // Forms Tab
-        filteredForms.length === 0 ? (
+        // Form Templates Tab
+        filteredTemplates.length === 0 ? (
           <Card>
             <CardContent>
               <Box sx={{ textAlign: 'center', py: 8 }}>
                 <FormIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary">
-                  No forms found
+                  No form templates found
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Pre-arrangement forms will appear here when sent
+                  Form templates are the blank versions used throughout the system
                 </Typography>
               </Box>
             </CardContent>
@@ -383,83 +430,103 @@ export default function FileManagerPage() {
                   <TableHead>
                     <TableRow>
                       <TableCell width="40px"></TableCell>
-                      <TableCell>Deceased Name</TableCell>
-                      <TableCell>Sent To</TableCell>
+                      <TableCell>Template Name</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Version</TableCell>
                       <TableCell>Status</TableCell>
-                      <TableCell>Sent Date</TableCell>
-                      <TableCell>Completed Date</TableCell>
-                      <TableCell>Last Edited</TableCell>
+                      <TableCell>Last Updated</TableCell>
+                      <TableCell>Updated By</TableCell>
                       <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredForms.map((form) => (
-                      <TableRow key={form.id} hover>
+                    {filteredTemplates.map((template) => (
+                      <TableRow
+                        key={template.id}
+                        hover
+                        sx={{
+                          opacity: template.deletedAt ? 0.5 : 1,
+                          bgcolor: template.deletedAt ? 'action.hover' : 'inherit',
+                        }}
+                      >
                         <TableCell>
-                          <FormIcon color="primary" />
+                          <FormIcon color={template.isActive ? 'primary' : 'disabled'} />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
-                            {form.deceasedName || 'Unknown'}
+                            {template.name}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {form.sentToName || 'Unknown'}
+                          <Typography variant="body2" color="text.secondary">
+                            {template.description || '-'}
                           </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={template.formType} size="small" variant="outlined" />
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={form.status}
+                            label={`v${template.version}`}
                             size="small"
-                            color={
-                              form.status === 'completed'
-                                ? 'success'
-                                : form.status === 'in_progress'
-                                ? 'warning'
-                                : form.status === 'cancelled'
-                                ? 'error'
-                                : 'default'
-                            }
+                            color={template.isActive ? 'primary' : 'default'}
                           />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {form.sentAt ? format(new Date(form.sentAt), 'dd MMM yyyy') : '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {form.completedAt
-                              ? format(new Date(form.completedAt), 'dd MMM yyyy')
-                              : '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          {form.lastEditedByName && form.lastEditedAt ? (
-                            <>
-                              <Typography variant="body2">
-                                {form.lastEditedByName}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {format(new Date(form.lastEditedAt), 'dd MMM yyyy HH:mm')}
-                              </Typography>
-                            </>
+                          {template.deletedAt ? (
+                            <Chip label="Deleted" size="small" color="error" />
+                          ) : template.isActive ? (
+                            <Chip label="Active" size="small" color="success" />
                           ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              -
+                            <Chip label="Inactive" size="small" color="default" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {format(new Date(template.updatedAt), 'dd MMM yyyy HH:mm')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {template.updatedByName || template.createdByName || '-'}
+                          </Typography>
+                          {template.deletedAt && template.deletedByName && (
+                            <Typography variant="caption" color="error">
+                              Deleted by: {template.deletedByName}
                             </Typography>
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => navigate(`/arrangements/${form.arrangementId}/pre-arrangement-form`)}
-                            title="View/Edit Form"
-                          >
-                            {form.status === 'completed' ? <ViewIcon /> : <EditIcon />}
-                          </IconButton>
+                          {template.deletedAt ? (
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleRestoreTemplate(template.id)}
+                              title="Restore"
+                            >
+                              <ViewIcon />
+                            </IconButton>
+                          ) : (
+                            <>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() => setTemplateDialog({ open: true, mode: 'edit', template })}
+                                title="Edit (Creates New Version)"
+                              >
+                                <EditIcon />
+                              </IconButton>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                title="Delete"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
