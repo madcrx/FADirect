@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'your-api-key-here');
 
 // System context for the AI assistant
-const SYSTEM_CONTEXT = `You are FADirect AI Assistant, a helpful and empathetic assistant for a funeral home management system.
+const SYSTEM_CONTEXT = `You are CarePortal Assistant, a helpful and empathetic assistant for a funeral home management system.
 
 Your role is to:
 1. Help users navigate the portal and mobile app
@@ -98,7 +98,7 @@ const AVAILABLE_FUNCTIONS = [
 class AIAssistant {
   constructor() {
     this.model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-pro',
       systemInstruction: SYSTEM_CONTEXT,
     });
 
