@@ -55,36 +55,28 @@ BEGIN
       -- 1. CREATE ARRANGEMENT from First Call Report
       INSERT INTO arrangements (
         deceased_name,
-        date_of_birth,
-        date_of_death,
-        age,
-        gender,
+        deceased_date_of_birth,
+        deceased_date_of_death,
         place_of_death,
         location_of_deceased,
         cause_of_death,
         contact_name,
         contact_phone,
-        contact_email,
         special_requests,
         status,
-        created_by,
-        created_at
+        arranger_id
       ) VALUES (
         deceased_full_name,
         (NEW.form_data->'deceased_details'->>'dateOfBirth')::DATE,
         (NEW.form_data->'deceased_details'->>'dateOfDeath')::DATE,
-        (NEW.form_data->'deceased_details'->>'age')::INTEGER,
-        NEW.form_data->'deceased_details'->>'gender',
         NEW.form_data->'location_details'->>'currentLocation',
         NEW.form_data->'location_details'->>'address',
         NEW.form_data->'medical_info'->>'causeOfDeath',
         NEW.form_data->'call_details'->>'callerName',
         NEW.form_data->'call_details'->>'callerPhone',
-        NULL, -- email not in first call report
         NEW.form_data->'removal_details'->>'specialInstructions',
         'pending',
-        NEW.submitted_by,
-        NOW()
+        NEW.submitted_by
       )
       RETURNING id INTO new_arrangement_id;
 
