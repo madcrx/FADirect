@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS first_call_reports (
   template_id UUID REFERENCES form_templates(id),
   arrangement_id UUID REFERENCES arrangements(id) ON DELETE SET NULL,
   job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
-  submitted_by INTEGER NOT NULL REFERENCES users(id),
+  submitted_by UUID NOT NULL REFERENCES users(id),
 
   -- Form data stored as JSONB
   form_data JSONB NOT NULL,
