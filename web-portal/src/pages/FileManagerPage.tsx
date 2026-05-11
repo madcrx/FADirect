@@ -43,6 +43,7 @@ import {
 import api, { formTemplatesApi } from '@/services/api';
 import { format } from 'date-fns';
 import FormTemplateEditor, { FormTemplateData } from '@/components/FormTemplateEditor';
+import FormTemplatePreview from '@/components/FormTemplatePreview';
 
 interface FileItem {
   id: string;
@@ -101,6 +102,7 @@ export default function FileManagerPage() {
     mode: 'create' | 'edit';
     template?: FormTemplate;
   }>({ open: false, mode: 'create' });
+  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
 
   useEffect(() => {
     loadFiles();
@@ -353,6 +355,19 @@ export default function FileManagerPage() {
     });
   };
 
+  const handlePreviewTemplate = (template: FormTemplate) => {
+    // Load full template data for preview
+    formTemplatesApi.getById(template.id).then((res) => {
+      setPreviewTemplate({
+        name: res.template.name,
+        description: res.template.description || '',
+        templateData: res.template.templateData,
+      });
+    }).catch((err) => {
+      setError(err.response?.data?.error?.message || 'Failed to load template');
+    });
+  };
+
   const currentFiles = selectedTab === 0 ? documents : selectedTab === 1 ? photos : [];
   const filteredFiles = filterFiles(currentFiles);
   const filteredTemplates = filterTemplates(formTemplates);
@@ -562,6 +577,14 @@ export default function FileManagerPage() {
                             </IconButton>
                           ) : (
                             <>
+                              <IconButton
+                                size="small"
+                                color="info"
+                                onClick={() => handlePreviewTemplate(template)}
+                                title="Preview Form"
+                              >
+                                <ViewIcon />
+                              </IconButton>
                               <IconButton
                                 size="small"
                                 color="primary"
@@ -845,6 +868,15 @@ export default function FileManagerPage() {
         initialData={templateDialog.template as any}
         mode={templateDialog.mode}
       />
+
+      {/* Form Template Preview Dialog */}
+      {previewTemplate && (
+        <FormTemplatePreview
+          open={!!previewTemplate}
+          onClose={() => setPreviewTemplate(null)}
+          template={previewTemplate}
+        />
+      )}
     </Box>
   );
 }
