@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 // Submit a new First Call Report
 // This will automatically create an arrangement and removal job
-router.post('/', auth, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   const client = await db.getClient();
 
   try {
@@ -74,7 +74,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Get all First Call Reports with filtering
-router.get('/', auth, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const { status, submittedBy, startDate, endDate, page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
@@ -150,7 +150,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get a specific First Call Report by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -188,7 +188,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Get First Call Report by Arrangement ID
-router.get('/arrangement/:arrangementId', auth, async (req, res) => {
+router.get('/arrangement/:arrangementId', authenticateToken, async (req, res) => {
   try {
     const { arrangementId } = req.params;
 
@@ -215,7 +215,7 @@ router.get('/arrangement/:arrangementId', auth, async (req, res) => {
 });
 
 // Get First Call Report by Job ID
-router.get('/job/:jobId', auth, async (req, res) => {
+router.get('/job/:jobId', authenticateToken, async (req, res) => {
   try {
     const { jobId } = req.params;
 
@@ -242,7 +242,7 @@ router.get('/job/:jobId', auth, async (req, res) => {
 });
 
 // Retry processing a failed First Call Report
-router.post('/:id/retry', auth, async (req, res) => {
+router.post('/:id/retry', authenticateToken, async (req, res) => {
   const client = await db.getClient();
 
   try {
