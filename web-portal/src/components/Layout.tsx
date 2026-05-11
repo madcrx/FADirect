@@ -43,6 +43,7 @@ import {
   PersonAdd as PersonAddIcon,
   Description as DescriptionIcon,
   School as OnboardingIcon,
+  PhoneForwarded as FirstCallIcon,
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
@@ -91,6 +92,7 @@ const menuSections: MenuSection[] = [
   {
     heading: 'OPERATIONS',
     items: [
+      { text: 'First Call Report', icon: <FirstCallIcon />, path: '/first-call-report' },
       { text: 'Daily Run Sheet', icon: <CalendarIcon />, path: '/bookings' },
       { text: 'Staff', icon: <PeopleIcon />, path: '/staff', requiresRoles: ['admin', 'management'] },
       { text: 'Vehicles', icon: <DriveEtaIcon />, path: '/vehicles', requiresRoles: ['admin', 'management'] },

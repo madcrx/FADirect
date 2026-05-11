@@ -29,6 +29,7 @@ import MournersPage from './pages/MournersPage';
 import RevenuePage from './pages/RevenuePage';
 import LeaveManagementPage from './pages/LeaveManagementPage';
 import PreArrangementFormPage from './pages/PreArrangementFormPage';
+import FirstCallReportPage from './pages/FirstCallReportPage';
 import PendingRegistrationsPage from './pages/PendingRegistrationsPage';
 import PoliciesPage from './pages/PoliciesPage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -48,6 +49,7 @@ function App() {
             <Route path="arrangements/:id" element={<ArrangementDetailPage />} />
             <Route path="arrangements/:id/edit" element={<ArrangementFormPage />} />
             <Route path="arrangements/:id/pre-arrangement-form" element={<PreArrangementFormPage />} />
+            <Route path="first-call-report" element={<FirstCallReportPage />} />
             <Route path="users" element={<Navigate to="/staff" replace />} />
             <Route path="price-lists" element={<PriceListsPage />} />
             <Route path="invoicing" element={<InvoicingPage />} />
