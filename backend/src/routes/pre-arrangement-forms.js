@@ -72,6 +72,22 @@ router.post('/send', authenticateToken, validateRequest(schemas.sendForm), async
       return res.status(400).json({ error: { message: 'No mourner associated with this arrangement' } });
     }
 
+    // Get the latest active pre-arrangement form template
+    const templateResult = await db.query(
+      `SELECT id, template_data
+       FROM form_templates
+       WHERE form_type = 'pre_arrangement'
+         AND is_active = TRUE
+         AND deleted_at IS NULL
+       ORDER BY version DESC, created_at DESC
+       LIMIT 1`
+    );
+
+    let formTemplate = null;
+    if (templateResult.rows.length > 0) {
+      formTemplate = templateResult.rows[0];
+    }
+
     // Check if form already exists
     const existing = await db.query(
       'SELECT id FROM pre_arrangement_forms WHERE arrangement_id = $1',
@@ -83,19 +99,19 @@ router.post('/send', authenticateToken, validateRequest(schemas.sendForm), async
       // Update existing form
       const result = await db.query(
         `UPDATE pre_arrangement_forms
-         SET status = 'sent', sent_at = NOW(), updated_at = NOW()
+         SET status = 'sent', sent_at = NOW(), updated_at = NOW(), template_id = $2
          WHERE arrangement_id = $1
          RETURNING id`,
-        [arrangementId]
+        [arrangementId, formTemplate ? formTemplate.id : null]
       );
       formId = result.rows[0].id;
     } else {
       // Create new form
       const result = await db.query(
         `INSERT INTO pre_arrangement_forms (
-          arrangement_id, sent_to_user_id, sent_by_user_id, status
-        ) VALUES ($1, $2, $3, 'sent') RETURNING id`,
-        [arrangementId, arr.mourner_id, req.user.id]
+          arrangement_id, sent_to_user_id, sent_by_user_id, status, template_id
+        ) VALUES ($1, $2, $3, 'sent', $4) RETURNING id`,
+        [arrangementId, arr.mourner_id, req.user.id, formTemplate ? formTemplate.id : null]
       );
       formId = result.rows[0].id;
     }

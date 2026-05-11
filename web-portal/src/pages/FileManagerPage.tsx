@@ -38,9 +38,11 @@ import {
   Send as SendIcon,
   Description as FormIcon,
   Edit as EditIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import api, { formTemplatesApi } from '@/services/api';
 import { format } from 'date-fns';
+import FormTemplateEditor, { FormTemplateData } from '@/components/FormTemplateEditor';
 
 interface FileItem {
   id: string;
@@ -312,6 +314,45 @@ export default function FileManagerPage() {
     }
   };
 
+  const handleSaveTemplate = async (templateData: FormTemplateData) => {
+    try {
+      if (templateDialog.mode === 'create') {
+        await formTemplatesApi.create(templateData);
+        setSuccess('Form template created successfully');
+      } else if (templateDialog.template) {
+        await formTemplatesApi.update(templateDialog.template.id, templateData);
+        setSuccess('Form template updated successfully (new version created)');
+      }
+      setTemplateDialog({ open: false, mode: 'create' });
+      await loadFiles();
+    } catch (err: any) {
+      throw err; // Let the dialog handle the error display
+    }
+  };
+
+  const handleEditTemplate = (template: FormTemplate) => {
+    // Convert template to FormTemplateData format
+    const templateData: FormTemplateData = {
+      name: template.name,
+      description: template.description || '',
+      formType: template.formType,
+      templateData: { sections: [] }, // Will be loaded from backend
+    };
+
+    // Load full template data
+    formTemplatesApi.getById(template.id).then((res) => {
+      const fullData: FormTemplateData = {
+        name: res.template.name,
+        description: res.template.description || '',
+        formType: res.template.formType,
+        templateData: res.template.templateData,
+      };
+      setTemplateDialog({ open: true, mode: 'edit', template: { ...template, ...fullData } as any });
+    }).catch((err) => {
+      setError(err.response?.data?.error?.message || 'Failed to load template');
+    });
+  };
+
   const currentFiles = selectedTab === 0 ? documents : selectedTab === 1 ? photos : [];
   const filteredFiles = filterFiles(currentFiles);
   const filteredTemplates = filterTemplates(formTemplates);
@@ -343,19 +384,31 @@ export default function FileManagerPage() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Files
+            Files {selectedTab === 2 && '& Form Templates'}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Manage all documents and photos
+            {selectedTab === 2
+              ? 'Manage form templates used throughout the system'
+              : 'Manage all documents and photos'}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<UploadIcon />}
-          onClick={() => setUploadDialog(true)}
-        >
-          Upload File
-        </Button>
+        {selectedTab === 2 ? (
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setTemplateDialog({ open: true, mode: 'create' })}
+          >
+            Create Template
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            startIcon={<UploadIcon />}
+            onClick={() => setUploadDialog(true)}
+          >
+            Upload File
+          </Button>
+        )}
       </Box>
 
       {success && (
@@ -512,7 +565,7 @@ export default function FileManagerPage() {
                               <IconButton
                                 size="small"
                                 color="primary"
-                                onClick={() => setTemplateDialog({ open: true, mode: 'edit', template })}
+                                onClick={() => handleEditTemplate(template)}
                                 title="Edit (Creates New Version)"
                               >
                                 <EditIcon />
@@ -783,6 +836,15 @@ export default function FileManagerPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Form Template Editor Dialog */}
+      <FormTemplateEditor
+        open={templateDialog.open}
+        onClose={() => setTemplateDialog({ open: false, mode: 'create' })}
+        onSave={handleSaveTemplate}
+        initialData={templateDialog.template as any}
+        mode={templateDialog.mode}
+      />
     </Box>
   );
 }

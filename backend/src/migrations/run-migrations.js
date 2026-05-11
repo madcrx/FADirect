@@ -49,6 +49,7 @@ async function runMigrations() {
     '041_add_audit_history.sql',
     '042_enhance_pre_arrangement_forms.sql',
     '043_add_form_templates.sql',
+    '044_link_forms_to_templates.sql',
   ];
 
   try {
