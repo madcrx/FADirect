@@ -46,6 +46,7 @@ import {
 } from '@mui/icons-material';
 import { authApi } from '@/services/api';
 import NotificationCenter from './NotificationCenter';
+import AIAssistant from './AIAssistant';
 import type { User } from '@/types';
 
 const drawerWidth = 260;
@@ -398,6 +399,9 @@ export default function Layout() {
           Logout
         </MenuItem>
       </Menu>
+
+      {/* AI Assistant - Always Available */}
+      <AIAssistant />
     </Box>
   );
 }
