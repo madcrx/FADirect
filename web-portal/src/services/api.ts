@@ -245,6 +245,10 @@ export const preArrangementFormsApi = {
     const response = await api.post('/pre-arrangement-forms/send', { arrangementId });
     return response.data;
   },
+  getAll: async (): Promise<any> => {
+    const response = await api.get('/pre-arrangement-forms/all');
+    return response.data;
+  },
   getByArrangement: async (arrangementId: string): Promise<any> => {
     const response = await api.get(`/pre-arrangement-forms/arrangement/${arrangementId}`);
     return response.data.form;

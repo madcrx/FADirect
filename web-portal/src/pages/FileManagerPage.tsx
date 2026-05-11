@@ -101,7 +101,7 @@ export default function FileManagerPage() {
       const [docsRes, photosRes, formsRes] = await Promise.all([
         api.get('/documents'),
         api.get('/photos'),
-        api.get('/pre-arrangement-forms/all').catch(() => ({ data: { forms: [] } })),
+        preArrangementFormsApi.getAll().catch(() => ({ forms: [] })),
       ]);
 
       const docsData = docsRes.data.documents?.map((doc: any) => ({
@@ -132,7 +132,7 @@ export default function FileManagerPage() {
         url: photo.url,
       })) || [];
 
-      const formsData = formsRes.data.forms?.map((form: any) => ({
+      const formsData = formsRes.forms?.map((form: any) => ({
         id: form.id,
         arrangementId: form.arrangementId,
         deceasedName: form.deceasedName,
