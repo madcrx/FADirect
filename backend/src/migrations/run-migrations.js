@@ -50,6 +50,7 @@ async function runMigrations() {
     '042_enhance_pre_arrangement_forms.sql',
     '043_add_form_templates.sql',
     '044_link_forms_to_templates.sql',
+    '045_add_common_funeral_forms.sql',
   ];
 
   try {
