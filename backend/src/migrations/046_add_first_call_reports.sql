@@ -165,13 +165,15 @@ BEGIN
         ON CONFLICT DO NOTHING;
       END IF;
 
-      -- Assign vehicle if specified (lookup by name)
+      -- Assign vehicle if specified (lookup by registration, make, or model)
       IF NEW.form_data->'removal_details'->>'vehicleUsed' IS NOT NULL AND
          NEW.form_data->'removal_details'->>'vehicleUsed' != '' THEN
         INSERT INTO job_vehicle_assignments (job_id, vehicle_id, is_primary)
         SELECT new_job_id, id, true
         FROM vehicles
-        WHERE name ILIKE '%' || (NEW.form_data->'removal_details'->>'vehicleUsed') || '%'
+        WHERE registration ILIKE '%' || (NEW.form_data->'removal_details'->>'vehicleUsed') || '%'
+           OR make ILIKE '%' || (NEW.form_data->'removal_details'->>'vehicleUsed') || '%'
+           OR model ILIKE '%' || (NEW.form_data->'removal_details'->>'vehicleUsed') || '%'
         LIMIT 1
         ON CONFLICT DO NOTHING;
       END IF;
