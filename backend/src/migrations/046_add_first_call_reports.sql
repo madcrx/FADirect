@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS first_call_reports (
 
   -- Foreign keys
   template_id UUID REFERENCES form_templates(id),
-  arrangement_id INTEGER REFERENCES arrangements(id) ON DELETE SET NULL,
-  job_id INTEGER REFERENCES daily_run_sheet(id) ON DELETE SET NULL,
+  arrangement_id UUID REFERENCES arrangements(id) ON DELETE SET NULL,
+  job_id UUID REFERENCES daily_run_sheet(id) ON DELETE SET NULL,
   submitted_by INTEGER NOT NULL REFERENCES users(id),
 
   -- Form data stored as JSONB
@@ -38,8 +38,8 @@ CREATE INDEX idx_first_call_reports_submitted_at ON first_call_reports(submitted
 CREATE OR REPLACE FUNCTION process_first_call_report()
 RETURNS TRIGGER AS $$
 DECLARE
-  new_arrangement_id INTEGER;
-  new_job_id INTEGER;
+  new_arrangement_id UUID;
+  new_job_id UUID;
   deceased_full_name TEXT;
   removal_datetime TIMESTAMP;
 BEGIN
