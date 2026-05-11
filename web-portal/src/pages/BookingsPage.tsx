@@ -257,6 +257,7 @@ export default function BookingsPage() {
   const handlePreviousDate = () => {
     switch (viewMode) {
       case 'day':
+      case 'kanban':
         setSelectedDate(subDays(selectedDate, 1));
         break;
       case 'week':
@@ -271,6 +272,7 @@ export default function BookingsPage() {
   const handleNextDate = () => {
     switch (viewMode) {
       case 'day':
+      case 'kanban':
         setSelectedDate(addDays(selectedDate, 1));
         break;
       case 'week':
