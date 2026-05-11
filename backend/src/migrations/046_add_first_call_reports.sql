@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS first_call_reports (
   -- Foreign keys
   template_id UUID REFERENCES form_templates(id),
   arrangement_id UUID REFERENCES arrangements(id) ON DELETE SET NULL,
-  job_id UUID REFERENCES daily_run_sheet(id) ON DELETE SET NULL,
+  job_id UUID REFERENCES jobs(id) ON DELETE SET NULL,
   submitted_by INTEGER NOT NULL REFERENCES users(id),
 
   -- Form data stored as JSONB
@@ -91,45 +91,42 @@ BEGIN
       -- Store the arrangement ID
       NEW.arrangement_id := new_arrangement_id;
 
-      -- 2. CREATE JOB (Removal) on Daily Run Sheet
+      -- 2. CREATE JOB (Removal/Transfer)
       -- Combine removal date and time
       removal_datetime := (
         NEW.form_data->'removal_details'->>'removalDate' || ' ' ||
         COALESCE(NEW.form_data->'removal_details'->>'removalTime', '09:00')
       )::TIMESTAMP;
 
-      INSERT INTO daily_run_sheet (
+      INSERT INTO jobs (
+        job_type_id,
         arrangement_id,
-        job_type,
-        scheduled_date,
-        scheduled_time,
-        pickup_location,
-        delivery_location,
-        assigned_staff,
-        vehicle_id,
+        title,
+        description,
+        location,
+        start_time,
+        end_time,
         status,
         priority,
         notes,
-        created_by,
-        created_at
+        special_instructions,
+        created_by
       ) VALUES (
+        (SELECT id FROM job_types WHERE name = 'Transfer' LIMIT 1),
         new_arrangement_id,
-        'removal',
-        (NEW.form_data->'removal_details'->>'removalDate')::DATE,
-        (NEW.form_data->'removal_details'->>'removalTime')::TIME,
+        CONCAT('Transfer - ', deceased_full_name),
+        CONCAT('First Call Report - Transfer of deceased from ',
+               NEW.form_data->'location_details'->>'currentLocation'),
         NEW.form_data->'location_details'->>'address',
-        'Funeral Home', -- Default delivery location
-        NEW.form_data->'removal_details'->>'staffAssigned',
-        -- Try to match vehicle by name if provided
-        (SELECT id FROM vehicles WHERE name = NEW.form_data->'removal_details'->>'vehicleUsed' LIMIT 1),
-        'pending',
+        removal_datetime,
+        removal_datetime + INTERVAL '90 minutes', -- Default 90 min duration
+        'scheduled',
         CASE
           WHEN (NEW.form_data->'removal_details'->>'coronerCase')::BOOLEAN = TRUE THEN 'high'
-          ELSE 'medium'
+          ELSE 'normal'
         END,
         CONCAT(
-          'First Call Report - Removal for ', deceased_full_name,
-          E'\nLocation: ', NEW.form_data->'location_details'->>'facilityName',
+          'Facility: ', COALESCE(NEW.form_data->'location_details'->>'facilityName', 'N/A'),
           CASE
             WHEN NEW.form_data->'location_details'->>'roomNumber' IS NOT NULL
             THEN CONCAT(E'\nRoom: ', NEW.form_data->'location_details'->>'roomNumber')
@@ -155,20 +152,37 @@ BEGIN
             WHEN NEW.form_data->'medical_info'->>'medicalDevices' IS NOT NULL
             THEN CONCAT(E'\nMedical Devices: ', NEW.form_data->'medical_info'->>'medicalDevices')
             ELSE ''
-          END,
-          CASE
-            WHEN NEW.form_data->'removal_details'->>'specialInstructions' IS NOT NULL
-            THEN CONCAT(E'\nSpecial Instructions: ', NEW.form_data->'removal_details'->>'specialInstructions')
-            ELSE ''
           END
         ),
-        NEW.submitted_by,
-        NOW()
+        NEW.form_data->'removal_details'->>'specialInstructions',
+        NEW.submitted_by
       )
       RETURNING id INTO new_job_id;
 
       -- Store the job ID
       NEW.job_id := new_job_id;
+
+      -- Assign staff if specified (lookup by name)
+      IF NEW.form_data->'removal_details'->>'staffAssigned' IS NOT NULL AND
+         NEW.form_data->'removal_details'->>'staffAssigned' != '' THEN
+        INSERT INTO job_staff_assignments (job_id, staff_id, role, is_primary)
+        SELECT new_job_id, id, 'driver', true
+        FROM users
+        WHERE name ILIKE '%' || (NEW.form_data->'removal_details'->>'staffAssigned') || '%'
+        LIMIT 1
+        ON CONFLICT DO NOTHING;
+      END IF;
+
+      -- Assign vehicle if specified (lookup by name)
+      IF NEW.form_data->'removal_details'->>'vehicleUsed' IS NOT NULL AND
+         NEW.form_data->'removal_details'->>'vehicleUsed' != '' THEN
+        INSERT INTO job_vehicle_assignments (job_id, vehicle_id, is_primary)
+        SELECT new_job_id, id, true
+        FROM vehicles
+        WHERE name ILIKE '%' || (NEW.form_data->'removal_details'->>'vehicleUsed') || '%'
+        LIMIT 1
+        ON CONFLICT DO NOTHING;
+      END IF;
 
       -- Mark as completed
       NEW.status := 'completed';
