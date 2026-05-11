@@ -67,8 +67,17 @@ BEGIN
         arranger_id
       ) VALUES (
         deceased_full_name,
-        (NEW.form_data->'deceased_details'->>'dateOfBirth')::DATE,
-        (NEW.form_data->'deceased_details'->>'dateOfDeath')::DATE,
+        -- Fix 2-digit years (26 -> 2026)
+        CASE
+          WHEN EXTRACT(YEAR FROM (NEW.form_data->'deceased_details'->>'dateOfBirth')::DATE) < 100
+          THEN (NEW.form_data->'deceased_details'->>'dateOfBirth')::DATE + INTERVAL '2000 years'
+          ELSE (NEW.form_data->'deceased_details'->>'dateOfBirth')::DATE
+        END,
+        CASE
+          WHEN EXTRACT(YEAR FROM (NEW.form_data->'deceased_details'->>'dateOfDeath')::DATE) < 100
+          THEN (NEW.form_data->'deceased_details'->>'dateOfDeath')::DATE + INTERVAL '2000 years'
+          ELSE (NEW.form_data->'deceased_details'->>'dateOfDeath')::DATE
+        END,
         NEW.form_data->'location_details'->>'currentLocation',
         NEW.form_data->'location_details'->>'address',
         NEW.form_data->'medical_info'->>'causeOfDeath',
@@ -84,11 +93,16 @@ BEGIN
       NEW.arrangement_id := new_arrangement_id;
 
       -- 2. CREATE JOB (Removal/Transfer)
-      -- Combine removal date and time
+      -- Combine removal date and time, fixing 2-digit years (e.g., 26 -> 2026)
       removal_datetime := (
         NEW.form_data->'removal_details'->>'removalDate' || ' ' ||
         COALESCE(NEW.form_data->'removal_details'->>'removalTime', '09:00')
       )::TIMESTAMP;
+
+      -- Fix year if it's less than 100 (treat 26 as 2026, etc.)
+      IF EXTRACT(YEAR FROM removal_datetime) < 100 THEN
+        removal_datetime := removal_datetime + INTERVAL '2000 years';
+      END IF;
 
       INSERT INTO jobs (
         job_type_id,
